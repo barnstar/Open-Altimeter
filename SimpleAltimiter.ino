@@ -30,27 +30,31 @@
  * A momentary switch
  * A BMP-280 compatible altimeter (Adafruit works)
  * Optional: An active peizo buzzer
- * Optional: An single relay breakout board
+ * Optional: Relay breakout boards for dual deployment
  * A battery and power switch - 9V (lipo, alk, or nihm) or even 2 cr2025 button cells 
  * Wire/perfboard, etc to connect all this together
  * 
  * 
  * - Records apogee, deployment altitude for hundreds of flights (but who's kidding who,
  *   you'll lose this long before it makes it 100 flights)
- * - Can trigger a deployment relay at a predefined altitude
+ * - Trigger drogue depoloyment at apogee
+ * - Triggers main deployment relay at a predefined altitude
  * - Plays an audible buzzer on landing to aid in locating
  * - Blinks out the last recorded apogee
  * - All flight data will be recored to EEPROM anddumped to the serial port 
  *   on startup.
  *  
- * For deployment, the DEPLOYMENT_PIN should be connected to a relay.
+ * For deployment, the depoloyment pins should be connected to a relay which
+ * fires the deployment charge(s).
+ * 
  * All signal PINs should be connected to LEDs via an appropriate resistor
  * The reset pin should be connected to ground via a momentary switch
  * The configuration below uses the internal LED for the status LED.
  * 
  * This is designed for an Adafruit-compatible BMP280 board connected via
  * i2c.  On a nano that's Clock->A5 and Data->A4.  Other barometer sensors 
- * should work just as well.
+ * should work just as well.  Cheap MBP280s require you to add the 0x77 paramter
+ * to correct the i2c addresss.
  * 
  * See comments on the various pin-outs for operation 
  *
@@ -89,8 +93,9 @@ const int kDeploymentRelayTimoutMs = 5000;
 //the eeprom will be erased.
 const int RESET_PIN            = 6;
 
-const int BUZZER_PIN           = 8;   //Audible buzzer on landing
-const int DEPLOYMENT_RELAY_PIN = 12;  //parachute deployment pin
+const int BUZZER_PIN            = 8;   //Audible buzzer on landing
+const int MAIN_DEPL_RELAY_PIN  = 12;  //parachute deployment pin
+const int DROGUE_DEPL_RELAY_PIN= 11;  //parachute deployment pin
 const int STATUS_PIN           = 4;   //Unit status pin.  On if OK
 const int MESSAGE_PIN          = 2;   //Blinks out the altitude
 const int READY_PIN            = 13;  //Inicates the unit is ready for flight
@@ -123,12 +128,16 @@ Barometer   barometer;
 double refAltitude = 0;         //The reference altitude (altitude of the launch pad)
 double apogee = 0;              //The apogee for the current flight
 double previousApogee = 0;      //The last recoreded apogee
-bool   deployed = false;        //True if the the chute has been deplyed
-int    deploymentTime = 0;      //Time at which the chute was deployed
-bool   timedReset = false;      //True if we've reset the chute relay due to a timeout
+bool   deployedMain = false;    //True if the the chute has been deplyed
+bool   deployedDrogue = false;  //True if the the chute has been deplyed
+int    drogueDeploymentTime = 0;//Time at which the chute was deployed
+int    mainDeploymentTime = 0;  //Time at which the chute was deployed
+bool   timedResetMain = false;  //True if we've reset the chute relay due to a timeout
+bool   timedResetDrogue = false;//True if we've reset the chute relay due to a timeout
 bool   enableBuzzer = false;    //True if the buzzer should be sounding
 int    flightCount = 0;         //The number of flights recorded in EEPROM
-bool   chuteRelayState = false; //State of the parachute relay pin.  Recorded separately.  To avoid fire.
+bool   drogueChuteRelayState = false; //State of the parachute relay pin.  Recorded separately.  To avoid fire.
+bool   mainChuteRelayState = false;   //State of the parachute relay pin.  Recorded separately.  To avoid fire.
 bool   barometerReady = false; 
 
 FlightState state = kOnGround;  //The flight state
@@ -136,7 +145,7 @@ FlightState state = kOnGround;  //The flight state
 void setup()
 {
   Serial.begin(SERIAL_BAUD_RATE);
-  pinMode(DEPLOYMENT_RELAY_PIN, OUTPUT);
+  pinMode(MAIN_DEPL_RELAY_PIN, OUTPUT);
   pinMode(RESET_PIN, INPUT_PULLUP);
 
   pinMode(MESSAGE_PIN, OUTPUT);
@@ -146,7 +155,7 @@ void setup()
   digitalWrite(MESSAGE_PIN, HIGH);
 
   delay(100);   //The barometer doesn't like being queried immediately
-  if (barometer.begin()) {
+  if (barometer.begin(0x76)) {  //Omit the parameter for adafruit
     digitalWrite(STATUS_PIN, HIGH);
     digitalWrite(MESSAGE_PIN, LOW);
     log("Init Barometer OK");
@@ -254,6 +263,8 @@ void readSensorData()
     //We record the apogee here just in case something breaks on descent.. At least
     //we have the altitude in EEPROM.
     recordApogee(apogee);
+    setMainDeploymentRelay(true);
+    mainDeploymentTime = millis();
   }
   else if (state == kDescending && altitude < kThresholdEndAltitude) {
     //Transition to "On Ground" if we've we're below our ending threshold altitude.
@@ -263,45 +274,68 @@ void readSensorData()
     previousApogee = apogee;
     apogee = 0;
     flightCount++;
-    deployed = false;
-    timedReset = false;
-    setDeploymentRelay(false);
+    deployedMain = false;
+    deployedDrogue = false;
+    timedResetMain = false;
+    timedResetDrogue = false;
+    setDrogueDeploymentRelay(false);
+    setMainDeploymentRelay(false);
     enableBuzzer = true;
   }
 
-  if (state == kDescending && !deployed && altitude < kDeploymentAltitude) {
+  if (state == kDescending && !deployedMain && altitude < kDeploymentAltitude) {
     //If we're descening and we're below our deployment altitude, deploy the chute!
-    deployed = true;
+    deployedMain = true;
     recordDepolyment(altitude);
-    setDeploymentRelay(true);
-    deploymentTime = millis();
+    setDrogueDeploymentRelay(true);
+    drogueDeploymentTime = millis();
   }
 
   //Safety measure in case we don't switch to the onGround state.  This will disable the igniter relay
   //after 5 seconds to avoid draining or damaging the battery
-  if (state == kDescending && deployed && !timedReset) {
-    if (millis() - deploymentTime > kDeploymentRelayTimoutMs) {
-      setDeploymentRelay(false);
-      deployed = false;
-      timedReset = true;
+  if (state == kDescending) {
+    if (millis() - drogueDeploymentTime > kDeploymentRelayTimoutMs && !timedResetDrogue && deployedDrogue) {
+      setDrogueDeploymentRelay(false);
+      deployedDrogue = false;
+      timedResetDrogue = true;
+    }
+    if (millis() - mainDeploymentTime > kDeploymentRelayTimoutMs &&!timedResetMain && deployedMain) {
+      setMainDeploymentRelay(false);
+      deployedMain = false;
+      timedResetMain = true;
     }
   }
 
 }
 
-void setDeploymentRelay(bool enabled)
+void setDrogueDeploymentRelay(bool enabled)
 {
-  if(enabled == chuteRelayState)return;
+  if(enabled == drogueChuteRelayState)return;
   
   if (enabled) {
-    digitalWrite(DEPLOYMENT_RELAY_PIN, HIGH);
+    digitalWrite(DROGUE_DEPL_RELAY_PIN, HIGH);
+    log("Deploying drogue");
+  } else {
+    digitalWrite(DROGUE_DEPL_RELAY_PIN, LOW);
+    log("Resetting drogue deployment relay");
+  }
+  drogueChuteRelayState = enabled;
+}
+
+void setMainDeploymentRelay(bool enabled)
+{
+  if(enabled == mainChuteRelayState)return;
+  
+  if (enabled) {
+    digitalWrite(MAIN_DEPL_RELAY_PIN, HIGH);
     log("Deploying parachte");
   } else {
-    digitalWrite(DEPLOYMENT_RELAY_PIN, LOW);
-    log("Resetting deployment relay");
+    digitalWrite(MAIN_DEPL_RELAY_PIN, LOW);
+    log("Resetting main deployment relay");
   }
-  chuteRelayState = enabled;
+  mainChuteRelayState = enabled;
 }
+
 
 
 //Note that we record these separately so that we get at least an altitude
