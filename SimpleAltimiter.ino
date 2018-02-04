@@ -79,6 +79,7 @@ const double kSeaLevelPressureHPa = 1013.7;
 //on a hill, etc.  30m should be sufficient for most launch sites.
 const double kThresholdStartAltitude = 10;
 const double kThresholdEndAltitude = 30;
+const double kThresholdStartAcc = 0.1;  //in G's
 
 //100m deployment altitude (330 ft) 
 const double kDeploymentAltitude = 100;
@@ -119,14 +120,43 @@ const int SENSOR_READ_DELAY_MS = 20;
 //Delay between digit blinks.  Any faster is too quick to keep up with
 const int BLINK_SPEED_MS       = 200;
 
+void log(String val);
 
 typedef struct  {
-  double apogee;
-  double ejectionAltitude;
-  bool isValid() {
-    return apogee || ejectionAltitude;
-  }
+  double apogee = 0;
+  double ejectionAltitude = 0;
+  double drogueEjectionAltitude = 0;
+  double maxAccelleration = 0;
+  double burnoutAltitude = 0;
+
+  int    accTriggerTime;
+  int    altTriggerTime;   
 } FlightData;
+
+bool isValid(FlightData *d) {
+  return d->apogee || 
+         d->ejectionAltitude ||
+         d->drogueEjectionAltitude || 
+         d->maxAccelleration ||
+         d->burnoutAltitude;
+}
+
+void reset(FlightData *d) {
+  d->apogee = 0;
+  d->ejectionAltitude = 0;
+  d->drogueEjectionAltitude = 0;
+  d->maxAccelleration = 0;
+  d->burnoutAltitude = 0; 
+  d->accTriggerTime = 0;
+  d->altTriggerTime = 0;
+}
+
+void logData(int index, FlightData *d) {
+   log(String("Flight " + String(index) + ": Apogee" + String(d->apogee) + "m : Drogue " + String(d->ejectionAltitude) 
+       + "m : Main " + String(d->drogueEjectionAltitude) + "m : Acc " + String(d->maxAccelleration) + "g's : Burnout" + String(d->burnoutAltitude)
+       + "m : Acc Trigger " + String(d->accTriggerTime) + "ms : Alt Trigger " + String(d->altTriggerTime) + "s"));
+}
+
 
 typedef enum {
   kInFlight,
@@ -138,10 +168,9 @@ typedef enum {
 Barometer   barometer;
 MPU6050 mpu;
 
+FlightData flightData;
 
 double refAltitude = 0;         //The reference altitude (altitude of the launch pad)
-double apogee = 0;              //The apogee for the current flight
-double previousApogee = 0;      //The last recoreded apogee
 bool   deployedMain = false;    //True if the the chute has been deplyed
 bool   deployedDrogue = false;  //True if the the chute has been deplyed
 int    drogueDeploymentTime = 0;//Time at which the chute was deployed
@@ -153,9 +182,12 @@ int    flightCount = 0;         //The number of flights recorded in EEPROM
 bool   drogueChuteRelayState = false; //State of the parachute relay pin.  Recorded separately.  To avoid fire.
 bool   mainChuteRelayState = false;   //State of the parachute relay pin.  Recorded separately.  To avoid fire.
 bool   barometerReady = false; 
-double maxAcc = 0;
+int    resetTime = 0;
+bool   readyToFly = false;
+
 
 FlightState state = kOnGround;  //The flight state
+
 
 void setup()
 {
@@ -182,7 +214,7 @@ void setup()
   } else {
     //If the unit starts with the status pin off and the message pin on,
     //the barometer failed to initialize
-    previousApogee = 0;
+    flightData.apogee = 0;
     log("Barometer Init Fail");
   }
 
@@ -193,6 +225,8 @@ void setup()
     mpu.setFullScaleAccelRange(MPU6050_ACCEL_FS_8);
     log("MPU Started");
   }
+
+  reset(&flightData);
   
   log("Deployment Alt: " + String(kDeploymentAltitude));
   refAltitude = barometer.readAltitude(kSeaLevelPressureHPa);
@@ -207,14 +241,14 @@ void setup()
 
 void loop()
 {
-  if(previousApogee == 0 && barometerReady) {
+  if(readyToFly && barometerReady) {
     readSensorData();
     delay(SENSOR_READ_DELAY_MS);
     digitalWrite(READY_PIN, HIGH);
   }
 
   //Blink out the last recorded apogee on the message pin
-  if (previousApogee != 0 && state == kOnGround) {
+  if (!readyToFly && state == kOnGround) {
         digitalWrite(READY_PIN, LOW);
         blinkLastAltitude();
   }
@@ -227,8 +261,10 @@ void loop()
 #define CHECK_RESETPIN_AND_RETURN() \
    do{ \
       if (digitalRead(RESET_PIN) == LOW) {\
-        previousApogee = 0;\
+        reset(&flightData); \
+        resetTime = millis(); \
         enableBuzzer = false;\
+        readyToFly = true; \
         return;\
       }\
    }while(0); \
@@ -238,7 +274,7 @@ void loop()
 //a couple of seconds at worst.  
 void blinkLastAltitude()
 {
-  int tempApogee = previousApogee;
+  int tempApogee = flightData.apogee;
   bool foundDigit = false;         //Don't blink leading 0s
   for(int m=10000; m>0; m=m/10) {  //If we make it past 99km, we're in trouble :)
     int digit = tempApogee / m;
@@ -291,6 +327,7 @@ double getAccelleration()
   return acc;
 }
 
+double apogee=0;
 void readSensorData()
 {
   //Our relative altitude... Relative to wherever we last reset the altimeter.
@@ -298,10 +335,16 @@ void readSensorData()
   double accelleration = getAccelleration();
 
   if(state != kOnGround) {
-    log(String("Alt:") + String(altitude) + " Acc:" + String(accelleration));
+    //log(String("Alt:") + String(altitude) + " Acc:" + String(accelleration));
   }
 
-  apogee = altitude > apogee ? altitude : apogee;
+  flightData.apogee = altitude > flightData.apogee ? altitude : flightData.apogee;
+  flightData.maxAccelleration = accelleration > flightData.maxAccelleration ? accelleration : flightData.maxAccelleration;
+
+  //Experimental.  Can we use 
+  if(state == kOnGround && accelleration > kThresholdStartAcc && flightData.accTriggerTime == 0) {
+    flightData.accTriggerTime = millis() - resetTime;
+  }
 
   if (state == kOnGround && altitude > kThresholdStartAltitude) {
     //Transition to "InFlight" if we've exceeded the threshold altitude.
@@ -309,23 +352,19 @@ void readSensorData()
     state = kAscending;
     digitalWrite(READY_PIN, LOW);
     digitalWrite(MESSAGE_PIN, HIGH);
-  } else if (state == kAscending && altitude < (apogee - kDescentThreshold)) {
+  } else if (state == kAscending && altitude < (flightData.apogee - kDescentThreshold)) {
     //Transition to "Descnding" if we've we're kDescentThreshold meters below our apogee
     log("Descending");
     state = kDescending;
-    //We record the apogee here just in case something breaks on descent.. At least
-    //we have the altitude in EEPROM.
-    recordApogee(apogee);
+    flightData.drogueEjectionAltitude = altitude;
     setMainDeploymentRelay(true);
-    mainDeploymentTime = millis();
+    mainDeploymentTime = millis() - resetTime;
   }
   else if (state == kDescending && altitude < kThresholdEndAltitude) {
-    //Transition to "On Ground" if we've we're below our ending threshold altitude.
-    //With any luck, we're acutally on the ground...
     state = kOnGround;
-    log(String("Landing.  Apogee:" + String(apogee)));
-    previousApogee = apogee;
-    apogee = 0;
+    log(String("Landed"));
+    logData(flightCount, &flightData);
+    recordFlight(flightData);
     flightCount++;
     deployedMain = false;
     deployedDrogue = false;
@@ -334,12 +373,13 @@ void readSensorData()
     setDrogueDeploymentRelay(false);
     setMainDeploymentRelay(false);
     enableBuzzer = true;
+    readyToFly = false;
   }
 
   if (state == kDescending && !deployedMain && altitude < kDeploymentAltitude) {
     //If we're descening and we're below our deployment altitude, deploy the chute!
     deployedMain = true;
-    recordDepolyment(altitude);
+    flightData.ejectionAltitude = altitude;
     setDrogueDeploymentRelay(true);
     drogueDeploymentTime = millis();
   }
@@ -390,19 +430,9 @@ void setMainDeploymentRelay(bool enabled)
 }
 
 
-
-//Note that we record these separately so that we get at least an altitude
-//reading if things go south on descent...
-void recordApogee(double a)
+void recordFlight(FlightData d)
 {
   int offset = flightCount * sizeof(FlightData);
-  EEPROM.put(offset, a);
-}
-
-
-void recordDepolyment(double d)
-{
-  int offset = flightCount * sizeof(FlightData) + sizeof(double);
   EEPROM.put(offset, d);
 }
 
@@ -426,11 +456,11 @@ int getFlightCount()
   FlightData d;
   for (int i = 0; i < maxProgs; i++) {
     EEPROM.get(i * sizeof(FlightData), d);
-    if (!d.isValid()) {
+    if (!isValid(&d)) {
       return i;
-    }
-    log(String("Flight " + String(i) + ":" + String(d.apogee) + ":" + String(d.ejectionAltitude)));
-    previousApogee = d.apogee;
+    }  
+    logData(i, &d);
+    flightData = d;
   }
   log("EEPROM Full.  That's probably an error.  Reset your EEPROM");
   return 0;
