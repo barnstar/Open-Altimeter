@@ -62,8 +62,10 @@
  
 #include <EEPROM.h>
 
-//From: https://github.com/adafruit/Adafruit_BMP280_Library/blob/master/Adafruit_BMP280.h
-#include <Adafruit_BMP280.h>             
+
+#include <Adafruit_BMP280.h>             //https://github.com/adafruit/Adafruit_BMP280_Library/blob/master/Adafruit_BMP280.h       
+#include "I2Cdev.h"                      //https://diyhacking.com/arduino-mpu-6050-imu-sensor-tutorial/
+#include "MPU6050_6Axis_MotionApps20.h"  //https://diyhacking.com/arduino-mpu-6050-imu-sensor-tutorial/ 
 
 #define LOG_TO_SERIAL 1   //Set to 0 to disable serial logging...
 
@@ -93,16 +95,25 @@ const int kDeploymentRelayTimoutMs = 5000;
 //the eeprom will be erased.
 const int RESET_PIN            = 6;
 
-const int BUZZER_PIN            = 8;   //Audible buzzer on landing
-const int MAIN_DEPL_RELAY_PIN  = 12;  //parachute deployment pin
-const int DROGUE_DEPL_RELAY_PIN= 11;  //parachute deployment pin
-const int STATUS_PIN           = 4;   //Unit status pin.  On if OK
-const int MESSAGE_PIN          = 2;   //Blinks out the altitude
-const int READY_PIN            = 13;  //Inicates the unit is ready for flight
+//Configuration A: 1 1/2" PCB
+//const int BUZZER_PIN            = 8;   //Audible buzzer on landing
+//const int MAIN_DEPL_RELAY_PIN  = 12;  //parachute deployment pin
+//const int DROGUE_DEPL_RELAY_PIN= 11;  //parachute deployment pin
+//const int STATUS_PIN           = 4;   //Unit status pin.  On if OK
+//const int MESSAGE_PIN          = 2;   //Blinks out the altitude
+//const int READY_PIN            = 13;  //Inicates the unit is ready for flight
+
+//Configurtion B: 2 1/2" PCB
+const int BUZZER_PIN            = 7;  //Audible buzzer on landing
+const int MAIN_DEPL_RELAY_PIN  =  8;  //parachute deployment pin
+const int DROGUE_DEPL_RELAY_PIN=  9;  //parachute deployment pin
+const int STATUS_PIN           =  2;  //Unit status pin.  On if OK
+const int MESSAGE_PIN          =  3;  //Blinks out the altitude
+const int READY_PIN            =  4;  //Inicates the unit is ready for flight
 
 const int SERIAL_BAUD_RATE     = 9600;
 
-//50Hz is plenty of resolution
+//The barometer can only refresh at about 50Hz. 
 const int SENSOR_READ_DELAY_MS = 20;
 
 //Delay between digit blinks.  Any faster is too quick to keep up with
@@ -125,6 +136,9 @@ typedef enum {
 } FlightState;
 
 Barometer   barometer;
+MPU6050 mpu;
+
+
 double refAltitude = 0;         //The reference altitude (altitude of the launch pad)
 double apogee = 0;              //The apogee for the current flight
 double previousApogee = 0;      //The last recoreded apogee
@@ -139,6 +153,7 @@ int    flightCount = 0;         //The number of flights recorded in EEPROM
 bool   drogueChuteRelayState = false; //State of the parachute relay pin.  Recorded separately.  To avoid fire.
 bool   mainChuteRelayState = false;   //State of the parachute relay pin.  Recorded separately.  To avoid fire.
 bool   barometerReady = false; 
+double maxAcc = 0;
 
 FlightState state = kOnGround;  //The flight state
 
@@ -146,11 +161,15 @@ void setup()
 {
   Serial.begin(SERIAL_BAUD_RATE);
   pinMode(MAIN_DEPL_RELAY_PIN, OUTPUT);
+  pinMode(DROGUE_DEPL_RELAY_PIN, OUTPUT);
+
   pinMode(RESET_PIN, INPUT_PULLUP);
 
   pinMode(MESSAGE_PIN, OUTPUT);
   pinMode(STATUS_PIN, OUTPUT);
   pinMode(BUZZER_PIN, OUTPUT);
+  pinMode(READY_PIN, OUTPUT);
+
   digitalWrite(STATUS_PIN, LOW);
   digitalWrite(MESSAGE_PIN, HIGH);
 
@@ -158,14 +177,23 @@ void setup()
   if (barometer.begin(0x76)) {  //Omit the parameter for adafruit
     digitalWrite(STATUS_PIN, HIGH);
     digitalWrite(MESSAGE_PIN, LOW);
-    log("Init Barometer OK");
+    log("Barometer Started");
     barometerReady = true;
   } else {
     //If the unit starts with the status pin off and the message pin on,
     //the barometer failed to initialize
     previousApogee = 0;
-    log("Init Barometer Fail");
+    log("Barometer Init Fail");
   }
+
+  mpu.initialize();
+  bool mpuActive = mpu.testConnection();
+  log(mpuActive? "MPU6050 connection successful" : "MPU6050 connection failed");
+  if(mpuActive) {
+    mpu.setFullScaleAccelRange(MPU6050_ACCEL_FS_8);
+    log("MPU Started");
+  }
+  
   log("Deployment Alt: " + String(kDeploymentAltitude));
   refAltitude = barometer.readAltitude(kSeaLevelPressureHPa);
   log("Ref Alt:" + String(refAltitude));
@@ -243,10 +271,35 @@ void log(String msg)
 #endif
 }
 
+
+
+int16_t ax, ay, az;
+int16_t gx, gy, gz;
+int16_t grx, gry, grz;
+const double onegee = 65536.0 / 16.0; //units/g for scale of +/- 8g
+
+double getAccelleration()
+{
+    mpu.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
+
+  double axd = ax / onegee ;
+  double ayd = ay / onegee ;
+  double azd = az / onegee ;
+
+  //Remove gravity.. We now have the absolute accelleration
+  double acc = sqrt( axd * axd + ayd * ayd + azd * azd) - 1.0;
+  return acc;
+}
+
 void readSensorData()
 {
   //Our relative altitude... Relative to wherever we last reset the altimeter.
   double altitude = barometer.readAltitude(kSeaLevelPressureHPa) - refAltitude;
+  double accelleration = getAccelleration();
+
+  if(state != kOnGround) {
+    log(String("Alt:") + String(altitude) + " Acc:" + String(accelleration));
+  }
 
   apogee = altitude > apogee ? altitude : apogee;
 
