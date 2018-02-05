@@ -47,14 +47,16 @@
  * For deployment, the depoloyment pins should be connected to a relay which
  * fires the deployment charge(s).
  * 
- * All signal PINs should be connected to LEDs via an appropriate resistor
+ * All signal PINs should be connected to LEDs via an 330ohm (or larger) resistor
  * The reset pin should be connected to ground via a momentary switch
- * The configuration below uses the internal LED for the status LED.
  * 
  * This is designed for an Adafruit-compatible BMP280 board connected via
  * i2c.  On a nano that's Clock->A5 and Data->A4.  Other barometer sensors 
- * should work just as well.  Cheap MBP280s require you to add the 0x77 paramter
+ * should work just as well.  Cheap MBP280s require you to add the 0x76 paramter
  * to correct the i2c addresss.
+ * 
+ * An optional MPU6050 can be attached which will recored the maximum accelleration
+ * and a triggered acceleration initiation event time.
  * 
  * See comments on the various pin-outs for operation 
  *
@@ -62,7 +64,7 @@
  
 #include <EEPROM.h>
 
-
+//Sensor libraries
 #include <Adafruit_BMP280.h>             //https://github.com/adafruit/Adafruit_BMP280_Library/blob/master/Adafruit_BMP280.h       
 #include "I2Cdev.h"                      //https://diyhacking.com/arduino-mpu-6050-imu-sensor-tutorial/
 #include "MPU6050_6Axis_MotionApps20.h"  //https://diyhacking.com/arduino-mpu-6050-imu-sensor-tutorial/ 
@@ -73,30 +75,25 @@ typedef Adafruit_BMP280 Barometer;
 void log(String val);
 
 //Today's pressure at sea level...
-const double kSeaLevelPressureHPa = 1013.7;
+const double SEA_LEVEL_PRESSURE = 1013.7;
 
-//Recording will start at kThresholdStartAltitude m and we'll assume we're on the 
-//ground at kThresholdEndAltitude m.
+//Recording will start at FLIGHT_START_THRESHOLD_ALT m and we'll assume we're on the 
+//ground at FLIGHT_END_THRESHOLD_ALT m.
 //In theory, these could be lower, but we want to account for landing in a tree,
 //on a hill, etc.  30m should be sufficient for most launch sites.
-const double kThresholdStartAltitude = 10;
-const double kThresholdEndAltitude = 30;
-const double kThresholdStartAcc = 0.1;  //in G's
+const double FLIGHT_START_THRESHOLD_ALT = 10;
+const double FLIGHT_END_THRESHOLD_ALT = 30;
+const double FLIGHT_START_THRESHOLD_ACC = 0.1;  //in G's
 
 //100m deployment altitude (330 ft) 
-//TODO: - We could use a couple of jumpered pins to set different deployment altitudes
-// D11 - 50m
-// D10 - 100m
-// D11+D10 = 150m
-// No Pins = 200m
-const double kDeploymentAltitude = 100;
+double deploymentAltitude = 100;
 
-//When the altitude is kDescentThreshold meters less than the apogee, we'll assume we're 
+//When the altitude is DESCENT_THRESHOLD meters less than the apogee, we'll assume we're 
 //descending.  Hopefully, your rocket has a generally upwards trajectory....
-const double kDescentThreshold = 20;
+const double DESCENT_THRESHOLD = 20;
 
 //The deployment relay will be deactivated after this time.
-const int kDeploymentRelayTimoutMs = 5000;
+const int MAX_FIRE_TIME = 5000;
 
 //When grounded the reset pin will cancel the last apogee display and
 //prepare the alitmiter for the next flight.  If it is grounded on boot
@@ -112,12 +109,18 @@ const int RESET_PIN            = 6;
 //const int READY_PIN            = 13;  //Inicates the unit is ready for flight
 
 //Configurtion B: 2 1/2" PCB
-const int BUZZER_PIN            = 7;  //Audible buzzer on landing
-const int MAIN_DEPL_RELAY_PIN  =  8;  //parachute deployment pin
-const int DROGUE_DEPL_RELAY_PIN=  9;  //parachute deployment pin
-const int STATUS_PIN           =  2;  //Unit status pin.  On if OK
-const int MESSAGE_PIN          =  3;  //Blinks out the altitude
-const int READY_PIN            =  4;  //Inicates the unit is ready for flight
+const int MAIN_DEPL_RELAY_PIN   =  8;  //parachute deployment pin
+const int DROGUE_DEPL_RELAY_PIN =  9;  //parachute deployment pin
+
+const int STATUS_PIN            =  2;  //Unit status pin.  On if OK
+const int MESSAGE_PIN           =  3;  //Blinks out the altitude
+const int READY_PIN             =  4;  //Inicates the unit is ready for flight
+const int BUZZER_PIN            =  7;  //Audible buzzer on landing
+
+//{100, 70, 150, 200} where (b<<1 & a) is a binary number corresponing to the index. 
+const int ALT_PIN_A             =  10;  //Altitude Set Pin.
+const int ALT_PIN_B             =  11;  //Altitude Set Pin
+
 
 const int SERIAL_BAUD_RATE     = 9600;
 
@@ -215,11 +218,14 @@ void setup()
   
   pinMode(RESET_PIN, INPUT_PULLUP);
 
+  //All LED pins sset to outputs
   pinMode(MESSAGE_PIN, OUTPUT);
-  pinMode(STATUS_PIN, OUTPUT);
-  pinMode(READY_PIN, OUTPUT);
-  pinMode(BUZZER_PIN, OUTPUT);
+  pinMode(STATUS_PIN,  OUTPUT);
+  pinMode(READY_PIN,   OUTPUT);
+  pinMode(BUZZER_PIN,  OUTPUT);
 
+  //Start in the "error" state.  Status pin should be high and message
+  //pin should be low to indicate a good startup
   digitalWrite(STATUS_PIN, LOW);
   digitalWrite(MESSAGE_PIN, HIGH);
 
@@ -242,19 +248,35 @@ void setup()
   mpuReady = mpu.testConnection();
   log(mpuReady? "MPU6050 connection successful" : "MPU6050 connection failed");
   if(mpuReady) {
+    //Don't really care if it's not ready or not present
     mpu.setFullScaleAccelRange(MPU6050_ACCEL_FS_8);
   }
 
   reset(&flightData);
-  
-  log("Deployment Altitude: " + String(kDeploymentAltitude));
-  refAltitude = barometer.readAltitude(kSeaLevelPressureHPa);
+  deploymentAltitude = readDeploymentAltitude();
+  log("Deployment Altitude: " + String(deploymentAltitude));
+  refAltitude = barometer.readAltitude(SEA_LEVEL_PRESSURE);
   log("Pad Altitude:" + String(refAltitude));
 
   configureEeprom();
 
   //We don't want to sound the buzzer on first boot, only after a flight
   enableBuzzer = false;
+}
+
+int readDeploymentAltitude()
+{
+  pinMode(ALT_PIN_A, INPUT_PULLUP);
+  pinMode(ALT_PIN_B, INPUT_PULLUP);
+
+  int a = (digitalRead(RESET_PIN) == LOW) ? 1 : 0;
+  int b = (digitalRead(RESET_PIN) == LOW) ? 1 : 0;
+
+  static const int altitudes[] = { 100, 70, 150, 200 };
+
+  int val = a & b<<1;
+  if(val > 3)val = 0;
+  return altitudes[val]; 
 }
 
 
@@ -273,7 +295,6 @@ void loop()
         digitalWrite(READY_PIN, LOW);
         blinkLastAltitude();
   }
-
 }
 
 //If the rest pin is hit while we're blinking out an altitude,
@@ -290,6 +311,19 @@ void loop()
       }\
    }while(0); \
 
+
+
+void blinkWithDelay(int onTime, int offTime)
+{
+  digitalWrite(MESSAGE_PIN, HIGH); 
+  if(enableBuzzer)digitalWrite(BUZZER_PIN, HIGH); 
+  delay(onTime);
+  digitalWrite(MESSAGE_PIN, LOW);
+  if(enableBuzzer)digitalWrite(BUZZER_PIN, LOW); 
+  delay(offTime);
+}
+
+
 //Not particularily pretty... We could use timers or interrupts here
 //but it's good enough.  You'll need to hold down the reset button for
 //a couple of seconds at worst.  
@@ -301,10 +335,8 @@ void blinkLastAltitude()
     int digit = tempApogee / m;
     if (digit || foundDigit){
       foundDigit = true;
-      if(digit == 0)digit = 10;
-      for (int i = 0; i < digit; i++) {
-        digitalWrite(MESSAGE_PIN, HIGH); delay(BLINK_SPEED_MS);
-        digitalWrite(MESSAGE_PIN, LOW);  delay(BLINK_SPEED_MS);
+      for (int i = 0; i < (digit ?: 10); i++) {
+        blinkWithDelay(BLINK_SPEED_MS, BLINK_SPEED_MS);
         CHECK_RESETPIN_AND_RETURN();
       }
       delay(BLINK_SPEED_MS * 2);
@@ -312,12 +344,7 @@ void blinkLastAltitude()
     }
   }
   CHECK_RESETPIN_AND_RETURN();
-  digitalWrite(MESSAGE_PIN, HIGH);
-  if(enableBuzzer)digitalWrite(BUZZER_PIN, HIGH);
-  delay(BLINK_SPEED_MS * 10);
-  digitalWrite(MESSAGE_PIN, LOW);
-  digitalWrite(BUZZER_PIN, LOW);
-  delay(BLINK_SPEED_MS);
+  blinkWithDelay(BLINK_SPEED_MS * 10, BLINK_SPEED_MS);
   CHECK_RESETPIN_AND_RETURN();
 }
 
@@ -348,7 +375,7 @@ void readSensorData(SensorData *d)
 {
   //Our relative altitude... Relative to wherever we last reset the altimeter.
   if(barometerReady) {
-    d->altitude = barometer.readAltitude(kSeaLevelPressureHPa) - refAltitude;
+    d->altitude = barometer.readAltitude(SEA_LEVEL_PRESSURE) - refAltitude;
   }
   if(mpuReady) {
     d->acceleration = getacceleration();
@@ -369,13 +396,14 @@ void flightControl(SensorData *d)
   flightData.apogee = altitude > flightData.apogee ? altitude : flightData.apogee;
   flightData.maxAcceleration = acceleration > flightData.maxAcceleration ? acceleration : flightData.maxAcceleration;
   
-  //Experimental.  Log when we've hit some prescribe g load.  This might be more accurate than starting the
-  //flight at some altitude x...
-  if(flightState == kOnGround && acceleration > kThresholdStartAcc && flightData.accTriggerTime == 0) {
+  //Experimental.  Log when we've hit some prescribed g load.  This might be more accurate than starting the
+  //flight at some altitude x...  The minimum load will probably have to be too small and will pick up things like
+  //wind gusts though.
+  if(flightState == kOnGround && acceleration > FLIGHT_START_THRESHOLD_ACC && flightData.accTriggerTime == 0) {
     flightData.accTriggerTime = millis() - resetTime;
   }
 
-  if (flightState == kOnGround && altitude > kThresholdStartAltitude) {
+  if (flightState == kOnGround && altitude > FLIGHT_START_THRESHOLD_ALT) {
     //Transition to "InFlight" if we've exceeded the threshold altitude.
     log("Flight Started");
     flightState = kAscending;
@@ -384,8 +412,8 @@ void flightControl(SensorData *d)
     digitalWrite(READY_PIN, LOW);
     digitalWrite(MESSAGE_PIN, HIGH);
   } 
-  else if (flightState == kAscending && altitude < (flightData.apogee - kDescentThreshold)) {
-    //Transition to kDescendining if we've we're kDescentThreshold meters below our apogee
+  else if (flightState == kAscending && altitude < (flightData.apogee - DESCENT_THRESHOLD)) {
+    //Transition to kDescendining if we've we're DESCENT_THRESHOLD meters below our apogee
     log("Descending");
     flightState = kDescending;
 
@@ -393,7 +421,7 @@ void flightControl(SensorData *d)
     setDeploymentRelay(ON, &drogueChute);
     flightData.drogueEjectionAltitude = altitude;
   }
-  else if (flightState == kDescending && altitude < kThresholdEndAltitude) {
+  else if (flightState == kDescending && altitude < FLIGHT_END_THRESHOLD_ALT) {
     flightState = kOnGround;
     log(String("Landed"));
     
@@ -413,7 +441,7 @@ void flightControl(SensorData *d)
   }
 
   //Main chute deployment at kDeployment Altitude
-  if (flightState == kDescending && !mainChute.deployed && altitude < kDeploymentAltitude) {
+  if (flightState == kDescending && !mainChute.deployed && altitude < deploymentAltitude) {
     //If we're descening and we're below our deployment altitude, deploy the chute!
     flightData.ejectionAltitude = altitude;
     setDeploymentRelay(ON, &mainChute);
@@ -422,11 +450,11 @@ void flightControl(SensorData *d)
   //Safety measure in case we don't switch to the onGround state.  This will disable the igniter relay
   //after 5 seconds to avoid draining or damaging the battery
   if (flightState == kDescending) {
-    if (millis() - drogueChute.deploymentTime > kDeploymentRelayTimoutMs && !drogueChute.timedReset) {
+    if (millis() - drogueChute.deploymentTime > MAX_FIRE_TIME && !drogueChute.timedReset) {
       setDeploymentRelay(OFF, &drogueChute);
       mainChute.timedReset = true;
     }
-    if (millis() - mainChute.deploymentTime > kDeploymentRelayTimoutMs &&!mainChute.timedReset) {
+    if (millis() - mainChute.deploymentTime > MAX_FIRE_TIME &&!mainChute.timedReset) {
       setDeploymentRelay(OFF, &mainChute);
       mainChute.timedReset = true;
     }
@@ -520,8 +548,8 @@ void reset(FlightData *d) {
 void logData(int index, FlightData *d) {
    log("Flight " + String(index) + 
        ": Apogee " + String(d->apogee) + 
-       "m : Drogue " + String(d->ejectionAltitude) + 
-       "m : Main " + String(d->drogueEjectionAltitude) + 
+       "m : Main " + String(d->ejectionAltitude) + 
+       "m : Drogue " + String(d->drogueEjectionAltitude) + 
        "m : Acc " + String(d->maxAcceleration) + 
        "g : Burnout " + String(d->burnoutAltitude) +
        "ms: Acc Trigger " + String(d->accTriggerTime) + 
