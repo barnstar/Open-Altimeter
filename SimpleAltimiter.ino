@@ -71,9 +71,14 @@
 #include "MPU6050_6Axis_MotionApps20.h"  //https://diyhacking.com/arduino-mpu-6050-imu-sensor-tutorial/ 
 
 #define LOG_TO_SERIAL 1   //Set to 0 to disable serial logging...
+const int SERIAL_BAUD_RATE     = 9600;
 
-typedef Adafruit_BMP280 Barometer;
+
 void log(String val);
+
+
+//////////////////////////////////////////////////////////////////
+// Constants
 
 //Today's pressure at sea level...
 const double SEA_LEVEL_PRESSURE = 1013.7;
@@ -83,11 +88,8 @@ const double SEA_LEVEL_PRESSURE = 1013.7;
 //In theory, these could be lower, but we want to account for landing in a tree,
 //on a hill, etc.  30m should be sufficient for most launch sites.
 const double FLIGHT_START_THRESHOLD_ALT = 10;
-const double FLIGHT_END_THRESHOLD_ALT = 30;
+const double FLIGHT_END_THRESHOLD_ALT   = 30;
 const double FLIGHT_START_THRESHOLD_ACC = 0.1;  //in G's
-
-//100m deployment altitude (330 ft) 
-double deploymentAltitude = 100;
 
 //When the altitude is DESCENT_THRESHOLD meters less than the apogee, we'll assume we're 
 //descending.  Hopefully, your rocket has a generally upwards trajectory....
@@ -110,24 +112,21 @@ const int MESSAGE_PIN           = 2;   //Blinks out the altitude
 const int READY_PIN             = 13;  //Inicates the unit is ready for flight
 const int BUZZER_PIN            = 8;   //Audible buzzer on landing
 const int RESET_PIN             = 6;
-const int MAIN_DEPL_RELAY_PIN   =  9;  //parachute deployment pin
-const int DROGUE_DEPL_RELAY_PIN =  10;  //parachute deployment pin
-const int ALT_PIN_A             =  11;  //Altitude Set Pin.
-const int ALT_PIN_B             =  12;  //Altitude Set Pin
+const int MAIN_DEPL_RELAY_PIN   = 9;   //parachute deployment pin
+const int DROGUE_DEPL_RELAY_PIN = 10;  //parachute deployment pin
+const int ALT_PIN_A             = 11;  //Main Chute Alitude Altitude Set Pin.
+const int ALT_PIN_B             = 12;  //Main Chute Alitude Altitude Set Pin
 #elif USE_PIN_CONFIG_2
-const int STATUS_PIN            = 2;  //Unit status pin.  On if OK
-const int MESSAGE_PIN           = 3;  //Blinks out the altitude
-const int READY_PIN             = 4;  //Inicates the unit is ready for flight
-const int BUZZER_PIN            = 7;  //Audible buzzer on landing
+const int STATUS_PIN            = 2;   //Unit status pin.  On if OK
+const int MESSAGE_PIN           = 3;   //Blinks out the altitude
+const int READY_PIN             = 4;   //Inicates the unit is ready for flight
+const int BUZZER_PIN            = 7;   //Audible buzzer on landing
 const int RESET_PIN             = 6;
-const int MAIN_DEPL_RELAY_PIN   =  8;  //parachute deployment pin
-const int DROGUE_DEPL_RELAY_PIN =  9;  //parachute deployment pin
-const int ALT_PIN_A             =  10;  //Altitude Set Pin.
-const int ALT_PIN_B             =  11;  //Altitude Set Pin
+const int MAIN_DEPL_RELAY_PIN   =  8;   //parachute deployment pin
+const int DROGUE_DEPL_RELAY_PIN =  9;   //parachute deployment pin
+const int ALT_PIN_A             =  10;  //Main Chute AlitudeAltitude Set Pin.
+const int ALT_PIN_B             =  11;  //Main Chute Alitude Altitude Set Pin
 #endif
-
-
-const int SERIAL_BAUD_RATE     = 9600;
 
 //The barometer can only refresh at about 50Hz. 
 const int SENSOR_READ_DELAY_MS = 20;
@@ -135,7 +134,11 @@ const int SENSOR_READ_DELAY_MS = 20;
 //Delay between digit blinks.  Any faster is too quick to keep up with
 const int BLINK_SPEED_MS       = 200;
 
-//FlightData parameters.
+
+
+//////////////////////////////////////////////////////////////////
+// Types
+
 typedef struct  {
   double apogee = 0;
   double ejectionAltitude = 0;
@@ -147,15 +150,27 @@ typedef struct  {
   int    altTriggerTime;   
 } FlightData;
 
+//Flight Data operations
 bool isValid(FlightData *d);
 void reset(FlightData *d);
 void logData(int index, FlightData *d);
-
 
 typedef enum {
   OFF = 0,
   ON =1 
 }RelayState;
+
+typedef struct {
+  double altitude =0;
+  double acceleration =0;
+}SensorData;
+
+typedef enum {
+  kInFlight,
+  kAscending,
+  kDescending,
+  kOnGround
+} FlightState;
 
 typedef struct {
   bool         deployed ;         //True if the the chute has been deplyed
@@ -184,17 +199,8 @@ typedef struct {
 }ChuteState;
 
 
-typedef struct {
-  double altitude =0;
-  double acceleration =0;
-}SensorData;
-
-typedef enum {
-  kInFlight,
-  kAscending,
-  kDescending,
-  kOnGround
-} FlightState;
+//////////////////////////////////////////////////////////////////
+// Global State
 
 FlightData flightData;
 FlightState flightState = kOnGround;  //The flight state
@@ -202,20 +208,21 @@ FlightState flightState = kOnGround;  //The flight state
 ChuteState mainChute;
 ChuteState drogueChute;
 
-double refAltitude = 0;         //The reference altitude (altitude of the launch pad)
-int    flightCount = 0;         //The number of flights recorded in EEPROM
-
-bool   barometerReady = false;        //True if the barometer/altimeter is ready
-bool   mpuReady = false;              //True if the barometer/altimeter is ready
-
-int    resetTime = 0;                 //millis() after starting
+double refAltitude = 0;               //The reference altitude (altitude of the launch pad)
+int    flightCount = 0;               //The number of flights recorded in EEPROM
+int    resetTime = 0;                 //millis() after starting the current flight
 bool   readyToFly = false;            //switches to false at the end of the flight.  Resets on reset.
 bool   enableBuzzer = false;          //True if the buzzer should be sounding
+double deploymentAltitude = 100;      //Deployment altitude in ft.
 
-//The Sensors
-Barometer   barometer;
-MPU6050     mpu;
+Adafruit_BMP280   barometer;
+MPU6050           mpu;
+bool              barometerReady = false;        //True if the barometer/altimeter is ready
+bool              mpuReady = false;              //True if the barometer/altimeter is ready
 
+
+//////////////////////////////////////////////////////////////////
+// main()
 
 void setup()
 {
