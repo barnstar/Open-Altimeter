@@ -46,7 +46,3 @@ prepare the unit for flight).
 
 
 
-- 
-
-- Optional:
-
