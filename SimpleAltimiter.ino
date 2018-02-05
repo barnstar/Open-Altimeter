@@ -61,6 +61,7 @@
  * See comments on the various pin-outs for operation 
  *
  *********************************************************************************/
+#define VERSION 2
  
 #include <EEPROM.h>
 
@@ -98,28 +99,32 @@ const int MAX_FIRE_TIME = 5000;
 //When grounded the reset pin will cancel the last apogee display and
 //prepare the alitmiter for the next flight.  If it is grounded on boot
 //the eeprom will be erased.
-const int RESET_PIN            = 6;
 
+#define USE_PIN_CONFIG_1 1
+#define USE_PIN_CONFIG_2 0
+
+#if USE_PIN_CONFIG_1
 //Configuration A: 1 1/2" PCB
-//const int BUZZER_PIN            = 8;   //Audible buzzer on landing
-//const int MAIN_DEPL_RELAY_PIN  = 12;  //parachute deployment pin
-//const int DROGUE_DEPL_RELAY_PIN= 11;  //parachute deployment pin
-//const int STATUS_PIN           = 4;   //Unit status pin.  On if OK
-//const int MESSAGE_PIN          = 2;   //Blinks out the altitude
-//const int READY_PIN            = 13;  //Inicates the unit is ready for flight
-
-//Configurtion B: 2 1/2" PCB
+const int STATUS_PIN            = 4;   //Unit status pin.  On if OK
+const int MESSAGE_PIN           = 2;   //Blinks out the altitude
+const int READY_PIN             = 13;  //Inicates the unit is ready for flight
+const int BUZZER_PIN            = 8;   //Audible buzzer on landing
+const int RESET_PIN             = 6;
+const int MAIN_DEPL_RELAY_PIN   =  9;  //parachute deployment pin
+const int DROGUE_DEPL_RELAY_PIN =  10;  //parachute deployment pin
+const int ALT_PIN_A             =  11;  //Altitude Set Pin.
+const int ALT_PIN_B             =  12;  //Altitude Set Pin
+#elif USE_PIN_CONFIG_2
+const int STATUS_PIN            = 2;  //Unit status pin.  On if OK
+const int MESSAGE_PIN           = 3;  //Blinks out the altitude
+const int READY_PIN             = 4;  //Inicates the unit is ready for flight
+const int BUZZER_PIN            = 7;  //Audible buzzer on landing
+const int RESET_PIN             = 6;
 const int MAIN_DEPL_RELAY_PIN   =  8;  //parachute deployment pin
 const int DROGUE_DEPL_RELAY_PIN =  9;  //parachute deployment pin
-
-const int STATUS_PIN            =  2;  //Unit status pin.  On if OK
-const int MESSAGE_PIN           =  3;  //Blinks out the altitude
-const int READY_PIN             =  4;  //Inicates the unit is ready for flight
-const int BUZZER_PIN            =  7;  //Audible buzzer on landing
-
-//{100, 70, 150, 200} where (b<<1 & a) is a binary number corresponing to the index. 
 const int ALT_PIN_A             =  10;  //Altitude Set Pin.
 const int ALT_PIN_B             =  11;  //Altitude Set Pin
+#endif
 
 
 const int SERIAL_BAUD_RATE     = 9600;
@@ -215,6 +220,7 @@ MPU6050     mpu;
 void setup()
 {
   Serial.begin(SERIAL_BAUD_RATE);
+  log("Initializing. Version " + String(VERSION));
   
   pinMode(RESET_PIN, INPUT_PULLUP);
 
@@ -233,7 +239,7 @@ void setup()
   drogueChute.init(1, DROGUE_DEPL_RELAY_PIN);
 
   delay(100);   //The barometer doesn't like being queried immediately
-  if (barometer.begin(0x76)) {  //Omit the parameter for adafruit
+  if (barometer.begin()) {  //Omit the parameter for adafruit
     digitalWrite(STATUS_PIN, HIGH);
     digitalWrite(MESSAGE_PIN, LOW);
     log("Barometer Started");
