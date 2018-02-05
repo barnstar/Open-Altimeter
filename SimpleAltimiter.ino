@@ -229,8 +229,8 @@ void setup()
   digitalWrite(STATUS_PIN, LOW);
   digitalWrite(MESSAGE_PIN, HIGH);
 
-  mainChute.init(1, MAIN_DEPL_RELAY_PIN);
-  drogueChute.init(2, DROGUE_DEPL_RELAY_PIN);
+  mainChute.init(2, MAIN_DEPL_RELAY_PIN);
+  drogueChute.init(1, DROGUE_DEPL_RELAY_PIN);
 
   delay(100);   //The barometer doesn't like being queried immediately
   if (barometer.begin(0x76)) {  //Omit the parameter for adafruit
@@ -449,16 +449,25 @@ void flightControl(SensorData *d)
   
   //Safety measure in case we don't switch to the onGround state.  This will disable the igniter relay
   //after 5 seconds to avoid draining or damaging the battery
-  if (flightState == kDescending) {
-    if (millis() - drogueChute.deploymentTime > MAX_FIRE_TIME && !drogueChute.timedReset) {
-      setDeploymentRelay(OFF, &drogueChute);
-      mainChute.timedReset = true;
+  checkChuteIgnitionTimeout(&mainChute, MAX_FIRE_TIME);
+  checkChuteIgnitionTimeout(&drogueChute, MAX_FIRE_TIME);
+}
+
+
+void checkChuteIgnitionTimeout(ChuteState *c, int maxIgnitionTime)
+{
+    if (flightState == kDescending) {
+      return;
     }
-    if (millis() - mainChute.deploymentTime > MAX_FIRE_TIME &&!mainChute.timedReset) {
-      setDeploymentRelay(OFF, &mainChute);
-      mainChute.timedReset = true;
+
+    if (!c->timedReset && c->deployed &&
+        millis() - c->deploymentTime > maxIgnitionTime) 
+    {
+      int chuteId = c->id;
+      log("Chute #" + String(chuteId) + " Timeout");
+      setDeploymentRelay(OFF, c);
+      c->timedReset = true;
     }
-  }
 }
 
 
