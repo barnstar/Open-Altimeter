@@ -70,11 +70,13 @@
 #define LOG_TO_SERIAL 1   //Set to 0 to disable serial logging...
 
 typedef Adafruit_BMP280 Barometer;
+void log(String val);
 
 //Today's pressure at sea level...
 const double kSeaLevelPressureHPa = 1013.7;
 
-//Recording will start at 10 m and we'll assume we're on the ground at 30 m.
+//Recording will start at kThresholdStartAltitude m and we'll assume we're on the 
+//ground at kThresholdEndAltitude m.
 //In theory, these could be lower, but we want to account for landing in a tree,
 //on a hill, etc.  30m should be sufficient for most launch sites.
 const double kThresholdStartAltitude = 10;
@@ -82,6 +84,11 @@ const double kThresholdEndAltitude = 30;
 const double kThresholdStartAcc = 0.1;  //in G's
 
 //100m deployment altitude (330 ft) 
+//TODO: - We could use a couple of jumpered pins to set different deployment altitudes
+// D11 - 50m
+// D10 - 100m
+// D11+D10 = 150m
+// No Pins = 200m
 const double kDeploymentAltitude = 100;
 
 //When the altitude is kDescentThreshold meters less than the apogee, we'll assume we're 
@@ -120,43 +127,59 @@ const int SENSOR_READ_DELAY_MS = 20;
 //Delay between digit blinks.  Any faster is too quick to keep up with
 const int BLINK_SPEED_MS       = 200;
 
-void log(String val);
-
+//FlightData parameters.
 typedef struct  {
   double apogee = 0;
   double ejectionAltitude = 0;
   double drogueEjectionAltitude = 0;
-  double maxAccelleration = 0;
+  double maxAcceleration = 0;
   double burnoutAltitude = 0;
 
   int    accTriggerTime;
   int    altTriggerTime;   
 } FlightData;
 
-bool isValid(FlightData *d) {
-  return d->apogee || 
-         d->ejectionAltitude ||
-         d->drogueEjectionAltitude || 
-         d->maxAccelleration ||
-         d->burnoutAltitude;
-}
+bool isValid(FlightData *d);
+void reset(FlightData *d);
+void logData(int index, FlightData *d);
 
-void reset(FlightData *d) {
-  d->apogee = 0;
-  d->ejectionAltitude = 0;
-  d->drogueEjectionAltitude = 0;
-  d->maxAccelleration = 0;
-  d->burnoutAltitude = 0; 
-  d->accTriggerTime = 0;
-  d->altTriggerTime = 0;
-}
 
-void logData(int index, FlightData *d) {
-   log(String("Flight " + String(index) + ": Apogee" + String(d->apogee) + "m : Drogue " + String(d->ejectionAltitude) 
-       + "m : Main " + String(d->drogueEjectionAltitude) + "m : Acc " + String(d->maxAccelleration) + "g's : Burnout" + String(d->burnoutAltitude)
-       + "m : Acc Trigger " + String(d->accTriggerTime) + "ms : Alt Trigger " + String(d->altTriggerTime) + "s"));
-}
+typedef enum {
+  OFF = 0,
+  ON =1 
+}RelayState;
 
+typedef struct {
+  bool         deployed ;         //True if the the chute has been deplyed
+  int          deploymentTime ;   //Time at which the chute was deployed
+  bool         timedReset ;       //True if we've reset the chute relay due to a timeout
+  RelayState   relayState = OFF;  //State of the parachute relay pin.  Recorded separately.  To avoid fire.
+  
+  int    relayPin=0;
+  char   id = 0; 
+  
+  void init(int id, int pin) {
+      log("Init Chute " + String(id) + " on pin " + String(pin));
+      this->relayPin = pin;
+      this->id = id;
+      pinMode(pin, OUTPUT);
+      reset();
+  }
+
+  void reset() {
+    deployed = false;
+    deploymentTime = 0;
+    timedReset = false;
+    relayState = OFF;
+    digitalWrite(relayPin, LOW);
+  }
+}ChuteState;
+
+
+typedef struct {
+  double altitude =0;
+  double acceleration =0;
+}SensorData;
 
 typedef enum {
   kInFlight,
@@ -165,45 +188,43 @@ typedef enum {
   kOnGround
 } FlightState;
 
-Barometer   barometer;
-MPU6050 mpu;
-
 FlightData flightData;
+FlightState flightState = kOnGround;  //The flight state
+
+ChuteState mainChute;
+ChuteState drogueChute;
 
 double refAltitude = 0;         //The reference altitude (altitude of the launch pad)
-bool   deployedMain = false;    //True if the the chute has been deplyed
-bool   deployedDrogue = false;  //True if the the chute has been deplyed
-int    drogueDeploymentTime = 0;//Time at which the chute was deployed
-int    mainDeploymentTime = 0;  //Time at which the chute was deployed
-bool   timedResetMain = false;  //True if we've reset the chute relay due to a timeout
-bool   timedResetDrogue = false;//True if we've reset the chute relay due to a timeout
-bool   enableBuzzer = false;    //True if the buzzer should be sounding
 int    flightCount = 0;         //The number of flights recorded in EEPROM
-bool   drogueChuteRelayState = false; //State of the parachute relay pin.  Recorded separately.  To avoid fire.
-bool   mainChuteRelayState = false;   //State of the parachute relay pin.  Recorded separately.  To avoid fire.
-bool   barometerReady = false; 
-int    resetTime = 0;
-bool   readyToFly = false;
 
+bool   barometerReady = false;        //True if the barometer/altimeter is ready
+bool   mpuReady = false;              //True if the barometer/altimeter is ready
 
-FlightState state = kOnGround;  //The flight state
+int    resetTime = 0;                 //millis() after starting
+bool   readyToFly = false;            //switches to false at the end of the flight.  Resets on reset.
+bool   enableBuzzer = false;          //True if the buzzer should be sounding
+
+//The Sensors
+Barometer   barometer;
+MPU6050     mpu;
 
 
 void setup()
 {
   Serial.begin(SERIAL_BAUD_RATE);
-  pinMode(MAIN_DEPL_RELAY_PIN, OUTPUT);
-  pinMode(DROGUE_DEPL_RELAY_PIN, OUTPUT);
-
+  
   pinMode(RESET_PIN, INPUT_PULLUP);
 
   pinMode(MESSAGE_PIN, OUTPUT);
   pinMode(STATUS_PIN, OUTPUT);
-  pinMode(BUZZER_PIN, OUTPUT);
   pinMode(READY_PIN, OUTPUT);
+  pinMode(BUZZER_PIN, OUTPUT);
 
   digitalWrite(STATUS_PIN, LOW);
   digitalWrite(MESSAGE_PIN, HIGH);
+
+  mainChute.init(1, MAIN_DEPL_RELAY_PIN);
+  drogueChute.init(2, DROGUE_DEPL_RELAY_PIN);
 
   delay(100);   //The barometer doesn't like being queried immediately
   if (barometer.begin(0x76)) {  //Omit the parameter for adafruit
@@ -214,23 +235,21 @@ void setup()
   } else {
     //If the unit starts with the status pin off and the message pin on,
     //the barometer failed to initialize
-    flightData.apogee = 0;
     log("Barometer Init Fail");
   }
 
   mpu.initialize();
-  bool mpuActive = mpu.testConnection();
-  log(mpuActive? "MPU6050 connection successful" : "MPU6050 connection failed");
-  if(mpuActive) {
+  mpuReady = mpu.testConnection();
+  log(mpuReady? "MPU6050 connection successful" : "MPU6050 connection failed");
+  if(mpuReady) {
     mpu.setFullScaleAccelRange(MPU6050_ACCEL_FS_8);
-    log("MPU Started");
   }
 
   reset(&flightData);
   
-  log("Deployment Alt: " + String(kDeploymentAltitude));
+  log("Deployment Altitude: " + String(kDeploymentAltitude));
   refAltitude = barometer.readAltitude(kSeaLevelPressureHPa);
-  log("Ref Alt:" + String(refAltitude));
+  log("Pad Altitude:" + String(refAltitude));
 
   configureEeprom();
 
@@ -241,14 +260,16 @@ void setup()
 
 void loop()
 {
+  static SensorData data;
   if(readyToFly && barometerReady) {
-    readSensorData();
+    readSensorData(&data);
+    flightControl(&data);
     delay(SENSOR_READ_DELAY_MS);
     digitalWrite(READY_PIN, HIGH);
   }
 
   //Blink out the last recorded apogee on the message pin
-  if (!readyToFly && state == kOnGround) {
+  if (!readyToFly && flightState == kOnGround) {
         digitalWrite(READY_PIN, LOW);
         blinkLastAltitude();
   }
@@ -269,7 +290,7 @@ void loop()
       }\
    }while(0); \
 
-//Not particularily efficent... We could use timers or interrupts here
+//Not particularily pretty... We could use timers or interrupts here
 //but it's good enough.  You'll need to hold down the reset button for
 //a couple of seconds at worst.  
 void blinkLastAltitude()
@@ -300,135 +321,143 @@ void blinkLastAltitude()
   CHECK_RESETPIN_AND_RETURN();
 }
 
-void log(String msg)
-{
-#if LOG_TO_SERIAL
-  Serial.println(msg);
-#endif
-}
 
 
+////////////////////////////////////////////////////////////////////////
+// Sensors 
 
 int16_t ax, ay, az;
 int16_t gx, gy, gz;
 int16_t grx, gry, grz;
 const double onegee = 65536.0 / 16.0; //units/g for scale of +/- 8g
 
-double getAccelleration()
+double getacceleration()
 {
-    mpu.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
+  mpu.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
 
   double axd = ax / onegee ;
   double ayd = ay / onegee ;
   double azd = az / onegee ;
 
-  //Remove gravity.. We now have the absolute accelleration
+  //Remove gravity.. We now have the absolute acceleration
   double acc = sqrt( axd * axd + ayd * ayd + azd * azd) - 1.0;
   return acc;
 }
 
-double apogee=0;
-void readSensorData()
+void readSensorData(SensorData *d)
 {
   //Our relative altitude... Relative to wherever we last reset the altimeter.
-  double altitude = barometer.readAltitude(kSeaLevelPressureHPa) - refAltitude;
-  double accelleration = getAccelleration();
-
-  if(state != kOnGround) {
-    //log(String("Alt:") + String(altitude) + " Acc:" + String(accelleration));
+  if(barometerReady) {
+    d->altitude = barometer.readAltitude(kSeaLevelPressureHPa) - refAltitude;
   }
+  if(mpuReady) {
+    d->acceleration = getacceleration();
+  }
+}
 
+
+
+////////////////////////////////////////////////////////////////////////
+// Flight Control 
+
+void flightControl(SensorData *d)
+{
+  double acceleration = d->acceleration;
+  double altitude = d->altitude;
+  
+  //Keep track or our apogee and our max g load
   flightData.apogee = altitude > flightData.apogee ? altitude : flightData.apogee;
-  flightData.maxAccelleration = accelleration > flightData.maxAccelleration ? accelleration : flightData.maxAccelleration;
-
-  //Experimental.  Can we use 
-  if(state == kOnGround && accelleration > kThresholdStartAcc && flightData.accTriggerTime == 0) {
+  flightData.maxAcceleration = acceleration > flightData.maxAcceleration ? acceleration : flightData.maxAcceleration;
+  
+  //Experimental.  Log when we've hit some prescribe g load.  This might be more accurate than starting the
+  //flight at some altitude x...
+  if(flightState == kOnGround && acceleration > kThresholdStartAcc && flightData.accTriggerTime == 0) {
     flightData.accTriggerTime = millis() - resetTime;
   }
 
-  if (state == kOnGround && altitude > kThresholdStartAltitude) {
+  if (flightState == kOnGround && altitude > kThresholdStartAltitude) {
     //Transition to "InFlight" if we've exceeded the threshold altitude.
     log("Flight Started");
-    state = kAscending;
+    flightState = kAscending;
+    flightData.altTriggerTime = millis() - resetTime;
+    //For testing - to indicate we're in the ascending mode
     digitalWrite(READY_PIN, LOW);
     digitalWrite(MESSAGE_PIN, HIGH);
-  } else if (state == kAscending && altitude < (flightData.apogee - kDescentThreshold)) {
-    //Transition to "Descnding" if we've we're kDescentThreshold meters below our apogee
+  } 
+  else if (flightState == kAscending && altitude < (flightData.apogee - kDescentThreshold)) {
+    //Transition to kDescendining if we've we're kDescentThreshold meters below our apogee
     log("Descending");
-    state = kDescending;
+    flightState = kDescending;
+
+    //Deploy our drogue chute
+    setDeploymentRelay(ON, &drogueChute);
     flightData.drogueEjectionAltitude = altitude;
-    setMainDeploymentRelay(true);
-    mainDeploymentTime = millis() - resetTime;
   }
-  else if (state == kDescending && altitude < kThresholdEndAltitude) {
-    state = kOnGround;
+  else if (flightState == kDescending && altitude < kThresholdEndAltitude) {
+    flightState = kOnGround;
     log(String("Landed"));
+    
     logData(flightCount, &flightData);
     recordFlight(flightData);
     flightCount++;
-    deployedMain = false;
-    deployedDrogue = false;
-    timedResetMain = false;
-    timedResetDrogue = false;
-    setDrogueDeploymentRelay(false);
-    setMainDeploymentRelay(false);
+
+    //Reset the chutes, reset the relays if we haven't already.  Start the locator
+    //beeper and start blinking...
+    setDeploymentRelay(OFF, &drogueChute);
+    setDeploymentRelay(OFF, &mainChute);
+    mainChute.reset();
+    drogueChute.reset();
+    
     enableBuzzer = true;
     readyToFly = false;
   }
 
-  if (state == kDescending && !deployedMain && altitude < kDeploymentAltitude) {
+  //Main chute deployment at kDeployment Altitude
+  if (flightState == kDescending && !mainChute.deployed && altitude < kDeploymentAltitude) {
     //If we're descening and we're below our deployment altitude, deploy the chute!
-    deployedMain = true;
     flightData.ejectionAltitude = altitude;
-    setDrogueDeploymentRelay(true);
-    drogueDeploymentTime = millis();
+    setDeploymentRelay(ON, &mainChute);
   }
-
+  
   //Safety measure in case we don't switch to the onGround state.  This will disable the igniter relay
   //after 5 seconds to avoid draining or damaging the battery
-  if (state == kDescending) {
-    if (millis() - drogueDeploymentTime > kDeploymentRelayTimoutMs && !timedResetDrogue && deployedDrogue) {
-      setDrogueDeploymentRelay(false);
-      deployedDrogue = false;
-      timedResetDrogue = true;
+  if (flightState == kDescending) {
+    if (millis() - drogueChute.deploymentTime > kDeploymentRelayTimoutMs && !drogueChute.timedReset) {
+      setDeploymentRelay(OFF, &drogueChute);
+      mainChute.timedReset = true;
     }
-    if (millis() - mainDeploymentTime > kDeploymentRelayTimoutMs &&!timedResetMain && deployedMain) {
-      setMainDeploymentRelay(false);
-      deployedMain = false;
-      timedResetMain = true;
+    if (millis() - mainChute.deploymentTime > kDeploymentRelayTimoutMs &&!mainChute.timedReset) {
+      setDeploymentRelay(OFF, &mainChute);
+      mainChute.timedReset = true;
     }
   }
-
 }
 
-void setDrogueDeploymentRelay(bool enabled)
+
+void setDeploymentRelay(RelayState relayState, ChuteState *c)
 {
-  if(enabled == drogueChuteRelayState)return;
+  if(relayState == c->relayState)return;
+  int chuteId = c->id;
   
-  if (enabled) {
-    digitalWrite(DROGUE_DEPL_RELAY_PIN, HIGH);
-    log("Deploying drogue");
-  } else {
-    digitalWrite(DROGUE_DEPL_RELAY_PIN, LOW);
-    log("Resetting drogue deployment relay");
+   switch(relayState) {
+    case ON:
+      log("Deploying Chute #" + String(chuteId) );
+      digitalWrite(c->relayPin, HIGH);
+      c->deployed = true;
+      c->deploymentTime = millis();
+      break;
+    case OFF:
+      log("Resetting Chute #" + String(chuteId));
+      digitalWrite(c->relayPin, LOW);
+      c->deployed = false;
+      break;
   }
-  drogueChuteRelayState = enabled;
+  c->relayState = relayState;
 }
 
-void setMainDeploymentRelay(bool enabled)
-{
-  if(enabled == mainChuteRelayState)return;
-  
-  if (enabled) {
-    digitalWrite(MAIN_DEPL_RELAY_PIN, HIGH);
-    log("Deploying parachte");
-  } else {
-    digitalWrite(MAIN_DEPL_RELAY_PIN, LOW);
-    log("Resetting main deployment relay");
-  }
-  mainChuteRelayState = enabled;
-}
 
+////////////////////////////////////////////////////////////////////////
+//EEPROM & Peristance
 
 void recordFlight(FlightData d)
 {
@@ -466,6 +495,45 @@ int getFlightCount()
   return 0;
 }
 
+
+////////////////////////////////////////////////////////////////////////
+//Flight Data Utilities
+
+bool isValid(FlightData *d) {
+  return d->apogee || 
+         d->ejectionAltitude ||
+         d->drogueEjectionAltitude || 
+         d->maxAcceleration ||
+         d->burnoutAltitude;
+}
+
+void reset(FlightData *d) {
+  d->apogee = 0;
+  d->ejectionAltitude = 0;
+  d->drogueEjectionAltitude = 0;
+  d->maxAcceleration = 0;
+  d->burnoutAltitude = 0; 
+  d->accTriggerTime = 0;
+  d->altTriggerTime = 0;
+}
+
+void logData(int index, FlightData *d) {
+   log("Flight " + String(index) + 
+       ": Apogee " + String(d->apogee) + 
+       "m : Drogue " + String(d->ejectionAltitude) + 
+       "m : Main " + String(d->drogueEjectionAltitude) + 
+       "m : Acc " + String(d->maxAcceleration) + 
+       "g : Burnout " + String(d->burnoutAltitude) +
+       "ms: Acc Trigger " + String(d->accTriggerTime) + 
+       "ms : Alt Trigger " + String(d->altTriggerTime) + "s");
+}
+
+void log(String msg)
+{
+#if LOG_TO_SERIAL
+  Serial.println(msg);
+#endif
+}
 
 
 
