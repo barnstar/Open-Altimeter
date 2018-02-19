@@ -112,10 +112,10 @@ const int MESSAGE_PIN           = 2;   //Blinks out the altitude
 const int READY_PIN             = 13;  //Inicates the unit is ready for flight
 const int BUZZER_PIN            = 8;   //Audible buzzer on landing
 const int RESET_PIN             = 6;
-const int MAIN_DEPL_RELAY_PIN   = 9;   //parachute deployment pin
-const int DROGUE_DEPL_RELAY_PIN = 10;  //parachute deployment pin
-const int ALT_PIN_A             = 11;  //Main Chute Alitude Altitude Set Pin.
-const int ALT_PIN_B             = 12;  //Main Chute Alitude Altitude Set Pin
+const int MAIN_DEPL_RELAY_PIN   = 12;   //parachute deployment pin
+const int DROGUE_DEPL_RELAY_PIN = 11;  //parachute deployment pin
+const int ALT_PIN_A             = 9;  //Main Chute Alitude Altitude Set Pin.
+const int ALT_PIN_B             = 10;  //Main Chute Alitude Altitude Set Pin
 #elif USE_PIN_CONFIG_2
 const int STATUS_PIN            = 2;   //Unit status pin.  On if OK
 const int MESSAGE_PIN           = 3;   //Blinks out the altitude
