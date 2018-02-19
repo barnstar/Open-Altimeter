@@ -25,7 +25,7 @@ prepare the unit for flight).
 
 ### BOM
 - Aruduino Nano
-- BMP280 Barometer/Altimeter
+- BMP280 Barometer/Altimeter 
 - 2-3 LEDS (you can use the internal LED for one of the indicators)
 - One or two momentary switches (normally open).
 - 2-3 330 or 470 Ohm resistors for the LEDs (up to 4.7K to dim the LEDs if wanted)
@@ -55,16 +55,16 @@ prepare the unit for flight).
   space and weight, you can update the deployment altitude with a reflash. 
 - On first boot with a fresh Arduino, you'll need to zero the EEPROM.  To clear the eprom
   power the unit up with the reset pin grounded.
-- The deployment altitude 
 - The status LED should be lit if all the sensors are ready.
 - The message LED will be fully on if the altimeter didn't initialize correctly.  If the
   unit is initialized correctly, and a previous flight exists, the message LED will blink
   out the last altitude.
-- NOTE: 10 blinks means "0"  so a pattern of **** ** **********  (long *) means 420 meters.
+- NOTE: 10 blinks means "0"  so a pattern of **** ** **********  means 420 meters.  Between
+  read-outs, the unit will buzz/blink a long tone.
 - To put the unit into ready mode, ground the reset pin until the ready light activates.
-- If both the status pin and ready LED are on, the model is ready to fly
-- On landing the piezo and message LED will beep/blink our the last recorded apogee.
-- Don't forget to place the unit where the pressure is properly equalized.  
+- If both the status pin and ready LED are on, the model is ready to fly.  Don't forget
+  to place the unit where the pressure is properly equalized 
+- On landing the piezo and message LED will beep/blink our the last recorded apogee.  
 - To silence the unit, hold the reset button (this will put it into ready mode again.)
 - To log all the recorded flights, start he unit while connected to a terminal via USB
   All flights saved in the EEPROM will be logged to the serial port.  To clear the unit,
