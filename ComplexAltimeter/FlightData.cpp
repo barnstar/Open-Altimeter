@@ -11,14 +11,16 @@ bool isFdValid(FlightData *d) {
 
 String dataToString(int index, FlightData *d)
 {
-   return String("Flight " + String(index) + 
-       " : [Apogee " + String(d->apogee) + 
-       "m] : [Main " + String(d->ejectionAltitude) + 
-       "m] : [Drogue " + String(d->drogueEjectionAltitude) + 
-       "m] : [Acc " + String(d->maxAcceleration) + 
-       "ms] : [Apogee Time  " + String(d->apogeeTime) +
-       "ms]: [Acc Trigger Time" + String(d->accTriggerTime) + 
-       "ms] : [Alt Trigger Time " + String(d->altTriggerTime) + "s]<br>");
+   return String(\
+       "{flight_idx : " + String(index) + 
+       " data : {" +
+         "apogee:" + String(d->apogee) + "," +
+         "main : " + String(d->ejectionAltitude) + "," + 
+         "drogue_alt : " + String(d->drogueEjectionAltitude) + "," + 
+         "max_acc : " + String(d->maxAcceleration) + "," + 
+         "apogee_time : " + String(d->apogeeTime) + "," +
+         "acc_trigger_time :" + String(d->accTriggerTime) + "," + 
+         "alt_trigger_time :  " + String(d->altTriggerTime) + "}}");
 }
 
 void resetFlightData(FlightData *d) {

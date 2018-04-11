@@ -4,9 +4,21 @@
 #include "DataLogger.hpp"
 #include "types.h"
 
-DataLogger::DataLogger() {}
+static const size_t buffer_size = 16*1024;
+static const int sample_rate_hz = 20;
 
-DataLogger::~DataLogger() {}
+DataLogger::DataLogger() {
+  log("Data Logger Initialized");
+  dataBufferLen = buffer_size / sizeof(DataLogger);
+  log("Buffer Size: " + String(sampleCount / sample_rate_hz));
+
+  //This should give us 204 seconds of data... 2.5 minutes...
+  dataBuffer = (FlightDataPoint *)malloc(buffer_size);
+}
+
+DataLogger::~DataLogger() {
+  free dataBuffer;  
+}
 
 DataLogger& DataLogger::sharedLogger()
 {

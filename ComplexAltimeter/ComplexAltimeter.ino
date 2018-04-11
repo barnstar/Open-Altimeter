@@ -118,6 +118,8 @@ void setup()
   EEPROM.begin(4096);
   Serial.begin(SERIAL_BAUD_RATE);
 
+  DataLogger::sharedLogger();
+
     //String ipAddress = String("Hello World");
   IPAddress serverAddress(IPAddress(192,4,0,1));
   server.setAddress(serverAddress);
@@ -428,14 +430,7 @@ int getFlightCount()
 
 void logData(int index, FlightData *d)
 {
-   DataLogger::log("Flight " + String(index) + 
-       " : [Apogee " + String(d->apogee) + 
-       "m] : [Main " + String(d->ejectionAltitude) + 
-       "m] : [Drogue " + String(d->drogueEjectionAltitude) + 
-       "m] : [Acc " + String(d->maxAcceleration) + 
-       "ms] : [Apogee Time  " + String(d->apogeeTime) +
-       "ms]: [Acc Trigger Time" + String(d->accTriggerTime) + 
-       "ms] : [Alt Trigger Time " + String(d->altTriggerTime) + "s]");
+   DataLogger::log(dataToString(index, d));
 }
 
 void log(String msg)
