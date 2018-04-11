@@ -1,70 +1,70 @@
 /*********************************************************************************
- * Simple Alitimeter 
- * 
+ * Simple Alitimeter
+ *
  * Mid power rocket avionics software for alitidue recording and dual deployment
- * 
+ *
  * Copyright 2018, Jonathan Nobels
  *
- * Permission is hereby granted, free of charge, to any person obtaining a copy of 
- * this software and associated documentation files (the "Software"), to deal in the 
- * Software without restriction, including without limitation the rights to use, copy, 
- * modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, 
- * and to permit persons to whom the Software is furnished to do so, subject to the 
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of
+ * this software and associated documentation files (the "Software"), to deal in the
+ * Software without restriction, including without limitation the rights to use, copy,
+ * modify, merge, publish, distribute, sublicense, and/or sell copies of the Software,
+ * and to permit persons to whom the Software is furnished to do so, subject to the
  * following conditions:
  *
- * The above copyright notice and this permission notice shall be included in all 
+ * The above copyright notice and this permission notice shall be included in all
  * copies or substantial portions of the Software.
  *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, 
- * INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A 
- * PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT 
- * HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF 
- * CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+ * PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+ * HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
+ * CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE
  * OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- * 
- * 
+ *
+ *
  * Components Required:
- * 
+ *
  * An Arduino.. Nano preferably
  * A few LEDs and some current limiting resistors
  * A momentary switch
  * A BMP-280 compatible altimeter (Adafruit works)
  * Optional: An active peizo buzzer
  * Optional: Relay breakout boards for dual deployment
- * A battery and power switch - 9V (lipo, alk, or nihm) or even 2 cr2025 button cells 
+ * A battery and power switch - 9V (lipo, alk, or nihm) or even 2 cr2025 button cells
  * Wire/perfboard, etc to connect all this together
- * 
- * 
+ *
+ *
  * - Records apogee, deployment altitude for hundreds of flights (but who's kidding who,
  *   you'll lose this long before it makes it 100 flights)
  * - Trigger drogue depoloyment at apogee
  * - Triggers main deployment relay at a predefined altitude
  * - Plays an audible buzzer on landing to aid in locating
  * - Blinks out the last recorded apogee
- * - All flight data will be recored to EEPROM anddumped to the serial port 
+ * - All flight data will be recored to EEPROM anddumped to the serial port
  *   on startup.
- *  
+ *
  * For deployment, the depoloyment pins should be connected to a relay which
  * fires the deployment charge(s).
- * 
+ *
  * All signal PINs should be connected to LEDs via an 330ohm (or larger) resistor
  * The reset pin should be connected to ground via a momentary switch
- * 
+ *
  * This is designed for an Adafruit-compatible BMP280 board connected via
- * i2c.  On a nano that's Clock->A5 and Data->A4.  Other barometer sensors 
+ * i2c.  On a nano that's Clock->A5 and Data->A4.  Other barometer sensors
  * should work just as well.  Cheap MBP280s require you to add the 0x76 paramter
  * to correct the i2c addresss.
- * 
+ *
  * An optional MPU6050 can be attached which will recored the maximum accelleration
  * and a triggered acceleration initiation event time.
- * 
- * See comments on the various pin-outs for operation 
+ *
+ * See comments on the various pin-outs for operation
  *
  *********************************************************************************/
 #define VERSION 2
- 
+
  #include "types.h"
-  
+
 #include <EEPROM.h>
 #include <Servo.h>
 #include <Ticker.h>
@@ -82,9 +82,6 @@ void playReadyTone();
 
 #include "config.h"
 
-//Flight Data operations
-bool isValid(FlightData *d);
-void logData(int index, FlightData *d);
 
 
 //////////////////////////////////////////////////////////////////
@@ -105,7 +102,6 @@ int    testFlightTimeStep = 0;
 bool              mpuReady = false;              //True if the barometer/altimeter is ready
 
 WebServer         server;
-DataLogger        dataLogger;
 Altimeter         altimeter;
 Blinker           blinker(MESSAGE_PIN, BUZZER_PIN);
 Ticker            sensorTicker;
@@ -123,9 +119,9 @@ void setup()
     //String ipAddress = String("Hello World");
   IPAddress serverAddress(IPAddress(192,4,0,1));
   server.setAddress(serverAddress);
-  
+
   log("Initializing. Version " + String(VERSION));
-  
+
   pinMode(RESET_PIN, INPUT_PULLUP);
 
   //All LED pins sset to outputs
@@ -133,7 +129,7 @@ void setup()
   pinMode(STATUS_PIN,  OUTPUT);
   pinMode(READY_PIN,   OUTPUT);
   pinMode(BUZZER_PIN,  OUTPUT);
-  
+
   if(TEST_PIN) {
     pinMode(TEST_PIN, INPUT_PULLUP);
   }
@@ -150,8 +146,8 @@ void setup()
   altimeter.start();
 
   resetFlightData(&flightData);
-  log("Deployment Altitude: " + String(deploymentAltitude));
-  log("Pad Altitude:" + String(refAltitude));
+  DataLogger::log("Deployment Altitude: " + String(deploymentAltitude));
+  DataLogger::log("Pad Altitude:" + String(refAltitude));
 
   configureEeprom();
 
@@ -168,9 +164,10 @@ void fly() {
 void loop()
 {
   server.handleClient();
- 
+
   if(readyToFly && altimeter.isReady()) {
     if(!sensorTicker.active()) {
+      DataLogger::sharedDataLogger().clearBuffer();
       sensorTicker.attach_ms(SENSOR_READ_DELAY_MS, fly);
       digitalWrite(READY_PIN, HIGH);
     }
@@ -189,13 +186,13 @@ void loop()
 bool checkResetPin()
 {
   if (digitalRead(RESET_PIN) == LOW) {
-    resetFlightData(&flightData); 
-    resetTime = millis(); 
-    readyToFly = true; 
-    setDeploymentRelay(OFF, &drogueChute); 
-    drogueChute.reset(); 
-    setDeploymentRelay(OFF, &mainChute); 
-    mainChute.reset(); 
+    resetFlightData(&flightData);
+    resetTime = millis();
+    readyToFly = true;
+    setDeploymentRelay(OFF, &drogueChute);
+    drogueChute.reset();
+    setDeploymentRelay(OFF, &mainChute);
+    mainChute.reset();
     testFlightTimeStep = 0;
     enableBuzzer = true;
     playReadyTone();
@@ -208,11 +205,11 @@ bool checkResetPin()
 #define kMaxBlinks 64
 
 void blinkLastAltitude()
-{ 
+{
   if(blinker.isBlinking()) {
     return;
   }
-  
+
   static Blink sequence[kMaxBlinks];
   int tempApogee = flightData.apogee;
   bool foundDigit = false;         //Don't blink leading 0s
@@ -247,7 +244,7 @@ void playReadyTone()
 
 
 ////////////////////////////////////////////////////////////////////////
-// Sensors 
+// Sensors
 
 int16_t ax, ay, az;
 int16_t gx, gy, gz;
@@ -273,7 +270,7 @@ void readSensorData(SensorData *d)
     testFlightData(d);
     return;
   }
-  
+
   //Our relative altitude... Relative to wherever we last reset the altimeter.
   if(altimeter.isReady()) {
     d->altitude = altimeter.getAltitude();
@@ -286,17 +283,20 @@ void readSensorData(SensorData *d)
 
 
 ////////////////////////////////////////////////////////////////////////
-// Flight Control 
+// Flight Control
 
 void flightControl(SensorData *d)
 {
   double acceleration = d->acceleration;
   double altitude = d->altitude;
-  
+
+  FlightDataPoint dp = FlightDataPoint(millis(), acceleration, alititude);
+  DataLogger::sharedDataLogger().logDataPoint(dp);
+
   //Keep track or our apogee and our max g load
   flightData.apogee = altitude > flightData.apogee ? altitude : flightData.apogee;
   flightData.maxAcceleration = acceleration > flightData.maxAcceleration ? acceleration : flightData.maxAcceleration;
-  
+
   //Experimental.  Log when we've hit some prescribed g load.  This might be more accurate than starting the
   //flight at some altitude x...  The minimum load will probably have to be too small and will pick up things like
   //wind gusts though.
@@ -306,16 +306,16 @@ void flightControl(SensorData *d)
 
   if (flightState == kOnGround && altitude > FLIGHT_START_THRESHOLD_ALT) {
     //Transition to "InFlight" if we've exceeded the threshold altitude.
-    log("Flight Started");
+    DataLogger::log("Flight Started");
     flightState = kAscending;
     flightData.altTriggerTime = millis() - resetTime;
     //For testing - to indicate we're in the ascending mode
     digitalWrite(READY_PIN, LOW);
     digitalWrite(MESSAGE_PIN, HIGH);
-  } 
+  }
   else if (flightState == kAscending && altitude < (flightData.apogee - DESCENT_THRESHOLD)) {
     //Transition to kDescendining if we've we're DESCENT_THRESHOLD meters below our apogee
-    log("Descending");
+    DataLogger::log("Descending");
     flightState = kDescending;
 
     //Deploy our drogue chute
@@ -324,9 +324,9 @@ void flightControl(SensorData *d)
   }
   else if (flightState == kDescending && altitude < FLIGHT_END_THRESHOLD_ALT) {
     flightState = kOnGround;
-    log(String("Landed"));
-    
-    logData(flightCount, &flightData);
+    DataLogger::log("Landed");
+
+    DataLogger::log(flightData.toString(flightCount));
     recordFlight(flightData);
     flightCount++;
 
@@ -338,7 +338,7 @@ void flightControl(SensorData *d)
 
     setDeploymentRelay(OFF, &mainChute);
     mainChute.reset();
-        
+
     enableBuzzer = true;
     readyToFly = false;
   }
@@ -349,7 +349,7 @@ void flightControl(SensorData *d)
     flightData.ejectionAltitude = altitude;
     setDeploymentRelay(ON, &mainChute);
   }
-  
+
   //Safety measure in case we don't switch to the onGround state.  This will disable the igniter relay
   //after 5 seconds to avoid draining or damaging the battery
   checkChuteIgnitionTimeout(&mainChute, MAX_FIRE_TIME);
@@ -360,10 +360,10 @@ void flightControl(SensorData *d)
 void checkChuteIgnitionTimeout(ChuteState *c, int maxIgnitionTime)
 {
     if (!c->timedReset && c->deployed &&
-        millis() - c->deploymentTime > maxIgnitionTime) 
+        millis() - c->deploymentTime > maxIgnitionTime)
     {
       int chuteId = c->id;
-      log("Chute #" + String(chuteId) + " Timeout");
+      DataLogger::log("Chute #" + String(chuteId) + " Timeout");
       setDeploymentRelay(OFF, c);
       c->timedReset = true;
     }
@@ -374,7 +374,7 @@ void setDeploymentRelay(RelayState relayState, ChuteState *c)
 {
   if(relayState == c->relayState)return;
   int chuteId = c->id;
-  
+
    switch(relayState) {
     case ON:
       c->enable();
@@ -403,9 +403,9 @@ void configureEeprom()
     for (int i = 0 ; i < EEPROM.length(); i++) {
       EEPROM.write(i, 0);
     }
-    log("EEProm Wiped");
+    DataLogger::log("EEProm Wiped");
   }
-  log("Reading Flights");
+  DataLogger::log("Reading Flights");
   flightCount = getFlightCount();
 }
 
@@ -416,35 +416,23 @@ int getFlightCount()
   FlightData d;
   for (int i = 0; i < maxProgs; i++) {
     EEPROM.get(i * sizeof(FlightData), d);
-    if (!isFdValid(&d)) {
+    if (d.isValid())) {
       return i;
-    }  
-    logData(i, &d);
+    }
+    DataLogger::log(d.toString());
     flightData = d;
   }
-  log("EEPROM Full.  That's probably an error.  Reset your EEPROM");
+  DataLogger::log("EEPROM Full.  That's probably an error.  Reset your EEPROM");
   return 0;
 }
 
 
 
-void logData(int index, FlightData *d)
-{
-   DataLogger::log(dataToString(index, d));
-}
-
-void log(String msg)
-{
-#if LOG_TO_SERIAL
-  DataLogger::log(msg);
-#endif
-}
-
 
 ///////////////////////////////////////////////////////////////////
 // Test Flight Generator
 // When you ground the TEST_PIN, the unit will initate a test flight
-// 
+//
 
 SensorData fakeData;
 double testApogee = 400;
@@ -453,7 +441,7 @@ bool isTestAscending;
 void testFlightData(SensorData *d)
 {
   if(0 == TEST_PIN)return;
-  
+
   if (testFlightTimeStep == 0) {
     testFlightTimeStep = 1;
     fakeData.altitude = 0;
@@ -470,7 +458,7 @@ void testFlightData(SensorData *d)
 
   double increment = isTestAscending ? 5.0 : -2.0;
   fakeData.altitude += increment;
- 
+
   testFlightTimeStep++;
 
   d->altitude = fakeData.altitude;

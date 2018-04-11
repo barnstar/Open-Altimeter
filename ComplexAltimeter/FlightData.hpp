@@ -3,7 +3,8 @@
 
 #include <Arduino.h>
 
-typedef struct  {
+class FlightData  {
+  public:
   double apogee = 0;
   double ejectionAltitude = 0;
   double drogueEjectionAltitude = 0;
@@ -12,12 +13,15 @@ typedef struct  {
 
   int    apogeeTime;
   int    accTriggerTime;
-  int    altTriggerTime;   
-} FlightData;
+  int    altTriggerTime;
+
+  const String toString(int index);
+  const bool isValid();
+
+  void reset();
+};
 
 
-String dataToString(int index, FlightData *d);
-bool isFdValid(FlightData *d);
-void resetFlightData(FlightData *d);
+
 
 #endif
