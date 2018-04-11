@@ -27,9 +27,7 @@ void FlightController::initialize()
   pinMode(READY_PIN,   OUTPUT);
   pinMode(BUZZER_PIN,  OUTPUT);
 
-  if(TEST_PIN) {
-    pinMode(TEST_PIN, INPUT_PULLUP);
-  }
+  pinMode(TEST_PIN, INPUT_PULLUP);
 
   //Start in the "error" state.  Status pin should be high and message
   //pin should be low to indicate a good startup
@@ -39,10 +37,9 @@ void FlightController::initialize()
   mainChute.init(2, MAIN_DEPL_RELAY_PIN, MAIN_TYPE);
   drogueChute.init(1, DROGUE_DEPL_RELAY_PIN, DROGUE_TYPE);
 
-  delay(100);   //The barometer doesn't like being queried immediately
   altimeter.start();
-
   flightData.reset();
+
   DataLogger::log("Deployment Altitude: " + String(deploymentAltitude));
   DataLogger::log("Pad Altitude:" + String(refAltitude));
 
@@ -335,7 +332,7 @@ int FlightController::getFlightCount()
 
 void FlightController::testFlightData(SensorData *d)
 {
-  if(0 == TEST_PIN)return;
+  if(NO_PIN == TEST_PIN)return;
 
   if (testFlightTimeStep == 0) {
     testFlightTimeStep = 1;
