@@ -26,32 +26,32 @@ class FlightDataPoint
 class DataLogger
 {
    public:
-   static DataLogger& sharedLogger();
+     static DataLogger& sharedLogger();
 
-   DataLogger();
-   ~DataLogger();
+     DataLogger();
+     ~DataLogger();
 
-   void initializeBuffer(int sampleRate, size_t bufferSize);
+     void initializeBuffer(int sampleRate, size_t bufferSize);
 
-   FlightDataPoint *getDataBuffer();
-   int dataBufferLength();
+     FlightDataPoint *getDataBuffer();
+     int dataBufferLength();
 
-   static void log(String msg);
-   static String getFlightList();
+     static void log(String msg);
+     static String getFlightList();
 
-   void logDataPoint(FlightDataPoint p, bool isTriggerPoint);
-   void writeBufferToFile(FlightData &ddata, const String& path);
+     void logDataPoint(FlightDataPoint p, bool isTriggerPoint);
+     void writeBufferToFile(FlightData &ddata, const String& path);
 
 
    DataLogger(DataLogger const&)      = delete;
    void operator=(DataLogger const&)  = delete;
 
    private:
-   FlightDataPoint *dataBuffer;
-   int dataIndex = 0;
-   int dataBufferLen = 0;
-   int triggerIndex = 0;
-   int dataPointsLogged = 0;
+     FlightDataPoint *dataBuffer;
+     int dataIndex = 0;
+     int dataBufferLen = 0;
+     int triggerIndex = 0;
+     int dataPointsLogged = 0;
 
 };
 
