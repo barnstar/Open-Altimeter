@@ -1,9 +1,11 @@
 #ifndef FlightController_h
 #define FlightController_h
 
-#include "WebServer.h"
-#include "Altimeter.h"
-#include "Blinker.h"
+#include <Arduino.h>
+
+#include "WebServer.hpp"
+#include "Altimeter.hpp"
+#include "BlinkSequence.hpp"
 #include <Ticker.h>
 
 #include "config.h"
@@ -23,6 +25,8 @@ public:
     WebServer server;
     Altimeter altimeter;
 
+    void fly();
+
 private:
     FlightData flightData;
     FlightState flightState = kOnGround;  //The flight state
@@ -39,14 +43,13 @@ private:
     bool   mpuReady = false;              //True if the barometer/altimeter is ready
 
 
-    Blinker blinker(MESSAGE_PIN, BUZZER_PIN);
+    Blinker *blinker;
     Ticker  sensorTicker;
 
     SensorData fakeData;
     double testApogee = 400;
     bool isTestAscending;
 
-    void fly();
     bool checkResetPin();
     void blinkLastAltitude();
     void playReadyTone();
@@ -60,6 +63,6 @@ private:
     int getFlightCount();
     void testFlightData(SensorData *d);
 
-}
+};
 
 #endif

@@ -1,11 +1,21 @@
-#include "FlightController.h"
+#include "FlightController.hpp"
 #include "types.h"
 #include "config.h"
-#include "DataLogger.h"
+#include "DataLogger.hpp"
+#include <EEPROM.h>
 
 #define kMaxBlinks 64
 
-FlightController& FlightController::sharedInstance()
+FlightController::FlightController()
+{
+  blinker = new Blinker(MESSAGE_PIN, BUZZER_PIN);
+}
+
+FlightController::~FlightController(){
+  delete blinker;
+}
+
+FlightController& FlightController::shared()
 {
   static FlightController sharedInstance;
   return sharedInstance;
@@ -56,7 +66,7 @@ void interrupt(FlightController *f)
 
 void FlightController::fly()
 {
-  Static SensorData data;
+  SensorData data;
   readSensorData(&data);
   flightControl(&data);
 }
@@ -67,7 +77,7 @@ void FlightController::loop()
 
   if(readyToFly && altimeter.isReady()) {
     if(!sensorTicker.active()) {
-      DataLogger::sharedDataLogger().clearBuffer();
+      DataLogger::sharedLogger().clearBuffer();
       sensorTicker.attach_ms(SENSOR_READ_DELAY_MS, interrupt, this);
       digitalWrite(READY_PIN, HIGH);
     }
@@ -87,7 +97,7 @@ void FlightController::loop()
 bool FlightController::checkResetPin()
 {
   if (digitalRead(RESET_PIN) == LOW) {
-    resetFlightData(&flightData);
+    flightData.reset();
     resetTime = millis();
     readyToFly = true;
     setDeploymentRelay(OFF, drogueChute);
@@ -106,7 +116,7 @@ bool FlightController::checkResetPin()
 
 void FlightController::blinkLastAltitude()
 {
-  if(blinker.isBlinking()) {
+  if(blinker->isBlinking()) {
     return;
   }
 
@@ -132,13 +142,13 @@ void FlightController::blinkLastAltitude()
   }
   sequence[n].onTime = BLINK_SPEED_MS*2;
   sequence[n].offTime = BLINK_SPEED_MS*2;
-  blinker.blinkSequence(sequence, n+1, true);
+  blinker->blinkSequence(sequence, n+1, true);
 }
 
 void FlightController::playReadyTone()
 {
   static Blink sequence[3] = {{100,100},{100,100},{100,100}};
-  blinker.blinkSequence(sequence, 3, false);
+  blinker->blinkSequence(sequence, 3, false);
 }
 
 
@@ -185,8 +195,8 @@ void FlightController::flightControl(SensorData *d)
   double acceleration = d->acceleration;
   double altitude = d->altitude;
 
-  FlightDataPoint dp = FlightDataPoint(millis(), acceleration, alititude);
-  DataLogger::sharedDataLogger().logDataPoint(dp);
+  FlightDataPoint dp = FlightDataPoint(millis(), acceleration, altitude);
+  DataLogger::sharedLogger().logDataPoint(dp, false);
 
   //Keep track or our apogee and our max g load
   flightData.apogee = altitude > flightData.apogee ? altitude : flightData.apogee;
@@ -207,6 +217,7 @@ void FlightController::flightControl(SensorData *d)
     //For testing - to indicate we're in the ascending mode
     digitalWrite(READY_PIN, LOW);
     digitalWrite(MESSAGE_PIN, HIGH);
+    DataLogger::sharedLogger().logDataPoint(dp, true);
   }
   else if (flightState == kAscending && altitude < (flightData.apogee - DESCENT_THRESHOLD)) {
     //Transition to kDescendining if we've we're DESCENT_THRESHOLD meters below our apogee
@@ -214,7 +225,7 @@ void FlightController::flightControl(SensorData *d)
     flightState = kDescending;
 
     //Deploy our drogue chute
-    setDeploymentRelay(ON, &drogueChute);
+    setDeploymentRelay(ON, drogueChute);
     flightData.drogueEjectionAltitude = altitude;
   }
   else if (flightState == kDescending && altitude < FLIGHT_END_THRESHOLD_ALT) {
@@ -257,7 +268,7 @@ void FlightController::checkChuteIgnitionTimeout(ChuteState &c, int maxIgnitionT
     if (!c.timedReset && c.deployed &&
         millis() - c.deploymentTime > maxIgnitionTime)
     {
-      int chuteId = c->id;
+      int chuteId = c.id;
       DataLogger::log("Chute #" + String(chuteId) + " Timeout");
       setDeploymentRelay(OFF, c);
       c.timedReset = true;
@@ -310,10 +321,10 @@ int FlightController::getFlightCount()
   FlightData d;
   for (int i = 0; i < maxProgs; i++) {
     EEPROM.get(i * sizeof(FlightData), d);
-    if (d.isValid())) {
+    if (d.isValid()) {
       return i;
     }
-    DataLogger::log(d.toString());
+    DataLogger::log(d.toString(i));
     flightData = d;
   }
   DataLogger::log("EEPROM Full.  That's probably an error.  Reset your EEPROM");

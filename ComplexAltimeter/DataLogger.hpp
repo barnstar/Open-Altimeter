@@ -2,20 +2,20 @@
 #define datalogger_h
 
 #include <Arduino.h>
-
+#include "FlightData.hpp"
 
 class FlightDataPoint
 {
   public:
     FlightDataPoint() {}
 
-    FlightDataPoint(long millis, double altitude, double acelleration) :
-        millis(millis)
+    FlightDataPoint(long ltime, double altitude, double acelleration) :
+        ltime(ltime),
         altitude(altitude),
         acelleration(acelleration)
         {}
 
-    long millis = 0;
+    long ltime = 0;
     double altitude = 0;
     double acelleration = 0;
 
@@ -39,8 +39,10 @@ class DataLogger
      static void log(String msg);
      static String getFlightList();
 
-     void logDataPoint(FlightDataPoint p, bool isTriggerPoint);
+     void logDataPoint(FlightDataPoint &p, bool isTriggerPoint);
      void writeBufferToFile(FlightData &ddata, const String& path);
+
+     void clearBuffer();
 
 
    DataLogger(DataLogger const&)      = delete;
@@ -52,6 +54,7 @@ class DataLogger
      int dataBufferLen = 0;
      int triggerIndex = 0;
      int dataPointsLogged = 0;
+
 
 };
 

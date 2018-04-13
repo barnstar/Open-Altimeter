@@ -4,6 +4,7 @@
 #ifndef config_h
 #define config_h
 
+#include <Arduino.h>
 #include "types.h"
 
 //Today's pressure at sea level...

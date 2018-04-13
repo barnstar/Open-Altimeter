@@ -70,11 +70,11 @@ void setup()
   Serial.begin(SERIAL_BAUD_RATE);
 
   DataLogger::sharedLogger();
-  FlightController::sharedInstance().initialize();
+  FlightController::shared().initialize();
 }
 
 void loop()
 {
-  FlightController::sharedInstance().loop();
+  FlightController::shared().loop();
 }
 

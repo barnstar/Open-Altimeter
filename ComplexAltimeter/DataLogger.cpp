@@ -2,22 +2,25 @@
 #include <EEPROM.h>
 
 #include "DataLogger.hpp"
+#include "FlightData.hpp"
 #include "types.h"
 
 static const size_t buffer_size = 16*1024;
 static const int sample_rate_hz = 20;
 
-DataLogger::DataLogger() {
+DataLogger::DataLogger() 
+{
   log("Data Logger Initialized");
   dataBufferLen = buffer_size / sizeof(DataLogger);
-  log("Buffer Size: " + String(sampleCount / sample_rate_hz));
+  log("Buffer Size: " + String(buffer_size / sample_rate_hz));
 
   //This should give us 204 seconds of data... 2.5 minutes...
   dataBuffer = (FlightDataPoint *)malloc(buffer_size);
 }
 
-DataLogger::~DataLogger() {
-  free dataBuffer;
+DataLogger::~DataLogger() 
+{
+  free(dataBuffer);
 }
 
 DataLogger& DataLogger::sharedLogger()
@@ -26,7 +29,7 @@ DataLogger& DataLogger::sharedLogger()
   return sharedInstance;
 }
 
-void DataLogger::logDataPoint(FlightDataPoint p, bool isTriggerPoint)
+void DataLogger::logDataPoint(FlightDataPoint &p, bool isTriggerPoint)
 {
   if(dataPointsLogged == dataBufferLen && triggerIndex) {
     return;
@@ -34,7 +37,9 @@ void DataLogger::logDataPoint(FlightDataPoint p, bool isTriggerPoint)
 
   if(isTriggerPoint) {
     triggerIndex = dataIndex;
-    dataPointsLogged = MIN(dataPointsLogged, 100);
+    if(dataPointsLogged > 100){
+      dataPointsLogged = 100;
+    }
   }
 
   dataBuffer[dataIndex] = p;
@@ -46,7 +51,7 @@ void DataLogger::logDataPoint(FlightDataPoint p, bool isTriggerPoint)
   }
 }
 
-void DataLogger::writeBufferToFile(FlightData &data, int index)
+void DataLogger::writeBufferToFile(FlightData &ddata, const String& path)
 {
 
 
@@ -57,7 +62,7 @@ void DataLogger::clearBuffer()
   triggerIndex = 0;
   dataPointsLogged = 0;
   dataIndex = 0;
-  FlightData d;
+  FlightDataPoint d;
   for(int i=0; i<dataBufferLen; i++) {
     dataBuffer[i] = d;
   }
@@ -68,21 +73,15 @@ FlightDataPoint* DataLogger::getDataBuffer()
   return dataBuffer;
 }
 
-
 int DataLogger::dataBufferLength()
 {
-  return dataBufferLength;
+  return dataPointsLogged;
 }
 
 void DataLogger::log(String msg)
 {
   Serial.println(msg);
 }
-
-bool isFdValid(FlightData *d);
-
-String dataToString(int index, FlightData *d);
-
 
 String DataLogger::getFlightList()
 {
@@ -91,10 +90,10 @@ String DataLogger::getFlightList()
   FlightData d;
   for (int i = 0; i < maxProgs; i++) {
     EEPROM.get(i * sizeof(FlightData), d);
-    if (!isFdValid(&d)) {
+    if (!d.isValid()) {
       return flightList;
     }
-    flightList+=dataToString(i, &d);
+    flightList+=d.toString(i);
   }
   return String("No Recorded Flights");
 }
@@ -102,7 +101,7 @@ String DataLogger::getFlightList()
 
 String FlightDataPoint::toJson()
 {
-  return String("{\"time\":" +  String(millis) + "," +
-                "\"alt\":" + String(alt) + "," +
-                "\"acc\":" + String(acc) + "}");
+  return String("{\"time\":" +  String(ltime) + "," +
+                "\"alt\":" + String(altitude) + "," +
+                "\"acc\":" + String(acelleration) + "}");
 }
