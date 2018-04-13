@@ -87,14 +87,15 @@ String DataLogger::getFlightList()
 {
   String flightList;
   size_t maxProgs = EEPROM.length() / sizeof(FlightData);
-  FlightData d;
+  FlightData *d = new FlightData();
   for (int i = 0; i < maxProgs; i++) {
     EEPROM.get(i * sizeof(FlightData), d);
-    if (!d.isValid()) {
+    if (!d->isValid()) {
       return flightList;
     }
-    flightList+=d.toString(i);
+    flightList+=d->toString(i);
   }
+  delete d;
   return String("No Recorded Flights");
 }
 

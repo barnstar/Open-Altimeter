@@ -8,6 +8,7 @@
 
 FlightController::FlightController()
 {
+  DataLogger::log("Creating Flight Controller");
   blinker = new Blinker(MESSAGE_PIN, BUZZER_PIN);
 }
 
@@ -15,10 +16,14 @@ FlightController::~FlightController(){
   delete blinker;
 }
 
+static FlightController *sharedInstance = nullptr;
+
 FlightController& FlightController::shared()
 {
-  static FlightController sharedInstance;
-  return sharedInstance;
+  if(nullptr == sharedInstance) {
+    sharedInstance = new FlightController();
+  }
+  return *sharedInstance;
 }
 
 void FlightController::initialize()
@@ -59,13 +64,15 @@ void FlightController::initialize()
   enableBuzzer = false;
 }
 
-void interrupt(FlightController *f)
+void readSensors(FlightController *f)
 {
+  DataLogger::log("Interrupt");
     f->fly();
 }
 
 void FlightController::fly()
 {
+    DataLogger::log("fly");
   SensorData data;
   readSensorData(&data);
   flightControl(&data);
@@ -77,9 +84,12 @@ void FlightController::loop()
 
   if(readyToFly && altimeter.isReady()) {
     if(!sensorTicker.active()) {
+      DataLogger::log("Clearing Buffer");
       DataLogger::sharedLogger().clearBuffer();
-      sensorTicker.attach_ms(SENSOR_READ_DELAY_MS, interrupt, this);
+      DataLogger::log("Attaching Interrupt");
+      sensorTicker.attach_ms(1000/20, readSensors, this);
       digitalWrite(READY_PIN, HIGH);
+      DataLogger::log("Flying");
     }
   }else{
     checkResetPin();
@@ -320,6 +330,7 @@ int FlightController::getFlightCount()
   size_t maxProgs = EEPROM.length() / sizeof(FlightData);
   FlightData d;
   for (int i = 0; i < maxProgs; i++) {
+    d.reset();
     EEPROM.get(i * sizeof(FlightData), d);
     if (d.isValid()) {
       return i;
