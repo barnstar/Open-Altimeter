@@ -24,6 +24,11 @@ void Altimeter::start()
   }
 }
 
+double Altimeter::referenceAltitude()
+{
+  return refAltitude;
+}
+
 double Altimeter::getAltitude()
 {
   return barometer.readAltitude(SEA_LEVEL_PRESSURE) - refAltitude;

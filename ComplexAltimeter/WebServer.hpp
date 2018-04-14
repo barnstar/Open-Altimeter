@@ -20,9 +20,19 @@ class WebServer
   IPAddress ipAddress;
   ESP8266WebServer *server;
 
+  void bindSavedFlights();
+  String savedFlightLinks();
   void response();
-  void handleSettings();
+
   void handleRoot();
+  void handleSettings();
+  void handleStatus();
+  void handleFlights();
+  
+  void handleReset();
+  void handleResetAll();
+  
+  void handleTest();
 };
 
 #endif //webserver_h

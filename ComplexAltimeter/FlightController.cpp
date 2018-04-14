@@ -2,14 +2,19 @@
 #include "types.h"
 #include "config.h"
 #include "DataLogger.hpp"
-#include <EEPROM.h>
+#include <FS.h>
 
 #define kMaxBlinks 64
 
 FlightController::FlightController()
 {
+  SPIFFS.begin();
+  Serial.begin(SERIAL_BAUD_RATE);
+  DataLogger::sharedLogger();
+
   DataLogger::log("Creating Flight Controller");
-  blinker = new Blinker(MESSAGE_PIN, BUZZER_PIN);
+  this->initialize();
+
 }
 
 FlightController::~FlightController(){
@@ -28,11 +33,11 @@ FlightController& FlightController::shared()
 
 void FlightController::initialize()
 {
-  //String ipAddress = String("Hello World");
+  DataLogger::log("Initializing Flight Controller");
+
+  blinker = new Blinker(MESSAGE_PIN, BUZZER_PIN);
   IPAddress serverAddress(IPAddress(192,4,0,1));
   server.setAddress(serverAddress);
-
-  DataLogger::log("Initializing");
 
   pinMode(RESET_PIN, INPUT_PULLUP);
 
@@ -41,8 +46,6 @@ void FlightController::initialize()
   pinMode(STATUS_PIN,  OUTPUT);
   pinMode(READY_PIN,   OUTPUT);
   pinMode(BUZZER_PIN,  OUTPUT);
-
-  pinMode(TEST_PIN, INPUT_PULLUP);
 
   //Start in the "error" state.  Status pin should be high and message
   //pin should be low to indicate a good startup
@@ -56,11 +59,26 @@ void FlightController::initialize()
   flightData.reset();
 
   DataLogger::log("Deployment Altitude: " + String(deploymentAltitude));
-  DataLogger::log("Pad Altitude:" + String(refAltitude));
+  DataLogger::log("Pad Altitude:" + String(altimeter.referenceAltitude()));
+
 
   //We don't want to sound the buzzer on first boot, only after a flight
   enableBuzzer = false;
 }
+
+ String FlightController::getStatus()
+ {
+    String ret = "Controller Status<br/>";
+    String statusStr = (readyToFly ?"Ready To Fly" : "Waiting");
+    ret += "Status :" + statusStr + "<br/>";
+    ret += "Flight Count :" +  String(flightCount) + "<br/>";
+    ret += "Deployment Altitude: " + String(deploymentAltitude) + "<br/>";
+    ret += "Pad Altitude:" + String(altimeter.referenceAltitude()) + "<br/>";
+    if(!readyToFly) {
+      ret += "Last Flight:" + flightData.toString(flightCount) + "<br/>";
+    }
+    return ret;
+ }
 
 void readSensors(FlightController *f)
 {
@@ -80,15 +98,11 @@ void FlightController::loop()
 
   if(readyToFly && altimeter.isReady()) {
     if(!sensorTicker.active()) {
-      DataLogger::log("Clearing Buffer");
       DataLogger::sharedLogger().clearBuffer();
-      DataLogger::log("Attaching Interrupt");
       sensorTicker.attach_ms(50, readSensors, this);
       digitalWrite(READY_PIN, HIGH);
-      DataLogger::log("Flying");
+      DataLogger::log("Ready to Fly");
     }
-  }else{
-    checkResetPin();
   }
 
   //Blink out the last recorded apogee on the message pin
@@ -99,10 +113,16 @@ void FlightController::loop()
   }
 }
 
-
-bool FlightController::checkResetPin()
+void FlightController::resetAll()
 {
-  if (digitalRead(RESET_PIN) == LOW) {
+  DataLogger::resetAll();
+  flightCount = 0;
+  reset();
+}
+
+void FlightController::reset()
+{
+  if(!readyToFly) {
     flightCount = DataLogger::sharedLogger().nextFlightIndex();
     flightData.reset();
     resetTime = millis();
@@ -116,11 +136,8 @@ bool FlightController::checkResetPin()
     playReadyTone();
     enableBuzzer = false;
     DataLogger::log("Ready To Fly...");
-    return true;
   }
-  return false;
 }
-
 
 void FlightController::blinkLastAltitude()
 {
@@ -183,10 +200,16 @@ double FlightController::getacceleration()
   return acc;
 }
 
+void FlightController::runTest()
+{
+  if(readyToFly && testFlightTimeStep == 0) {
+    testFlightTimeStep=1;
+  }
+}
 
 void FlightController::readSensorData(SensorData *d)
 {
-  if(TEST_PIN && ((digitalRead(TEST_PIN) == LOW) || testFlightTimeStep)) {
+  if(testFlightTimeStep) {
     testFlightData(d);
     return;
   }
@@ -314,10 +337,8 @@ void FlightController::setDeploymentRelay(RelayState relayState, ChuteState &c)
 
 void FlightController::testFlightData(SensorData *d)
 {
-  if(NO_PIN == TEST_PIN)return;
-
-  if (testFlightTimeStep == 0) {
-    testFlightTimeStep = 1;
+  if (testFlightTimeStep == 1) {
+    testFlightTimeStep = 2;
     fakeData.altitude = 0;
     fakeData.acceleration = 4;
     d->altitude = fakeData.altitude;

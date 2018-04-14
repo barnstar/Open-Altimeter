@@ -13,7 +13,8 @@ class Altimeter
    bool isReady();
 
    double getAltitude();
-   
+   double referenceAltitude();
+      
    private:
    Adafruit_BMP280 barometer;
    bool            barometerReady;

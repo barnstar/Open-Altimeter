@@ -20,12 +20,37 @@ DataLogger::DataLogger()
 
   Dir dir = SPIFFS.openDir("/");
   while (dir.next()) {
-      Serial.print(dir.fileName());
+      Serial.print(dir.fileName() + "  size:");
       File f = dir.openFile("r");
       Serial.println(f.size());
   }
   printFlightData();
 
+}
+
+void DataLogger::resetAll()
+{
+   log("Erasing all flight data");
+   File f = SPIFFS.open("/flights.txt", "w");
+   if(f) {
+      log("Erasing all flight data");
+      f.print("");
+      f.close();
+   }
+
+   f = SPIFFS.open("/flightCount.txt", "w");
+   if(f) {
+    log("Setting flight count to zero");
+    f.print("");
+    f.close();
+   }
+
+  Dir dir = SPIFFS.openDir("/flights");
+  while (dir.next()) {
+      Serial.print("Deleting " + dir.fileName());
+      SPIFFS.remove(dir.fileName());
+  }
+  
 }
 
 DataLogger::~DataLogger() 
@@ -46,10 +71,9 @@ void DataLogger::logDataPoint(FlightDataPoint &p, bool isTriggerPoint)
   }
 
   if(isTriggerPoint) {
-    triggerIndex = dataIndex;
-    if(dataPointsLogged > 100){
-      dataPointsLogged = 100;
-    }
+    triggerIndex = dataIndex - 20;
+    if(dataIndex < 0)dataIndex = dataIndex + dataBufferLen;
+
   }
 
   dataBuffer[dataIndex] = p;
@@ -61,10 +85,31 @@ void DataLogger::logDataPoint(FlightDataPoint &p, bool isTriggerPoint)
   }
 }
 
-void DataLogger::writeBufferToFile(FlightData &ddata, const String& path)
+void DataLogger::readFlightDetails(int index, PrintCallback callback)
 {
+    String path = "/flights/" + String(index);
+    File f = SPIFFS.open(path, "r");
+    if(f) {
+        String line = f.readStringUntil('\n');
+        callback(line);
+    }
+    f.close();  
+}
 
-
+void DataLogger::writeFlightDataFileWithIndex(FlightData &data, int index)
+{
+    String path = "/flights/" + String(index);
+    File f = SPIFFS.open(path, "w");
+    if(f) {
+      f.println(data.toString(index));
+      int idx=triggerIndex;
+      for(int i=0; i<dataBufferLen; i++) {
+        f.println(dataBuffer[idx].toJson());
+        idx = (idx == dataBufferLen) ? 0 : idx+1;
+      }
+      log("Saved Flight Details to:" + path);
+      f.close();
+    }
 }
 
 void DataLogger::clearBuffer()
@@ -96,7 +141,7 @@ int DataLogger::dataBufferLength()
  
  void DataLogger::readFlightData(PrintCallback callback)
  {
-   File f = SPIFFS.open("/flights.txt", "r");
+  File f = SPIFFS.open("/flights.txt", "r");
   if (!f) {
     callback("file open failed");
     return;
@@ -158,6 +203,8 @@ void DataLogger::saveFlight(FlightData &d, int index)
   f.println(indexStr);
   f.close();
   log("Updtaed Flight Count: " + indexStr);
+
+  writeFlightDataFileWithIndex(d, index);
 }
 
 int DataLogger::nextFlightIndex()

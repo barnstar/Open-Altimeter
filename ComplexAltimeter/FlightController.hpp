@@ -26,15 +26,21 @@ public:
     Altimeter altimeter;
 
     void fly();
+    String getStatus();
 
+    void reset();
+    void runTest();
+    void resetAll();
+    
 private:
+    bool initialized;
+
     FlightData flightData;
     FlightState flightState = kOnGround;  //The flight state
 
     ChuteState mainChute;
     ChuteState drogueChute;
 
-    double refAltitude = 0;               //The reference altitude (altitude of the launch pad)
     int    flightCount = 0;               //The number of flights recorded in EEPROM
     int    resetTime = 0;                 //millis() after starting the current flight
     bool   readyToFly = false;            //switches to false at the end of the flight.  Resets on reset.

@@ -51,16 +51,20 @@ class DataLogger
 
      void saveFlight(FlightData &d, int index);
      void logDataPoint(FlightDataPoint &p, bool isTriggerPoint);
-     void writeBufferToFile(FlightData &ddata, const String& path);
+     void writeFlightDataFileWithIndex(FlightData &ddata, int index);
 
      void clearBuffer();
      void printFlightData();
      void printBufferData();
      
      void readFlightData(PrintCallback callback);
+     void readFlightDetails(int index, PrintCallback callback);
+
      void readBufferData(PrintCallback callback);
 
      int nextFlightIndex();
+
+     static void resetAll();
 
      DataLogger(DataLogger const&)      = delete;
      void operator=(DataLogger const&)  = delete;
