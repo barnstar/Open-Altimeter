@@ -51,9 +51,16 @@ void WebServer::handleSettings()
   //Send settings screen.
 }
 
+static String *input;
+void concatenateStrings(const String &s)
+{
+   *input += s;
+}
+
 void WebServer::handleRoot() {
   String htmlRes = HtmlHtml + HtmlTitle;
-  htmlRes += DataLogger::getFlightList();
+  input = &htmlRes;
+  DataLogger::sharedLogger().readFlightData(concatenateStrings);
   htmlRes += HtmlHtmlClose;
   server->send(200, "text/html", htmlRes);
 }

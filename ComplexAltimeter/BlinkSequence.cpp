@@ -18,7 +18,7 @@ void Blinker::cancelSequence()
 {
   ticker.detach();
   setHardwareState(OFF);
-  if(sequence) {
+  if(sequence != nullptr) {
     delete sequence;
     sequence = nullptr;
     isRunning = false;

@@ -4,6 +4,7 @@
 #include "DataLogger.hpp"
 #include "FlightData.hpp"
 #include "types.h"
+#include "FS.h"
 
 static const size_t buffer_size = 16*1024;
 static const int sample_rate_hz = 20;
@@ -11,11 +12,20 @@ static const int sample_rate_hz = 20;
 DataLogger::DataLogger() 
 {
   log("Data Logger Initialized");
-  dataBufferLen = buffer_size / sizeof(DataLogger);
+  dataBufferLen = buffer_size / sizeof(FlightDataPoint);
   log("Buffer Size: " + String(buffer_size / sample_rate_hz));
 
   //This should give us 204 seconds of data... 2.5 minutes...
-  dataBuffer = (FlightDataPoint *)malloc(buffer_size);
+  dataBuffer = new FlightDataPoint[dataBufferLen];
+
+  Dir dir = SPIFFS.openDir("/");
+  while (dir.next()) {
+      Serial.print(dir.fileName());
+      File f = dir.openFile("r");
+      Serial.println(f.size());
+  }
+  printFlightData();
+
 }
 
 DataLogger::~DataLogger() 
@@ -31,7 +41,7 @@ DataLogger& DataLogger::sharedLogger()
 
 void DataLogger::logDataPoint(FlightDataPoint &p, bool isTriggerPoint)
 {
-  if(dataPointsLogged == dataBufferLen && triggerIndex) {
+  if((dataPointsLogged == dataBufferLen) && triggerIndex != -1) {
     return;
   }
 
@@ -59,12 +69,11 @@ void DataLogger::writeBufferToFile(FlightData &ddata, const String& path)
 
 void DataLogger::clearBuffer()
 {
-  triggerIndex = 0;
+  triggerIndex = -1;
   dataPointsLogged = 0;
   dataIndex = 0;
-  FlightDataPoint d;
   for(int i=0; i<dataBufferLen; i++) {
-    dataBuffer[i] = d;
+    dataBuffer[i].reset();
   }
 }
 
@@ -78,26 +87,92 @@ int DataLogger::dataBufferLength()
   return dataPointsLogged;
 }
 
-void DataLogger::log(String msg)
+
+
+ void DataLogger::printFlightData()
+ {
+    readFlightData(logLine);
+ }
+ 
+ void DataLogger::readFlightData(PrintCallback callback)
+ {
+   File f = SPIFFS.open("/flights.txt", "r");
+  if (!f) {
+    callback("file open failed");
+    return;
+  }
+  
+  while (f.available()){
+    String line = f.readStringUntil('\n');
+    callback(line);
+  }
+  f.close();
+}
+ 
+ 
+void DataLogger::printBufferData()
+{
+  readBufferData(logLine);
+}
+ 
+ void DataLogger::readBufferData(PrintCallback callback)
+ {  
+    if(triggerIndex == -1) {
+      callback(String("No Data to Log"));
+      return;    
+    }
+    
+    int idx=triggerIndex;
+    for(int i=0; i<dataBufferLen; i++) {
+      callback(dataBuffer[idx].toJson());
+      idx = (idx == dataBufferLen) ? 0 : idx+1;
+    }
+ }
+
+
+void logLine(const String &s) {
+  DataLogger::log(s);
+}
+
+void DataLogger::log(const String &msg)
 {
   Serial.println(msg);
 }
 
-String DataLogger::getFlightList()
+
+void DataLogger::saveFlight(FlightData &d, int index)
 {
-  String flightList;
-  size_t maxProgs = EEPROM.length() / sizeof(FlightData);
-  FlightData *d = new FlightData();
-  for (int i = 0; i < maxProgs; i++) {
-    EEPROM.get(i * sizeof(FlightData), d);
-    if (!d->isValid()) {
-      return flightList;
-    }
-    flightList+=d->toString(i);
+  File f = SPIFFS.open("/flights.txt", "a");
+  if (!f) {
+    log("Unalble to save flight. No File");
+    return;
   }
-  delete d;
-  return String("No Recorded Flights");
+  f.seek(0, SeekEnd);
+  f.println(d.toString(index));
+  f.close();
+  log("Saved Flight");
+
+
+  f = SPIFFS.open("/flightCount.txt", "w");
+  String indexStr = String(index+1);
+  f.println(indexStr);
+  f.close();
+  log("Updtaed Flight Count: " + indexStr);
 }
+
+int DataLogger::nextFlightIndex()
+{
+  File f = SPIFFS.open("/flightCount.txt", "r");
+  if (!f) { 
+    return 0;
+  }
+  String line = f.readStringUntil('\n');
+  int index = line.toInt(); 
+  f.close();
+  log("Flight Count: " + String(index));
+  return index++;
+}
+
 
 
 String FlightDataPoint::toJson()

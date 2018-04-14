@@ -33,10 +33,10 @@ class Blinker
   int ledPin = NO_PIN;
   int piezoPin = NO_PIN;
 
-  Blink *sequence;
-  size_t sequenceLen;
-  int position;
-  bool repeat;
+  Blink *sequence = nullptr;
+  size_t sequenceLen =0;
+  int position = 0;
+  bool repeat = 0;
 
   Ticker ticker;
   bool isRunning;

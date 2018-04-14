@@ -58,21 +58,17 @@ void FlightController::initialize()
   DataLogger::log("Deployment Altitude: " + String(deploymentAltitude));
   DataLogger::log("Pad Altitude:" + String(refAltitude));
 
-  configureEeprom();
-
   //We don't want to sound the buzzer on first boot, only after a flight
   enableBuzzer = false;
 }
 
 void readSensors(FlightController *f)
 {
-  DataLogger::log("Interrupt");
-    f->fly();
+  f->fly();
 }
 
 void FlightController::fly()
 {
-    DataLogger::log("fly");
   SensorData data;
   readSensorData(&data);
   flightControl(&data);
@@ -87,7 +83,7 @@ void FlightController::loop()
       DataLogger::log("Clearing Buffer");
       DataLogger::sharedLogger().clearBuffer();
       DataLogger::log("Attaching Interrupt");
-      sensorTicker.attach_ms(1000/20, readSensors, this);
+      sensorTicker.attach_ms(50, readSensors, this);
       digitalWrite(READY_PIN, HIGH);
       DataLogger::log("Flying");
     }
@@ -107,6 +103,7 @@ void FlightController::loop()
 bool FlightController::checkResetPin()
 {
   if (digitalRead(RESET_PIN) == LOW) {
+    flightCount = DataLogger::sharedLogger().nextFlightIndex();
     flightData.reset();
     resetTime = millis();
     readyToFly = true;
@@ -118,6 +115,7 @@ bool FlightController::checkResetPin()
     enableBuzzer = true;
     playReadyTone();
     enableBuzzer = false;
+    DataLogger::log("Ready To Fly...");
     return true;
   }
   return false;
@@ -132,6 +130,9 @@ void FlightController::blinkLastAltitude()
 
   static Blink sequence[kMaxBlinks];
   int tempApogee = flightData.apogee;
+  if(tempApogee < 30){
+    return;
+  }
   bool foundDigit = false;         //Don't blink leading 0s
   int n=0;
   for(int m=100000; m>0; m=m/10) {  //If we make it past 99km, we're in trouble :)
@@ -243,8 +244,7 @@ void FlightController::flightControl(SensorData *d)
     DataLogger::log("Landed");
 
     DataLogger::log(flightData.toString(flightCount));
-    recordFlight(flightData);
-    flightCount++;
+    DataLogger::sharedLogger().saveFlight(flightData, flightCount);
 
     //Reset the chutes, reset the relays if we haven't already.  Start the locator
     //beeper and start blinking...
@@ -275,6 +275,11 @@ void FlightController::flightControl(SensorData *d)
 
 void FlightController::checkChuteIgnitionTimeout(ChuteState &c, int maxIgnitionTime)
 {
+  //We only need to timeout pyrocharges
+  if(!c.type == kPyro) {
+    return;
+  }
+  
     if (!c.timedReset && c.deployed &&
         millis() - c.deploymentTime > maxIgnitionTime)
     {
@@ -302,55 +307,10 @@ void FlightController::setDeploymentRelay(RelayState relayState, ChuteState &c)
 }
 
 
-void FlightController::recordFlight(FlightData d)
-{
-  int offset = flightCount * sizeof(FlightData);
-  EEPROM.put(offset, d);
-  EEPROM.commit();
-}
-
-
-void FlightController::configureEeprom()
-{
-  EEPROM.begin(4096);
-
-  if (digitalRead(RESET_PIN) == LOW) {
-    for (int i = 0 ; i < EEPROM.length(); i++) {
-      EEPROM.write(i, 0);
-    }
-    DataLogger::log("EEProm Wiped");
-  }
-  DataLogger::log("Reading Flights");
-  flightCount = getFlightCount();
-}
-
-
-int FlightController::getFlightCount()
-{
-  size_t maxProgs = EEPROM.length() / sizeof(FlightData);
-  FlightData d;
-  for (int i = 0; i < maxProgs; i++) {
-    d.reset();
-    EEPROM.get(i * sizeof(FlightData), d);
-    if (d.isValid()) {
-      return i;
-    }
-    DataLogger::log(d.toString(i));
-    flightData = d;
-  }
-  DataLogger::log("EEPROM Full.  That's probably an error.  Reset your EEPROM");
-  return 0;
-}
-
-
-
-
 ///////////////////////////////////////////////////////////////////
 // Test Flight Generator
 // When you ground the TEST_PIN, the unit will initate a test flight
 //
-
-
 
 void FlightController::testFlightData(SensorData *d)
 {

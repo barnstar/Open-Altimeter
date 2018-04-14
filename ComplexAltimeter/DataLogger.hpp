@@ -4,6 +4,10 @@
 #include <Arduino.h>
 #include "FlightData.hpp"
 
+typedef void (*PrintCallback)(const String& line);
+
+void logLine(const String &s);
+
 class FlightDataPoint
 {
   public:
@@ -20,6 +24,12 @@ class FlightDataPoint
     double acelleration = 0;
 
     String toJson();
+
+    void reset() {
+      ltime = 0;
+      altitude = 0;
+      acelleration = 0;
+    }
 };
 
 
@@ -36,23 +46,30 @@ class DataLogger
      FlightDataPoint *getDataBuffer();
      int dataBufferLength();
 
-     static void log(String msg);
+     static void log(const String &msg);
      static String getFlightList();
 
+     void saveFlight(FlightData &d, int index);
      void logDataPoint(FlightDataPoint &p, bool isTriggerPoint);
      void writeBufferToFile(FlightData &ddata, const String& path);
 
      void clearBuffer();
+     void printFlightData();
+     void printBufferData();
+     
+     void readFlightData(PrintCallback callback);
+     void readBufferData(PrintCallback callback);
 
+     int nextFlightIndex();
 
-   DataLogger(DataLogger const&)      = delete;
-   void operator=(DataLogger const&)  = delete;
+     DataLogger(DataLogger const&)      = delete;
+     void operator=(DataLogger const&)  = delete;
 
    private:
      FlightDataPoint *dataBuffer;
      int dataIndex = 0;
      int dataBufferLen = 0;
-     int triggerIndex = 0;
+     int triggerIndex = -1;
      int dataPointsLogged = 0;
 
 

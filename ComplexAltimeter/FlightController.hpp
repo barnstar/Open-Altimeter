@@ -58,9 +58,7 @@ private:
     void flightControl(SensorData *d);
     void checkChuteIgnitionTimeout(ChuteState &c, int maxIgnitionTime);
     void setDeploymentRelay(RelayState relayState, ChuteState &c);
-    void recordFlight(FlightData d);
-    void configureEeprom();
-    int getFlightCount();
+    void recordFlight(FlightData &d);
     void testFlightData(SensorData *d);
 
 };

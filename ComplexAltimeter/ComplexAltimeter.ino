@@ -64,9 +64,11 @@
 #define VERSION 1
 
 #include "FlightController.hpp"
+#include <FS.h>
 
 void setup()
 {
+  SPIFFS.begin();
   Serial.begin(SERIAL_BAUD_RATE);
 
   DataLogger::sharedLogger();
