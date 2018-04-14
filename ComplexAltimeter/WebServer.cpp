@@ -24,12 +24,12 @@ const String HtmlHtml       = "<html><head>"
 const String HtmlHtmlClose  = "</html>";
 const String HtmlTitle      = "<h1>Alitmeter 1</h1><br/>\n";
 
-const String flightsLink      = "<br><a href=\"/flights\">Flights</a>";
-const String resetLink      = "<br><a href=\"/reset\">Reset Controller</a>";
-const String statusLink     = "<br><a href=\"/status\">Controller Status</a>";
-const String settingsLink   = "<br><a href=\"/settings\">Controller Settings</a>";
-const String testLink       = "<br><a href=\"/test\">Run Test</a>";
-const String resetAllLink   = "<br><a href=\"/resetAll\">Reset ALL</a>";
+const char* testURL = "/test";
+const char* flightsURL = "/flighs";
+const char* resetAllURL = "/resetAll";
+const char* resetURL = "/reset";
+const char* statusURL = "/status";
+const char* settingsURL = "/settings";
 
 void WebServer::setAddress(const IPAddress& ipAddress)
 { 
@@ -42,23 +42,30 @@ void WebServer::setAddress(const IPAddress& ipAddress)
   Serial.println(apip);
   
   server->on("/", std::bind(&WebServer::handleRoot, this));
-  server->on("/settings", std::bind(&WebServer::handleSettings, this));
-  server->on("/reset", std::bind(&WebServer::handleReset, this));
-  server->on("/status", std::bind(&WebServer::handleStatus, this));
-  server->on("/test", std::bind(&WebServer::handleTest, this));
-  server->on("/flights", std::bind(&WebServer::handleFlights, this));
-  server->on("/resetAll", std::bind(&WebServer::handleResetAll, this));
+  server->on(settingsURL, std::bind(&WebServer::handleSettings, this));
+  server->on(resetURL, std::bind(&WebServer::handleReset, this));
+  server->on(statusURL, std::bind(&WebServer::handleStatus, this));
+  server->on(testURL, std::bind(&WebServer::handleTest, this));
+  server->on(flightsURL, std::bind(&WebServer::handleFlights, this));
+  server->on(resetAllURL, std::bind(&WebServer::handleResetAll, this));
 
-  server->serveStatic("/stats", SPIFFS, "/stats.html");
   bindSavedFlights();
   server->begin();
   Serial.println("HTTP server initialized");
+}
+
+void WebServer::bindFlight(int index) 
+{
+  String fname = "/flights/" + String(index);
+  //server->on( fname.c_str(), std::bind(&WebServer::handleFlight, this)) ;
+  server->serveStatic(fname.c_str(), SPIFFS,fname.c_str());
 }
 
 void WebServer::bindSavedFlights()
 {
   Dir dir = SPIFFS.openDir("/flights");
   while (dir.next()) {
+     //server->on(dir.fileName().c_str(), std::bind(&WebServer::handleFlight, this));
      server->serveStatic(dir.fileName().c_str(), SPIFFS, dir.fileName().c_str());
   }
 }
@@ -79,11 +86,27 @@ void WebServer::handleClient() {
 
 void WebServer::handleFlights()
 {
-    String htmlRes = HtmlHtml + HtmlTitle;
-    htmlRes += savedFlightLinks();
-    htmlRes+="<br><br>";
-    htmlRes += HtmlHtmlClose;
-   server->send(200, "text/html", htmlRes);
+  pageBuilder.reset("Saved Flights");
+  pageBuilder.appendToBody(savedFlightLinks());
+  server->send(200, "text/html", pageBuilder.build());
+}
+
+void WebServer::handleFlight()
+{
+  String path = server->uri();
+  DataLogger::log("Reading flight " + path);
+  pageBuilder.reset("Flight :" + path);
+  pageBuilder.appendToBody("Here's the flight JSON Raw:<br><br>\n");
+  File f = SPIFFS.open(path, "r");
+  if(f) {
+    f.seek(0);
+    while(f.available()) {
+      String line = f.readStringUntil('\n');
+      pageBuilder.appendToBody(line + "<br/>");
+    }
+    f.close();
+  }
+  server->send(200, "text/html", pageBuilder.build());
 }
 
 void WebServer::handleSettings()
@@ -118,37 +141,82 @@ void WebServer::handleTest()
 
 void WebServer::handleStatus()
 {
-  String htmlRes = HtmlHtml + HtmlTitle;
-  htmlRes += "STATUS<br>";
-  htmlRes += FlightController::shared().getStatus();
-  htmlRes += HtmlHtmlClose;
-  server->send(200, "text/html", htmlRes);
+  pageBuilder.reset("Altimeter 1: Status");
+  pageBuilder.appendToBody(FlightController::shared().getStatus());
+  server->send(200, "text/html", pageBuilder.build());
+  pageBuilder.reset("");
 }
 
 void WebServer::handleRoot() 
 {
-  String htmlRes = HtmlHtml + HtmlTitle;
+  pageBuilder.reset("Altimeter 1");
+  pageBuilder.appendToBody( PageBuilder::makeLink(String(flightsURL), "Flight List<br/>") );
+  pageBuilder.appendToBody( PageBuilder::makeLink(String(resetURL), "Set To Ready State<br/>") );
+  pageBuilder.appendToBody( PageBuilder::makeLink(String(statusURL), "Show Status<br/>") );
+  pageBuilder.appendToBody( PageBuilder::makeLink(String(testURL), "Run Flight Test<br/>") );
+  pageBuilder.appendToBody("<br><br>" + PageBuilder::makeLink(String(resetAllURL), "Full Reset") + "<br><br>" );
+  pageBuilder.appendToBody("STATUS : <br>");
+  pageBuilder.appendToBody(FlightController::shared().getStatus());
+  pageBuilder.appendToBody("<br><br>"); 
 
-  htmlRes += flightsLink;
-  htmlRes += resetLink;
-  htmlRes += statusLink;
-  htmlRes += settingsLink;
-  htmlRes += testLink;
-  htmlRes += "<br><br>";
-  htmlRes += resetAllLink;
-
-  htmlRes += "<br><br>";
-
-  htmlRes += "STATUS<br>";
-  htmlRes += FlightController::shared().getStatus();
-  htmlRes += "<br><br>";
-
-  input = &htmlRes;
+  String flightData;
+  input = &flightData;
   DataLogger::sharedLogger().readFlightData(concatenateStrings);
-  htmlRes+="<br><br>";
-  htmlRes += HtmlHtmlClose;
-  server->send(200, "text/html", htmlRes);
+  pageBuilder.appendToBody(flightData);
+  pageBuilder.appendToBody("<br><br>"); 
+  server->send(200, "text/html", pageBuilder.build());
+  pageBuilder.reset("");
 }
 
+
+PageBuilder::PageBuilder()
+{
+  reset("");  
+}
+
+PageBuilder::~PageBuilder() {}
+
+
+String PageBuilder::build()
+{
+  String htmlRes = "" + HtmlHtml;
+  
+  htmlRes += "<h1>" + title + "</h1><br/>\n<body>";
+  htmlRes += body + "\n</body>";
+  htmlRes += script;
+  htmlRes += HtmlHtmlClose;
+
+  return htmlRes;
+}
+
+
+void PageBuilder::appendToBody(const String &html)
+{
+  body += html;
+}
+
+
+void PageBuilder::appendScriptLink(const String &link)
+{
+  String linkText = "<script src=\"" + link + "\"></script>";
+  script += linkText;
+}
+
+
+void PageBuilder::appendScript(const String &scriptTxt)
+{
+  script += "<script>\n"+scriptTxt+"\n</script>";  
+}
+
+
+String PageBuilder::makeLink(const String &link, const String &string)
+{
+  return "<a href=\"" + link + "\">" + string + "</a>\n";
+}
+
+String PageBuilder::makeDiv(const String &name, const String &contents)
+{
+    return "<div name=\"" + name + "\">\n" + contents + "\n</div>\n";
+}
 
 

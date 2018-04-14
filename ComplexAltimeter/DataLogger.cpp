@@ -90,10 +90,12 @@ void DataLogger::readFlightDetails(int index, PrintCallback callback)
     String path = "/flights/" + String(index);
     File f = SPIFFS.open(path, "r");
     if(f) {
+      while(f.available()) {
         String line = f.readStringUntil('\n');
         callback(line);
+      }
+      f.close();  
     }
-    f.close();  
 }
 
 void DataLogger::writeFlightDataFileWithIndex(FlightData &data, int index)
@@ -101,12 +103,18 @@ void DataLogger::writeFlightDataFileWithIndex(FlightData &data, int index)
     String path = "/flights/" + String(index);
     File f = SPIFFS.open(path, "w");
     if(f) {
-      f.println(data.toString(index));
+      f.print("var flightData = {\"stats\" : ");
+      f.println(data.toString(index) + ", \n\"data\":[");
       int idx=triggerIndex;
+      bool firstItem = true;
       for(int i=0; i<dataBufferLen; i++) {
-        f.println(dataBuffer[idx].toJson());
+        if(dataBuffer[idx].ltime != 0) {
+          f.println((firstItem ? "" : ",") + dataBuffer[idx].toJson() + "\n");
+          firstItem = false;
+        }
         idx = (idx == dataBufferLen) ? 0 : idx+1;
       }
+      f.println("]}\n\n");
       log("Saved Flight Details to:" + path);
       f.close();
     }

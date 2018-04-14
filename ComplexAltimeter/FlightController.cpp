@@ -229,7 +229,7 @@ void FlightController::flightControl(SensorData *d)
   double acceleration = d->acceleration;
   double altitude = d->altitude;
 
-  FlightDataPoint dp = FlightDataPoint(millis(), acceleration, altitude);
+  FlightDataPoint dp = FlightDataPoint(millis(), altitude, acceleration);
   DataLogger::sharedLogger().logDataPoint(dp, false);
 
   //Keep track or our apogee and our max g load
@@ -268,6 +268,7 @@ void FlightController::flightControl(SensorData *d)
 
     DataLogger::log(flightData.toString(flightCount));
     DataLogger::sharedLogger().saveFlight(flightData, flightCount);
+    server.bindFlight(flightCount);
 
     //Reset the chutes, reset the relays if we haven't already.  Start the locator
     //beeper and start blinking...
