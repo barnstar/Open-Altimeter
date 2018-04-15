@@ -1,6 +1,7 @@
 #include "FlightData.hpp"
 
-const bool FlightData::isValid() {
+const bool FlightData::isValid()
+{
   return apogee ||
          ejectionAltitude ||
          drogueEjectionAltitude ||
@@ -23,7 +24,8 @@ const String FlightData::toString(int index)
          " \"alt_trigger_time\" :  " + String(altTriggerTime) + "}}");
 }
 
-void FlightData::reset() {
+void FlightData::reset()
+{
   apogee = 0;
   ejectionAltitude = 0;
   drogueEjectionAltitude = 0;

@@ -1,10 +1,12 @@
 #include "FlightController.hpp"
-#include "types.h"
-#include "config.h"
 #include "DataLogger.hpp"
 #include <FS.h>
 
+#include "types.h"
+#include "config.h"
+
 #define kMaxBlinks 64
+
 
 FlightController::FlightController()
 {
@@ -13,29 +15,28 @@ FlightController::FlightController()
   DataLogger::sharedLogger();
 
   DataLogger::log("Creating Flight Controller");
-  this->initialize();
+  blinker = new Blinker(MESSAGE_PIN, BUZZER_PIN);
 
+  this->initialize();
 }
+
 
 FlightController::~FlightController(){
   delete blinker;
 }
 
-static FlightController *sharedInstance = nullptr;
 
 FlightController& FlightController::shared()
 {
-  if(nullptr == sharedInstance) {
-    sharedInstance = new FlightController();
-  }
-  return *sharedInstance;
+  static DataLogger sharedInstance;
+  return sharedInstance;
 }
+
 
 void FlightController::initialize()
 {
   DataLogger::log("Initializing Flight Controller");
 
-  blinker = new Blinker(MESSAGE_PIN, BUZZER_PIN);
   IPAddress serverAddress(IPAddress(192,4,0,1));
   server.setAddress(serverAddress);
 
@@ -66,24 +67,25 @@ void FlightController::initialize()
   enableBuzzer = false;
 }
 
- String FlightController::getStatus()
- {
-    String ret = "Controller Status<br/>";
-    String statusStr = (readyToFly ?"Ready To Fly" : "Waiting");
-    ret += "Status :" + statusStr + "<br/>";
-    ret += "Flight Count :" +  String(flightCount) + "<br/>";
-    ret += "Deployment Altitude: " + String(deploymentAltitude) + "<br/>";
-    ret += "Pad Altitude:" + String(altimeter.referenceAltitude()) + "<br/>";
-    if(!readyToFly) {
-      ret += "Last Flight:" + flightData.toString(flightCount) + "<br/>";
-    }
-    return ret;
- }
+String FlightController::getStatus()
+{
+  String statusStr = (readyToFly ?"Ready To Fly" : "Waiting");
+  ret += "Status :" + statusStr + "<br/>";
+  ret += "Flight Count :" +  String(flightCount) + "<br/>";
+  ret += "Deployment Altitude: " + String(deploymentAltitude) + "<br/>";
+  ret += "Pad Altitude:" + String(altimeter.referenceAltitude()) + "<br/>";
+  if(!readyToFly) {
+    ret += "Last Flight:" + flightData.toString(flightCount) + "<br/>";
+  }
+  return ret;
+}
+
 
 void readSensors(FlightController *f)
 {
   f->fly();
 }
+
 
 void FlightController::fly()
 {
@@ -91,6 +93,7 @@ void FlightController::fly()
   readSensorData(&data);
   flightControl(&data);
 }
+
 
 void FlightController::loop()
 {
@@ -101,7 +104,6 @@ void FlightController::loop()
       DataLogger::sharedLogger().clearBuffer();
       sensorTicker.attach_ms(50, readSensors, this);
       digitalWrite(READY_PIN, HIGH);
-      DataLogger::log("Ready to Fly");
     }
   }
 
@@ -113,6 +115,12 @@ void FlightController::loop()
   }
 }
 
+void FlightController::setDeploymentAltitude(int altitude)
+{
+  DataLogger::log("Deployment Altitude Set to " + String(altitude));
+  deploymentAltitude  = altitude;
+}
+
 void FlightController::resetAll()
 {
   DataLogger::resetAll();
@@ -120,24 +128,33 @@ void FlightController::resetAll()
   reset();
 }
 
+
 void FlightController::reset()
 {
-  if(!readyToFly) {
-    flightCount = DataLogger::sharedLogger().nextFlightIndex();
-    flightData.reset();
-    resetTime = millis();
-    readyToFly = true;
-    setDeploymentRelay(OFF, drogueChute);
-    drogueChute.reset();
-    setDeploymentRelay(OFF, mainChute);
-    mainChute.reset();
-    testFlightTimeStep = 0;
-    enableBuzzer = true;
-    playReadyTone();
-    enableBuzzer = false;
-    DataLogger::log("Ready To Fly...");
+  if(readyToFly) {
+    return;
   }
+
+
+  flightCount = DataLogger::sharedLogger().nextFlightIndex();
+  flightData.reset();
+  resetTime = millis();
+
+  setDeploymentRelay(OFF, drogueChute);
+  drogueChute.reset();
+  setDeploymentRelay(OFF, mainChute);
+  mainChute.reset();
+
+  testFlightTimeStep = 0;
+
+  enableBuzzer = true;
+  playReadyTone();
+  enableBuzzer = false;
+
+  DataLogger::log("Ready To Fly...");
+  readyToFly = true;
 }
+
 
 void FlightController::blinkLastAltitude()
 {
@@ -173,12 +190,12 @@ void FlightController::blinkLastAltitude()
   blinker->blinkSequence(sequence, n+1, true);
 }
 
+
 void FlightController::playReadyTone()
 {
   static Blink sequence[3] = {{100,100},{100,100},{100,100}};
   blinker->blinkSequence(sequence, 3, false);
 }
-
 
 
 double FlightController::getacceleration()
@@ -200,12 +217,14 @@ double FlightController::getacceleration()
   return acc;
 }
 
+
 void FlightController::runTest()
 {
   if(readyToFly && testFlightTimeStep == 0) {
     testFlightTimeStep=1;
   }
 }
+
 
 void FlightController::readSensorData(SensorData *d)
 {
@@ -303,7 +322,7 @@ void FlightController::checkChuteIgnitionTimeout(ChuteState &c, int maxIgnitionT
   if(!c.type == kPyro) {
     return;
   }
-  
+
     if (!c.timedReset && c.deployed &&
         millis() - c.deploymentTime > maxIgnitionTime)
     {
@@ -330,11 +349,6 @@ void FlightController::setDeploymentRelay(RelayState relayState, ChuteState &c)
   }
 }
 
-
-///////////////////////////////////////////////////////////////////
-// Test Flight Generator
-// When you ground the TEST_PIN, the unit will initate a test flight
-//
 
 void FlightController::testFlightData(SensorData *d)
 {

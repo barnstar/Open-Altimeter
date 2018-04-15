@@ -8,6 +8,9 @@ typedef void (*PrintCallback)(const String& line);
 
 void logLine(const String &s);
 
+#define FLIGHTS_DIR "/flights"
+
+
 class FlightDataPoint
 {
   public:
@@ -35,48 +38,46 @@ class FlightDataPoint
 
 class DataLogger
 {
-   public:
-     static DataLogger& sharedLogger();
+public:
+    static DataLogger& sharedLogger();
 
-     DataLogger();
-     ~DataLogger();
+    DataLogger();
+    ~DataLogger();
 
-     void initializeBuffer(int sampleRate, size_t bufferSize);
+    void initializeBuffer(int sampleRate, size_t bufferSize);
 
-     FlightDataPoint *getDataBuffer();
-     int dataBufferLength();
+    FlightDataPoint *getDataBuffer();
+    int dataBufferLength();
 
-     static void log(const String &msg);
-     static String getFlightList();
+    static void log(const String &msg);
+    static String getFlightList();
 
-     void saveFlight(FlightData &d, int index);
-     void logDataPoint(FlightDataPoint &p, bool isTriggerPoint);
-     void writeFlightDataFileWithIndex(FlightData &ddata, int index);
+    void saveFlight(FlightData &d, int index);
+    void logDataPoint(FlightDataPoint &p, bool isTriggerPoint);
+    void writeFlightDataFileWithIndex(FlightData &ddata, int index);
 
-     void clearBuffer();
-     void printFlightData();
-     void printBufferData();
-     
-     void readFlightData(PrintCallback callback);
-     void readFlightDetails(int index, PrintCallback callback);
+    void clearBuffer();
+    void printFlightData();
+    void printBufferData();
 
-     void readBufferData(PrintCallback callback);
+    void readFlightData(PrintCallback callback);
+    void readFlightDetails(int index, PrintCallback callback);
 
-     int nextFlightIndex();
+    void readBufferData(PrintCallback callback);
 
-     static void resetAll();
+    int nextFlightIndex();
 
-     DataLogger(DataLogger const&)      = delete;
-     void operator=(DataLogger const&)  = delete;
+    static void resetAll();
 
-   private:
-     FlightDataPoint *dataBuffer;
-     int dataIndex = 0;
-     int dataBufferLen = 0;
-     int triggerIndex = -1;
-     int dataPointsLogged = 0;
+    DataLogger(DataLogger const&)      = delete;
+    void operator=(DataLogger const&)  = delete;
 
-
+private:
+    FlightDataPoint *dataBuffer;
+    int dataIndex = 0;
+    int dataBufferLen = 0;
+    int triggerIndex = -1;
+    int dataPointsLogged = 0;
 };
 
 #endif

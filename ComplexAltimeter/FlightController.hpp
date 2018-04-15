@@ -14,13 +14,17 @@
 class FlightController
 {
 public:
-     static FlightController& shared();
+    static FlightController& shared();
 
-     FlightController();
-     ~FlightController();
+    FlightController();
+    ~FlightController();
 
-    void initialize();
+    FlightController(FlightController const&)        = delete;
+    void FlightController=(FlightController const&)  = delete;
+
     void loop();
+
+    void setDeploymentAltitude(int altitude);
 
     WebServer server;
     Altimeter altimeter;
@@ -31,9 +35,9 @@ public:
     void reset();
     void runTest();
     void resetAll();
-    
+
 private:
-    bool initialized;
+    void initialize();
 
     FlightData flightData;
     FlightState flightState = kOnGround;  //The flight state

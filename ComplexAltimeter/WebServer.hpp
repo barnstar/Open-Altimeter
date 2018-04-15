@@ -4,7 +4,7 @@
 #include <Arduino.h>
 
 #include <ESP8266WiFi.h>
-#include <WiFiClient.h> 
+#include <WiFiClient.h>
 #include <ESP8266WebServer.h>
 
 
@@ -24,7 +24,7 @@ class PageBuilder
   void appendToBody(const String &html);
   void appendScriptLink(const String &link);
   void appendScript(const String &script);
-  
+
   static String makeLink(const String &link, const String &string);
   static String makeDiv(const String &name, const String &contents);
 
@@ -37,7 +37,7 @@ class PageBuilder
 
 class WebServer
 {
-  public:
+public:
   WebServer();
   ~WebServer();
 
@@ -45,15 +45,15 @@ class WebServer
   void handleClient();
 
   void bindFlight(int index);
-  
-  private:
+
+private:
   IPAddress ipAddress;
   ESP8266WebServer *server;
 
   PageBuilder pageBuilder;
 
   void bindSavedFlights();
-  
+
   String savedFlightLinks();
   void response();
 
@@ -62,10 +62,11 @@ class WebServer
   void handleStatus();
   void handleFlights();
   void handleFlight();
-  
+  void handleConfig();
+
   void handleReset();
   void handleResetAll();
-  
+
   void handleTest();
 };
 
