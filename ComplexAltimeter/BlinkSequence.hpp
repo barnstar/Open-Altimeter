@@ -6,19 +6,18 @@
 
 typedef struct {
   int onTime;
-  int offTime;  
+  int offTime;
 }Blink;
 
 class Blinker
 {
-  public:
+public:
   Blinker(int ledPin, int piezoPin) :
-  ledPin(ledPin),
-  piezoPin(piezoPin)
-  {}
+    ledPin(ledPin),
+    piezoPin(piezoPin) {}
 
   ~Blinker() {
-    cancelSequence();  
+    cancelSequence();
   };
 
   void blinkSequence(Blink *sequence, size_t len, bool repeat);
@@ -26,7 +25,7 @@ class Blinker
   bool isBlinking();
   void handleTimeout();
 
-  private:
+private:
   BlinkerState state;
   void setHardwareState(BlinkerState hwState);
 

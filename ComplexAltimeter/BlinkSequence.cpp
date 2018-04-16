@@ -14,6 +14,7 @@ void Blinker::blinkSequence(Blink *sequence, size_t len, bool repeat)
   handleTimeout();
 }
 
+
 void Blinker::cancelSequence()
 {
   ticker.detach();
@@ -25,10 +26,12 @@ void Blinker::cancelSequence()
   }
 }
 
+
 void interrupt(Blinker *blinker)
 {
   blinker->handleTimeout();
 }
+
 
 void Blinker::handleTimeout()
 {
@@ -36,7 +39,7 @@ void Blinker::handleTimeout()
     Blink b = sequence[position];
     if(state == OFF) {
       setHardwareState(ON);
-      duration = b.onTime;  
+      duration = b.onTime;
     }
     else if(state == ON) {
       setHardwareState(OFF);
@@ -61,6 +64,7 @@ bool Blinker::isBlinking()
   return isRunning;
 }
 
+
 void Blinker::setHardwareState(BlinkerState hwState)
 {
   if(hwState==ON)
@@ -69,7 +73,7 @@ void Blinker::setHardwareState(BlinkerState hwState)
       digitalWrite(ledPin, HIGH);
     }
     if(piezoPin != NO_PIN){
-        digitalWrite(piezoPin, HIGH); 
+        digitalWrite(piezoPin, HIGH);
     }
   }
   else if(hwState == OFF) {
@@ -77,7 +81,7 @@ void Blinker::setHardwareState(BlinkerState hwState)
       digitalWrite(ledPin, LOW);
     }
     if(piezoPin != NO_PIN){
-        digitalWrite(piezoPin, LOW); 
+        digitalWrite(piezoPin, LOW);
     }
   }
   this->state = hwState;

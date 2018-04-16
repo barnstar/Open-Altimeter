@@ -168,6 +168,7 @@ void WebServer::handleConfigSetting(String &arg, String &val)
     int deplAlt = val.toInt();
     FlightController::shared.setDeploymentAltitude(deplAlt);
   }
+  //Add other form elements here....
 }
 
 
@@ -181,6 +182,7 @@ void WebServer::handleRoot()
   pageBuilder.appendToBody( doubleLine + PageBuilder::makeLink(String(resetAllURL), "Full Reset") + doubleLine );
   pageBuilder.appendToBody(  "STATUS : <br>");
   pageBuilder.appendToBody( FlightController::shared().getStatus());
+    pageBuilder.appendToBody( FlightController::shared().checkMPUSettings());
   pageBuilder.appendToBody( doubleLine);
 
   String flightData;

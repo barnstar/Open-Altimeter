@@ -6,6 +6,19 @@
 
 typedef void (*PrintCallback)(const String& line);
 
+class PrintFnc {
+public:
+     String operator()(String x) {
+        ret+=x;
+        return ret;
+     }
+     String operator ()(void) {
+        return ret;
+     }
+private:
+    String ret;
+};
+
 void logLine(const String &s);
 
 #define FLIGHTS_DIR "/flights"

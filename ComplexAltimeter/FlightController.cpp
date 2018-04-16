@@ -57,11 +57,13 @@ void FlightController::initialize()
   drogueChute.init(1, DROGUE_DEPL_RELAY_PIN, DROGUE_TYPE);
 
   altimeter.start();
+  mpu.begin(MPU6050_SCALE_2000DPS, MPU6050_RANGE_16G);
+
   flightData.reset();
 
   DataLogger::log("Deployment Altitude: " + String(deploymentAltitude));
   DataLogger::log("Pad Altitude:" + String(altimeter.referenceAltitude()));
-
+  DataLogger::log(checkMPUSettings());
 
   //We don't want to sound the buzzer on first boot, only after a flight
   enableBuzzer = false;
@@ -291,7 +293,6 @@ void FlightController::flightControl(SensorData *d)
 
     //Reset the chutes, reset the relays if we haven't already.  Start the locator
     //beeper and start blinking...
-
     setDeploymentRelay(OFF, drogueChute);
     drogueChute.reset();
 
@@ -373,5 +374,48 @@ void FlightController::testFlightData(SensorData *d)
 
   d->altitude = fakeData.altitude;
   d->acceleration = fakeData.acceleration;
+}
+
+String FlightController::checkMPUSettings()
+{
+  if(!mpu.isReady()) {
+    return "MPU is not ready";
+  }
+
+  String settings;
+
+  settings += " * Sleep Mode: ");
+  settings += mpu.getSleepEnabled() ? "Enabled" : "Disabled";
+
+  settings  " *<br>\n  Clock Source: ";
+  switch(mpu.getClockSource())
+  {
+    case MPU6050_CLOCK_KEEP_RESET:     settings +="Stops the clock and keeps the timing generator in reset"; break;
+    case MPU6050_CLOCK_EXTERNAL_19MHZ: settings +="PLL with external 19.2MHz reference"; break;
+    case MPU6050_CLOCK_EXTERNAL_32KHZ: settings +="PLL with external 32.768kHz reference"; break;
+    case MPU6050_CLOCK_PLL_ZGYRO:      settings +="PLL with Z axis gyroscope reference"; break;
+    case MPU6050_CLOCK_PLL_YGYRO:      settings +="PLL with Y axis gyroscope reference"; break;
+    case MPU6050_CLOCK_PLL_XGYRO:      settings +="PLL with X axis gyroscope reference"; break;
+    case MPU6050_CLOCK_INTERNAL_8MHZ:  settings +="Internal 8MHz oscillator"; break;
+  }
+
+  Serial.print("<br>\n * Accelerometer:         ");
+  switch(mpu.getRange())
+  {
+    case MPU6050_RANGE_16G:            settings +="+/- 16 g"; break;
+    case MPU6050_RANGE_8G:             settings +="+/- 8 g"; break;
+    case MPU6050_RANGE_4G:             settings +="+/- 4 g"; break;
+    case MPU6050_RANGE_2G:             settings +="+/- 2 g"; break;
+  }
+
+  settings +="<br>\n  * Accelerometer offsets: ";
+  settings +=String(mpu.getAccelOffsetX());
+  settings +=" / ";
+  settings +=String(mpu.getAccelOffsetY());
+  settings +=" / ";
+  settings +=String(mpu.getAccelOffsetZ());
+
+  settings += "<br>\n";
+  return settings;
 }
 

@@ -6,6 +6,7 @@
 #include "WebServer.hpp"
 #include "Altimeter.hpp"
 #include "BlinkSequence.hpp"
+#include "MPU6050.h"
 #include <Ticker.h>
 
 #include "config.h"
@@ -25,9 +26,11 @@ public:
     void loop();
 
     void setDeploymentAltitude(int altitude);
+    String checkMPUSettings();
 
     WebServer server;
     Altimeter altimeter;
+    MPU6050 mpu;
 
     void fly();
     String getStatus();
