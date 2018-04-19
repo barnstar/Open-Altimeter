@@ -11,35 +11,27 @@ class WebServer;
 
 class PageBuilder
 {
-  public:
+public:
   PageBuilder();
   ~PageBuilder();
 
-  String build();
-  void reset(const String &title) {
-    this->title = title;
-    this->body = " ";
-    this->script = " ";
-  };
-
   void startPageStream(ESP8266WebServer *s);
-  void sendHeaders(ESP8266WebServer *s);
-  void sendBodyChunk(ESP8266WebServer *s, const String &chunk, bool addStartTag, bool addClosingTag);
-  void sendScript(ESP8266WebServer *s, const String &script);
-  void sendRawText(ESP8266WebServer *s, const String &rawText);
-  void closePageStream(ESP8266WebServer *s);
+  void sendHeaders();
+  void sendTagedChunk(const String &tag, const String &chunk);
+  void sendBodyChunk(const String &chunk, bool addStartTag, bool addClosingTag);
+  void sendScript(const String &script);
+  void sendRawText(const String &rawText);
 
-  void appendToBody(const String &html);
-  void appendScriptLink(const String &link);
-  void appendScript(const String &script);
+  void sendFileRaw(const String &path);
+  void sendFilePretty(const String &path);
+
+  void closePageStream();
 
   static String makeLink(const String &link, const String &string);
   static String makeDiv(const String &name, const String &contents);
 
-  private:
-  String title;
-  String body;
-  String script;
+private:
+  ESP8266WebServer *server = nullptr;
 };
 
 
@@ -49,7 +41,7 @@ public:
   WebServer();
   ~WebServer();
 
-  void setAddress(const IPAddress& ipAddress);
+  void start(const IPAddress& ipAddress);
   void handleClient();
 
   void bindFlight(int index);
@@ -72,7 +64,7 @@ private:
   void handleReset();
   void handleResetAll();
   void handleConfigSetting(String &arg, String &val);
-  
+
   void handleTest();
 };
 
