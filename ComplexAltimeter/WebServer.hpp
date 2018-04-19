@@ -7,6 +7,7 @@
 #include <WiFiClient.h>
 #include <ESP8266WebServer.h>
 
+class WebServer;
 
 class PageBuilder
 {
@@ -20,6 +21,13 @@ class PageBuilder
     this->body = " ";
     this->script = " ";
   };
+
+  void startPageStream(ESP8266WebServer *s);
+  void sendHeaders(ESP8266WebServer *s);
+  void sendBodyChunk(ESP8266WebServer *s, const String &chunk, bool addStartTag, bool addClosingTag);
+  void sendScript(ESP8266WebServer *s, const String &script);
+  void sendRawText(ESP8266WebServer *s, const String &rawText);
+  void closePageStream(ESP8266WebServer *s);
 
   void appendToBody(const String &html);
   void appendScriptLink(const String &link);
@@ -51,14 +59,11 @@ private:
   ESP8266WebServer *server;
 
   PageBuilder pageBuilder;
-
   void bindSavedFlights();
-
   String savedFlightLinks();
   void response();
 
   void handleRoot();
-  void handleSettings();
   void handleStatus();
   void handleFlights();
   void handleFlight();
@@ -66,7 +71,8 @@ private:
 
   void handleReset();
   void handleResetAll();
-
+  void handleConfigSetting(String &arg, String &val);
+  
   void handleTest();
 };
 

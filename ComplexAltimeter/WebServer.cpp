@@ -49,7 +49,6 @@ void WebServer::setAddress(const IPAddress& ipAddress)
   Serial.println(apip);
 
   server->on("/", std::bind(&WebServer::handleRoot, this));
-  server->on(settingsURL, std::bind(&WebServer::handleSettings, this));
   server->on(resetURL, std::bind(&WebServer::handleReset, this));
   server->on(statusURL, std::bind(&WebServer::handleStatus, this));
   server->on(testURL, std::bind(&WebServer::handleTest, this));
@@ -65,7 +64,7 @@ void WebServer::setAddress(const IPAddress& ipAddress)
 
 void WebServer::bindFlight(int index)
 {
-  String fname = FLIGHTS_DIR + "/" + String(index);
+  String fname = String(FLIGHTS_DIR) + String("/") + String(index);
   server->on( fname.c_str(), std::bind(&WebServer::handleFlight, this)) ;
   //server->serveStatic(fname.c_str(), SPIFFS,fname.c_str());
 }
@@ -100,22 +99,22 @@ void WebServer::handleFlight()
 {
   String path = server->uri();
   DataLogger::log("Reading " + path);
-  pageBuilder.reset("Flight :" + path);
-  pageBuilder.appendToBody("Here's the flight JSON Raw:<br><br>\n");
+  
+  pageBuilder.reset("Flight :" + path + "<br>\n");
+  pageBuilder.startPageStream(server);
+  pageBuilder.sendHeaders(server);
+  pageBuilder.sendBodyChunk(server, "", true, false);
   File f = SPIFFS.open(path, "r");
   if(f) {
     f.seek(0);
-    char f = 0;
     while(f.available()) {
-      char f = r.read();
-      pageBuilder.appendToBbody(String(f));
-      if(f == "\n") {}
-        pageBuilder.appendToBody(line + "<br/>");
-      }
+      String line = f.readStringUntil('\n');
+      pageBuilder.sendBodyChunk(server, line + "<br/>", false, false);
     }
     f.close();
   }
-  server->send(200, "text/html", pageBuilder.build());
+  pageBuilder.sendBodyChunk(server, "", false, true);
+  pageBuilder.closePageStream(server);
 }
 
 
@@ -148,15 +147,20 @@ void WebServer::handleStatus()
 {
   pageBuilder.reset("Altimeter 1: Status");
   pageBuilder.appendToBody(FlightController::shared().getStatus());
+
+  SensorData d;
+  FlightController::shared().readSensorData(&d);
+  pageBuilder.appendToBody(d.toString());
+
   server->send(200, "text/html", pageBuilder.build());
   pageBuilder.reset("");
 }
 
 void WebServer::handleConfig()
 {
-  for (int i = 0; i < server.args(); i++) {
-    String argName  = server.argName(i);
-    String argVal  = server.arg(i);
+  for (int i = 0; i < server->args(); i++) {
+    String argName  = server->argName(i);
+    String argVal  = server->arg(i);
     handleConfigSetting(argName, argVal);
   }
   handleStatus();
@@ -166,7 +170,7 @@ void WebServer::handleConfigSetting(String &arg, String &val)
 {
   if(arg == String("deplAlt")) {
     int deplAlt = val.toInt();
-    FlightController::shared.setDeploymentAltitude(deplAlt);
+    FlightController::shared().setDeploymentAltitude(deplAlt);
   }
   //Add other form elements here....
 }
@@ -175,6 +179,7 @@ void WebServer::handleConfigSetting(String &arg, String &val)
 void WebServer::handleRoot()
 {
   pageBuilder.reset("Altimeter 1");
+  pageBuilder.appendToBody( PageBuilder::makeLink(String(settingsURL), "Configure<br/>") );
   pageBuilder.appendToBody( PageBuilder::makeLink(String(flightsURL), "Flight List<br/>") );
   pageBuilder.appendToBody( PageBuilder::makeLink(String(resetURL), "Set To Ready State<br/>") );
   pageBuilder.appendToBody( PageBuilder::makeLink(String(statusURL), "Show Status<br/>") );
@@ -182,7 +187,7 @@ void WebServer::handleRoot()
   pageBuilder.appendToBody( doubleLine + PageBuilder::makeLink(String(resetAllURL), "Full Reset") + doubleLine );
   pageBuilder.appendToBody(  "STATUS : <br>");
   pageBuilder.appendToBody( FlightController::shared().getStatus());
-    pageBuilder.appendToBody( FlightController::shared().checkMPUSettings());
+  pageBuilder.appendToBody( FlightController::shared().checkMPUSettings());
   pageBuilder.appendToBody( doubleLine);
 
   String flightData;
@@ -205,6 +210,45 @@ PageBuilder::PageBuilder()
 
 PageBuilder::~PageBuilder() {}
 
+//Strings can't conatin the entire body so we need some kind of streaming
+
+void PageBuilder::startPageStream(ESP8266WebServer *s)
+{
+  s->setContentLength(CONTENT_LENGTH_UNKNOWN);   //Enable Chunked Transfer
+}
+
+void PageBuilder::sendHeaders(ESP8266WebServer *s)
+{
+  String header = String("<h1>" + title + "</h1><br/>\n<");
+  s->send(200, "text/html", header);
+}
+
+void PageBuilder::sendBodyChunk(ESP8266WebServer *s, const String &chunk, bool addStartTag, bool addClosingTag)
+{
+  String toSend = addStartTag ? "<body>" + chunk : chunk;
+  toSend = addClosingTag ? toSend + "</body>" : toSend;
+  sendRawText(s, toSend);
+}
+
+
+void PageBuilder::sendScript(ESP8266WebServer *s, const String &script)
+{
+  String toSend = String("<script>") + script + String("</script>");
+  sendRawText(s, toSend);
+}
+
+void PageBuilder::sendRawText(ESP8266WebServer *s, const String &rawText)
+{
+ s->sendContent(rawText); 
+}
+
+
+void PageBuilder::closePageStream(ESP8266WebServer *s)
+{
+   s->sendContent(""); 
+   s->client().stop();
+}
+
 
 String PageBuilder::build()
 {
@@ -217,7 +261,6 @@ String PageBuilder::build()
 
   return htmlRes;
 }
-
 
 void PageBuilder::appendToBody(const String &html)
 {

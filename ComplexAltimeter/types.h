@@ -29,6 +29,8 @@ typedef OnOffState BlinkerState;
 typedef struct {
   double altitude =0;
   double acceleration =0;
+
+  String toString() { return String("Alt " + String(altitude) +"    acc: " + String(acceleration)); }
 }SensorData;
 
 typedef enum {

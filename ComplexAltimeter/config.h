@@ -20,7 +20,7 @@ const double FLIGHT_START_THRESHOLD_ACC = 0.1;  //in G's
 
 //When the altitude is DESCENT_THRESHOLD meters less than the apogee, we'll assume we're 
 //descending.  Hopefully, your rocket has a generally upwards trajectory....
-const double DESCENT_THRESHOLD = 20;
+const double DESCENT_THRESHOLD = 15;
 
 //The deployment relay will be deactivated after this time.
 const int MAX_FIRE_TIME = 5000;
@@ -50,7 +50,6 @@ const int SENSOR_READ_DELAY_MS = 20;
 //Delay between digit blinks.  Any faster is too quick to keep up with
 const int BLINK_SPEED_MS       = 250;
 
-const double deploymentAltitude = 100;      //Deployment altitude in ft.
 
 #endif //config_h
 

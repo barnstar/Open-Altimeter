@@ -77,9 +77,28 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define VECTOR_STRUCT_H
 struct Vector
 {
-    float XAxis;
-    float YAxis;
-    float ZAxis;
+    float XAxis=0;
+    float YAxis=0;
+    float ZAxis=0;
+
+    Vector() {}
+    
+    Vector(float x, float y, float z) {
+      XAxis=x; YAxis=y; ZAxis=z;
+    }
+
+    double length() {
+      return sqrt( XAxis * XAxis + YAxis * YAxis + ZAxis * ZAxis);
+    }
+
+    Vector operator / (float rhs) {
+      return Vector(XAxis/rhs, YAxis/rhs, ZAxis/rhs);
+    }
+
+   Vector operator * (float rhs) {
+      return Vector(XAxis*rhs, YAxis*rhs, ZAxis*rhs);
+    }
+
 };
 #endif
 

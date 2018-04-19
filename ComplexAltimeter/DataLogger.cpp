@@ -87,7 +87,7 @@ void DataLogger::logDataPoint(FlightDataPoint &p, bool isTriggerPoint)
 
 void DataLogger::readFlightDetails(int index, PrintCallback callback)
 {
-    String path = FLIGHTS_DIR + String(index);
+    String path = String(FLIGHTS_DIR) + String("/") + String(index);
     File f = SPIFFS.open(path, "r");
     if(f) {
       while(f.available()) {
@@ -100,7 +100,7 @@ void DataLogger::readFlightDetails(int index, PrintCallback callback)
 
 void DataLogger::writeFlightDataFileWithIndex(FlightData &data, int index)
 {
-    String path = FLIGHTS_DIR + String(index);
+    String path = String(FLIGHTS_DIR) + String("/") + String(index);
     File f = SPIFFS.open(path, "w");
     if(f) {
       f.print("var flightData = {\"stats\" : ");

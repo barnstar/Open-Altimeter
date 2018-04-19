@@ -28,7 +28,7 @@ FlightController::~FlightController(){
 
 FlightController& FlightController::shared()
 {
-  static DataLogger sharedInstance;
+  static FlightController sharedInstance;
   return sharedInstance;
 }
 
@@ -57,7 +57,9 @@ void FlightController::initialize()
   drogueChute.init(1, DROGUE_DEPL_RELAY_PIN, DROGUE_TYPE);
 
   altimeter.start();
-  mpu.begin(MPU6050_SCALE_2000DPS, MPU6050_RANGE_16G);
+  if(!(mpuReady = mpu.begin(MPU6050_SCALE_2000DPS, MPU6050_RANGE_16G))) {
+    DataLogger::log("IMU Startup failed");
+  }
 
   flightData.reset();
 
@@ -72,6 +74,8 @@ void FlightController::initialize()
 String FlightController::getStatus()
 {
   String statusStr = (readyToFly ?"Ready To Fly" : "Waiting");
+
+  String ret;
   ret += "Status :" + statusStr + "<br/>";
   ret += "Flight Count :" +  String(flightCount) + "<br/>";
   ret += "Deployment Altitude: " + String(deploymentAltitude) + "<br/>";
@@ -202,20 +206,8 @@ void FlightController::playReadyTone()
 
 double FlightController::getacceleration()
 {
-    return 0;
-  //mpu.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
-  int16_t ax, ay, az;
-  int16_t gx, gy, gz;
-  int16_t grx, gry, grz;
-  const double onegee = 65536.0 / 16.0; //units/g for scale of +/- 8g
-
-
-  double axd = ax / onegee ;
-  double ayd = ay / onegee ;
-  double azd = az / onegee ;
-
-  //Remove gravity.. We now have the absolute acceleration
-  double acc = sqrt( axd * axd + ayd * ayd + azd * azd) - 1.0;
+  Vector v = mpu.readNormalizeAccel();
+  double acc = v.length() - 1.0;
   return acc;
 }
 
@@ -252,6 +244,10 @@ void FlightController::flightControl(SensorData *d)
 
   FlightDataPoint dp = FlightDataPoint(millis(), altitude, acceleration);
   DataLogger::sharedLogger().logDataPoint(dp, false);
+  
+  if(logCounter == 0) { DataLogger::log(String("Alt " + String(altitude) +"    acc: " + String(acceleration))); }
+  logCounter = !logCounter ? 20 : logCounter-1;
+
 
   //Keep track or our apogee and our max g load
   flightData.apogee = altitude > flightData.apogee ? altitude : flightData.apogee;
@@ -378,16 +374,16 @@ void FlightController::testFlightData(SensorData *d)
 
 String FlightController::checkMPUSettings()
 {
-  if(!mpu.isReady()) {
-    return "MPU is not ready";
+  if(!mpuReady) {
+    return String("IMU is not ready");
   }
-
+    
   String settings;
 
-  settings += " * Sleep Mode: ");
+  settings += " * Sleep Mode: ";
   settings += mpu.getSleepEnabled() ? "Enabled" : "Disabled";
 
-  settings  " *<br>\n  Clock Source: ";
+  settings +=  " *<br>\n  Clock Source: ";
   switch(mpu.getClockSource())
   {
     case MPU6050_CLOCK_KEEP_RESET:     settings +="Stops the clock and keeps the timing generator in reset"; break;

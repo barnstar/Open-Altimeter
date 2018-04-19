@@ -21,7 +21,6 @@ public:
     ~FlightController();
 
     FlightController(FlightController const&)        = delete;
-    void FlightController=(FlightController const&)  = delete;
 
     void loop();
 
@@ -39,6 +38,8 @@ public:
     void runTest();
     void resetAll();
 
+    void readSensorData(SensorData *d);
+
 private:
     void initialize();
 
@@ -54,10 +55,12 @@ private:
     bool   enableBuzzer = false;          //True if the buzzer should be sounding
     int    testFlightTimeStep = 0;
     bool   mpuReady = false;              //True if the barometer/altimeter is ready
+    double deploymentAltitude = 100;      //Deployment altitude in ft.
 
 
     Blinker *blinker;
     Ticker  sensorTicker;
+    int logCounter;
 
     SensorData fakeData;
     double testApogee = 400;
@@ -67,7 +70,6 @@ private:
     void blinkLastAltitude();
     void playReadyTone();
     double getacceleration();
-    void readSensorData(SensorData *d);
     void flightControl(SensorData *d);
     void checkChuteIgnitionTimeout(ChuteState &c, int maxIgnitionTime);
     void setDeploymentRelay(RelayState relayState, ChuteState &c);
