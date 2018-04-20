@@ -219,7 +219,7 @@ void PageBuilder::startPageStream(ESP8266WebServer *s)
 
 void PageBuilder::sendHeaders(ESP8266WebServer *s)
 {
-  String header = String("<h1>" + title + "</h1><br/>\n<");
+  String header = String("<h1>" + title + "</h1><br/>\n");
   s->send(200, "text/html", header);
 }
 

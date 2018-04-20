@@ -22,6 +22,10 @@ class PageBuilder
     this->script = " ";
   };
 
+  String title;
+  String body;
+  String script;
+
   void startPageStream(ESP8266WebServer *s);
   void sendHeaders(ESP8266WebServer *s);
   void sendBodyChunk(ESP8266WebServer *s, const String &chunk, bool addStartTag, bool addClosingTag);
@@ -36,10 +40,7 @@ class PageBuilder
   static String makeLink(const String &link, const String &string);
   static String makeDiv(const String &name, const String &contents);
 
-  private:
-  String title;
-  String body;
-  String script;
+
 };
 
 
