@@ -37,7 +37,7 @@ void WebServer::handleClient()
 }
 
 
-void WebServer::setAddress(const IPAddress& ipAddress)
+void WebServer::start(const IPAddress& ipAddress)
 {
   Serial.println(String("IP Set to:" + ipAddress.toString()));
   this->ipAddress = ipAddress;
@@ -45,7 +45,7 @@ void WebServer::setAddress(const IPAddress& ipAddress)
 
   IPAddress apip = WiFi.softAPIP();
 
-  Serial.print("Server Address: ");
+  Serial.print("Actual Server Address: ");
   Serial.println(apip);
 
   server->on("/", std::bind(&WebServer::handleRoot, this));
@@ -66,7 +66,6 @@ void WebServer::bindFlight(int index)
 {
   String fname = String(FLIGHTS_DIR) + String("/") + String(index);
   server->on( fname.c_str(), std::bind(&WebServer::handleFlight, this)) ;
-  //server->serveStatic(fname.c_str(), SPIFFS,fname.c_str());
 }
 
 void WebServer::bindSavedFlights()
@@ -74,7 +73,6 @@ void WebServer::bindSavedFlights()
   Dir dir = SPIFFS.openDir(FLIGHTS_DIR);
   while (dir.next()) {
      server->on(dir.fileName().c_str(), std::bind(&WebServer::handleFlight, this));
-     //server->serveStatic(dir.fileName().c_str(), SPIFFS, dir.fileName().c_str());
   }
 }
 
@@ -91,28 +89,22 @@ String WebServer::savedFlightLinks()
 void WebServer::handleFlights()
 {
   pageBuilder.reset("Saved Flights");
-  pageBuilder.appendToBody(savedFlightLinks());
-  server->send(200, "text/html", pageBuilder.build());
+  pageBuilder.startPageStream(server);
+  pageBuilder.sendHeaders(server);
+  pageBuilder.sendTagedChunk(s, "body", savedFlightLinks() );
+  pageBuilder.closePageStream();
 }
 
 void WebServer::handleFlight()
 {
   String path = server->uri();
   DataLogger::log("Reading " + path);
-  
+
   pageBuilder.reset("Flight :" + path + "<br>\n");
   pageBuilder.startPageStream(server);
   pageBuilder.sendHeaders(server);
   pageBuilder.sendBodyChunk(server, "", true, false);
-  File f = SPIFFS.open(path, "r");
-  if(f) {
-    f.seek(0);
-    while(f.available()) {
-      String line = f.readStringUntil('\n');
-      pageBuilder.sendBodyChunk(server, line + "<br/>", false, false);
-    }
-    f.close();
-  }
+  pageBuilder.sendFilePretty(path);
   pageBuilder.sendBodyChunk(server, "", false, true);
   pageBuilder.closePageStream(server);
 }
@@ -146,14 +138,17 @@ void WebServer::handleTest()
 void WebServer::handleStatus()
 {
   pageBuilder.reset("Altimeter 1: Status");
-  pageBuilder.appendToBody(FlightController::shared().getStatus());
+  pageBuilder.startPageStream(server);
+  pageBuilder.sendHeaders(server);
+
+  String body = FlightController::shared().getStatus();
 
   SensorData d;
   FlightController::shared().readSensorData(&d);
-  pageBuilder.appendToBody(d.toString());
+  body += d.toString();
 
-  server->send(200, "text/html", pageBuilder.build());
-  pageBuilder.reset("");
+  pageBuilder.sendTaggedChunk(s, String("body"), body);
+  pageBuilder.closePageStream();
 }
 
 void WebServer::handleConfig()
@@ -179,107 +174,106 @@ void WebServer::handleConfigSetting(String &arg, String &val)
 void WebServer::handleRoot()
 {
   pageBuilder.reset("Altimeter 1");
-  pageBuilder.appendToBody( PageBuilder::makeLink(String(settingsURL), "Configure<br/>") );
-  pageBuilder.appendToBody( PageBuilder::makeLink(String(flightsURL), "Flight List<br/>") );
-  pageBuilder.appendToBody( PageBuilder::makeLink(String(resetURL), "Set To Ready State<br/>") );
-  pageBuilder.appendToBody( PageBuilder::makeLink(String(statusURL), "Show Status<br/>") );
-  pageBuilder.appendToBody( PageBuilder::makeLink(String(testURL), "Run Flight Test<br/>") );
-  pageBuilder.appendToBody( doubleLine + PageBuilder::makeLink(String(resetAllURL), "Full Reset") + doubleLine );
-  pageBuilder.appendToBody(  "STATUS : <br>");
-  pageBuilder.appendToBody( FlightController::shared().getStatus());
-  pageBuilder.appendToBody( FlightController::shared().checkMPUSettings());
-  pageBuilder.appendToBody( doubleLine);
+  pageBuilder.startPageStream(server);
+  pageBuilder.sendHeaders(server);
+  pageBuilder.sendBodyChunk(server, "", true, false);
 
-  String flightData;
-  input = &flightData;
-  DataLogger::sharedLogger().readFlightData(concatenateStrings);
-  pageBuilder.appendToBody(flightData);
-  pageBuilder.appendToBody(doubleLine);
-  server->send(200, "text/html", pageBuilder.build());
-  pageBuilder.reset("");
+  String body;
+
+  body += PageBuilder::makeLink(String(settingsURL), "Configure<br/>");
+  body += PageBuilder::makeLink(String(flightsURL), "Flight List<br/>");
+  body += PageBuilder::makeLink(String(resetURL), "Set To Ready State<br/>");
+  body += PageBuilder::makeLink(String(statusURL), "Show Status<br/>");
+  body += PageBuilder::makeLink(String(testURL), "Run Flight Test<br/>");
+  body += doubleLine + PageBuilder::makeLink(String(resetAllURL), "Full Reset") + doubleLine );
+  body += "STATUS : <br>";
+  body += FlightController::shared().getStatus();
+  body += FlightController::shared().checkMPUSettings();
+  body += doubleLine;
+
+  pageBuilder.sendBodyChunk(server, body, false, false);
+  pageBuilder.sendFilePretty("/flights.txt");
+  pageBuilder.closePageStream(server);
 }
 
 
 ///////////////////////////////////////////////////////////////////////////////////////
 // PageBuilder
 
-PageBuilder::PageBuilder()
-{
-  reset("");
-}
-
-PageBuilder::~PageBuilder() {}
-
-//Strings can't conatin the entire body so we need some kind of streaming
 
 void PageBuilder::startPageStream(ESP8266WebServer *s)
 {
-  s->setContentLength(CONTENT_LENGTH_UNKNOWN);   //Enable Chunked Transfer
+  server = s;
+  server->setContentLength(CONTENT_LENGTH_UNKNOWN);   //Enable Chunked Transfer
 }
 
-void PageBuilder::sendHeaders(ESP8266WebServer *s)
+void PageBuilder::sendFileRaw(const String &path)
 {
-  String header = String("<h1>" + title + "</h1><br/>\n");
-  s->send(200, "text/html", header);
+  const size_t buffer_size = 256;
+  File f = SPIFFS.open(path, "r");
+  char buffer[buffer_size];
+
+  if(f) {
+    while(f.available()) {
+      size_t read = f.readBytes(buffer, buffer_size-1);
+      buffer[read+1] = 0;
+      sendRawText(String(buffer));
+    }
+    f.close();
+  }
 }
 
-void PageBuilder::sendBodyChunk(ESP8266WebServer *s, const String &chunk, bool addStartTag, bool addClosingTag)
+void PageBuilder::sendFilePretty(const String &path)
+{
+  File f = SPIFFS.open(path, "r");
+  if(f) {
+    while(f.available()) {
+      String line = f.readStringUntil('\n');
+      sendRawText(line + "<br/>", false, false);
+    }
+    f.close();
+  }
+}
+
+void PageBuilder::sendHeaders()
+{
+  String header = HtmlHtml + String("\n<h1>" + title + "</h1><br/>\n<");
+  server->send(200, "text/html", header);
+}
+
+
+void PageBuilder::sendTagedChunk(const String &tag, const String &chunk)
+{
+  String toSend = String("<" + tag ">" + chunk + "</" + tag + ">\n");
+  sendRawText(server, toSend);
+}
+
+void PageBuilder::sendBodyChunk(const String &chunk, bool addStartTag, bool addClosingTag)
 {
   String toSend = addStartTag ? "<body>" + chunk : chunk;
   toSend = addClosingTag ? toSend + "</body>" : toSend;
-  sendRawText(s, toSend);
+  sendRawText(server, toSend);
 }
 
 
-void PageBuilder::sendScript(ESP8266WebServer *s, const String &script)
+void PageBuilder::sendScript(const String &script)
 {
-  String toSend = String("<script>") + script + String("</script>");
-  sendRawText(s, toSend);
+  sendTagedChunk(server, String("script"), script);
 }
 
-void PageBuilder::sendRawText(ESP8266WebServer *s, const String &rawText)
+void PageBuilder::sendRawText(const String &rawText)
 {
- s->sendContent(rawText); 
+ server->sendContent(rawText);
 }
 
 
-void PageBuilder::closePageStream(ESP8266WebServer *s)
+void PageBuilder::closePageStream()
 {
-   s->sendContent(""); 
-   s->client().stop();
+  sendRawText(s, HtmlHtmlClose);
+  server->sendContent("");
+  server->client().stop();
+  server = nullptr;
 }
-
-
-String PageBuilder::build()
-{
-  String htmlRes = "" + HtmlHtml;
-
-  htmlRes += "<h1>" + title + "</h1><br/>\n<body>";
-  htmlRes += body + "\n</body>";
-  htmlRes += script;
-  htmlRes += HtmlHtmlClose;
-
-  return htmlRes;
-}
-
-void PageBuilder::appendToBody(const String &html)
-{
-  body += html;
-}
-
-
-void PageBuilder::appendScriptLink(const String &link)
-{
-  String linkText = "<script src=\"" + link + "\"></script>";
-  script += linkText;
-}
-
-
-void PageBuilder::appendScript(const String &scriptTxt)
-{
-  script += "<script>\n"+scriptTxt+"\n</script>";
-}
-
 
 String PageBuilder::makeLink(const String &link, const String &string)
 {

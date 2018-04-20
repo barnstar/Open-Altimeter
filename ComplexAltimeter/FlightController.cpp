@@ -38,7 +38,7 @@ void FlightController::initialize()
   DataLogger::log("Initializing Flight Controller");
 
   IPAddress serverAddress(IPAddress(192,4,0,1));
-  server.setAddress(serverAddress);
+  server.start(serverAddress);
 
   pinMode(RESET_PIN, INPUT_PULLUP);
 
@@ -244,7 +244,7 @@ void FlightController::flightControl(SensorData *d)
 
   FlightDataPoint dp = FlightDataPoint(millis(), altitude, acceleration);
   DataLogger::sharedLogger().logDataPoint(dp, false);
-  
+
   if(logCounter == 0) { DataLogger::log(String("Alt " + String(altitude) +"    acc: " + String(acceleration))); }
   logCounter = !logCounter ? 20 : logCounter-1;
 
@@ -377,7 +377,7 @@ String FlightController::checkMPUSettings()
   if(!mpuReady) {
     return String("IMU is not ready");
   }
-    
+
   String settings;
 
   settings += " * Sleep Mode: ";
