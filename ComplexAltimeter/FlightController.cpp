@@ -57,9 +57,10 @@ void FlightController::initialize()
   drogueChute.init(1, DROGUE_DEPL_RELAY_PIN, DROGUE_TYPE);
 
   altimeter.start();
-  if(!(mpuReady = mpu.begin(MPU6050_SCALE_2000DPS, MPU6050_RANGE_16G))) {
+  if(!(mpuReady = mpu.begin(MPU6050_SCALE_250DPS, MPU6050_RANGE_8G))) {
     DataLogger::log("IMU Startup failed");
   }
+
 
   flightData.reset();
 
@@ -204,11 +205,12 @@ void FlightController::playReadyTone()
 }
 
 
-double FlightController::getacceleration()
+Vector FlightController::getacceleration()
 {
   Vector v = mpu.readNormalizeAccel();
-  double acc = v.length() - 1.0;
-  return acc;
+  //Vector v = mpu.readRawAccel();
+
+  return v;
 }
 
 
@@ -232,7 +234,8 @@ void FlightController::readSensorData(SensorData *d)
     d->altitude = altimeter.getAltitude();
   }
   if(mpuReady) {
-    d->acceleration = getacceleration();
+    d->acc_vec = getacceleration();
+    d->acceleration = d->acc_vec.length() - 9.80065;
   }
 }
 
@@ -243,10 +246,14 @@ void FlightController::flightControl(SensorData *d)
   double altitude = d->altitude;
 
   FlightDataPoint dp = FlightDataPoint(millis(), altitude, acceleration);
-  DataLogger::sharedLogger().logDataPoint(dp, false);
 
-  if(logCounter == 0) { DataLogger::log(String("Alt " + String(altitude) +"    acc: " + String(acceleration))); }
-  logCounter = !logCounter ? 20 : logCounter-1;
+  if(logCounter == 0) { 
+    DataLogger::log(String("Alt " + String(altitude) +"    acc: " + d->acc_vec.toString() + "  acc mag:" +  String(d->acceleration))); 
+    if(!flightState == kOnGround) {
+      DataLogger::sharedLogger().logDataPoint(dp, false);
+    }
+  }
+  logCounter = !logCounter ? 5 : logCounter-1;
 
 
   //Keep track or our apogee and our max g load
@@ -273,8 +280,7 @@ void FlightController::flightControl(SensorData *d)
   else if (flightState == kAscending && altitude < (flightData.apogee - DESCENT_THRESHOLD)) {
     //Transition to kDescendining if we've we're DESCENT_THRESHOLD meters below our apogee
     DataLogger::log("Descending");
-    flightState = kDescending;
-
+    flightState = kDescending;    
     //Deploy our drogue chute
     setDeploymentRelay(ON, drogueChute);
     flightData.drogueEjectionAltitude = altitude;
@@ -303,6 +309,7 @@ void FlightController::flightControl(SensorData *d)
   if (flightState == kDescending && !mainChute.deployed && altitude < deploymentAltitude) {
     //If we're descening and we're below our deployment altitude, deploy the chute!
     flightData.ejectionAltitude = altitude;
+    DataLogger::log("Deploy Main");
     setDeploymentRelay(ON, mainChute);
   }
 

@@ -12,12 +12,14 @@ class WebServer;
 class PageBuilder
 {
 public:
-  PageBuilder();
-  ~PageBuilder();
+  PageBuilder() {};
+  ~PageBuilder() {};
 
-  void startPageStream(ESP8266WebServer *s);
+  String title;
+
+  void startPageStream(ESP8266WebServer *s, const String& title);
   void sendHeaders();
-  void sendTagedChunk(const String &tag, const String &chunk);
+  void sendTaggedChunk(const String &tag, const String &chunk);
   void sendBodyChunk(const String &chunk, bool addStartTag, bool addClosingTag);
   void sendScript(const String &script);
   void sendRawText(const String &rawText);

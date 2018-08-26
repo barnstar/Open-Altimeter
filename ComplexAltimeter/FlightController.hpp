@@ -69,7 +69,7 @@ private:
     bool checkResetPin();
     void blinkLastAltitude();
     void playReadyTone();
-    double getacceleration();
+    Vector getacceleration();
     void flightControl(SensorData *d);
     void checkChuteIgnitionTimeout(ChuteState &c, int maxIgnitionTime);
     void setDeploymentRelay(RelayState relayState, ChuteState &c);

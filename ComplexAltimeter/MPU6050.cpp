@@ -50,14 +50,23 @@ bool MPU6050::begin(mpu6050_dps_t scale, mpu6050_range_t range, int mpua)
     }
 
     // Set Clock Source
-    setClockSource(MPU6050_CLOCK_PLL_XGYRO);
+    setClockSource(MPU6050_CLOCK_INTERNAL_8MHZ);
 
     // Set Scale & Range
     setScale(scale);
     setRange(range);
 
+    //Offsets assume 4G setting or something
+    setAccelOffsetX(-4700/2 + 900/2 -83/2);
+    setAccelOffsetY(-4600/2 -42/2);
+    setAccelOffsetZ(4400/2 - 200/2);
+
     // Disable Sleep Mode
     setSleepEnabled(false);
+
+    offsets.XAxis = getAccelOffsetX();
+    offsets.YAxis = getAccelOffsetY();
+    offsets.ZAxis = getAccelOffsetZ();
 
     return true;
 }
@@ -339,61 +348,32 @@ Activites MPU6050::readActivites(void)
 
 Vector MPU6050::readRawAccel(void)
 {
-    Wire.beginTransmission(mpuAddress);
-    #if ARDUINO >= 100
-	Wire.write(MPU6050_REG_ACCEL_XOUT_H);
-    #else
-	Wire.send(MPU6050_REG_ACCEL_XOUT_H);
-    #endif
-    Wire.endTransmission();
+  Wire.beginTransmission(mpuAddress);
+  Wire.write(MPU6050_REG_ACCEL_XOUT_H);
+  Wire.endTransmission();
 
-    Wire.beginTransmission(mpuAddress);
-    Wire.requestFrom(mpuAddress, 6);
+  Wire.beginTransmission(mpuAddress);
+  Wire.requestFrom(mpuAddress, 6);
+    
 
-    while (Wire.available() < 6);
+  ra.XAxis = int16_t(Wire.read()<<8|Wire.read());
+  ra.YAxis = int16_t(Wire.read()<<8|Wire.read());
+  ra.ZAxis = int16_t(Wire.read()<<8|Wire.read());
 
-    #if ARDUINO >= 100
-	uint8_t xha = Wire.read();
-	uint8_t xla = Wire.read();
-        uint8_t yha = Wire.read();
-	uint8_t yla = Wire.read();
-	uint8_t zha = Wire.read();
-	uint8_t zla = Wire.read();
-    #else
-	uint8_t xha = Wire.receive();
-	uint8_t xla = Wire.receive();
-	uint8_t yha = Wire.receive();
-	uint8_t yla = Wire.receive();
-	uint8_t zha = Wire.receive();
-	uint8_t zla = Wire.receive();
-    #endif
-
-    ra.XAxis = xha << 8 | xla;
-    ra.YAxis = yha << 8 | yla;
-    ra.ZAxis = zha << 8 | zla;
-
-    return ra;
+  return ra;
 }
 
 Vector MPU6050::readNormalizeAccel(void)
-{
+{      
     readRawAccel();
-
-    na.XAxis = ra.XAxis * rangePerDigit * 9.80665f;
-    na.YAxis = ra.YAxis * rangePerDigit * 9.80665f;
-    na.ZAxis = ra.ZAxis * rangePerDigit * 9.80665f;
-
+    na = ra * rangePerDigit * 9.80665f;
     return na;
 }
 
 Vector MPU6050::readScaledAccel(void)
 {
     readRawAccel();
-
-    na.XAxis = ra.XAxis * rangePerDigit;
-    na.YAxis = ra.YAxis * rangePerDigit;
-    na.ZAxis = ra.ZAxis * rangePerDigit;
-
+    na = ra * rangePerDigit;
     return na;
 }
 
@@ -401,11 +381,7 @@ Vector MPU6050::readScaledAccel(void)
 Vector MPU6050::readRawGyro(void)
 {
     Wire.beginTransmission(mpuAddress);
-    #if ARDUINO >= 100
-	Wire.write(MPU6050_REG_GYRO_XOUT_H);
-    #else
-	Wire.send(MPU6050_REG_GYRO_XOUT_H);
-    #endif
+	  Wire.write(MPU6050_REG_GYRO_XOUT_H);
     Wire.endTransmission();
 
     Wire.beginTransmission(mpuAddress);
@@ -742,3 +718,53 @@ void MPU6050::writeRegisterBit(uint8_t reg, uint8_t pos, bool state)
 
     writeRegister8(reg, value);
 }
+//+436, +170, +100
+//-1942, 2319, 1898
+/*
+void MPU6050::calibrateAccelerometer(){
+ 
+  ax_offset=-mean_ax/8;
+  ay_offset=-mean_ay/8;
+  az_offset=(16384-mean_az)/8;
+
+  gx_offset=-mean_gx/4;
+  gy_offset=-mean_gy/4;
+  gz_offset=-mean_gz/4;
+  while (1){
+    int ready=0;
+    accelgyro.setXAccelOffset(ax_offset);
+    accelgyro.setYAccelOffset(ay_offset);
+    accelgyro.setZAccelOffset(az_offset);
+
+    accelgyro.setXGyroOffset(gx_offset);
+    accelgyro.setYGyroOffset(gy_offset);
+    accelgyro.setZGyroOffset(gz_offset);
+
+    meansensors();
+    Serial.println("...");
+
+    if (abs(mean_ax)<=acel_deadzone) ready++;
+    else ax_offset=ax_offset-mean_ax/acel_deadzone;
+
+    if (abs(mean_ay)<=acel_deadzone) ready++;
+    else ay_offset=ay_offset-mean_ay/acel_deadzone;
+
+    if (abs(16384-mean_az)<=acel_deadzone) ready++;
+    else az_offset=az_offset+(16384-mean_az)/acel_deadzone;
+
+    if (abs(mean_gx)<=giro_deadzone) ready++;
+    else gx_offset=gx_offset-mean_gx/(giro_deadzone+1);
+
+    if (abs(mean_gy)<=giro_deadzone) ready++;
+    else gy_offset=gy_offset-mean_gy/(giro_deadzone+1);
+
+    if (abs(mean_gz)<=giro_deadzone) ready++;
+    else gz_offset=gz_offset-mean_gz/(giro_deadzone+1);
+
+    if (ready==6) break;
+  }
+}
+ 
+}
+*/
+

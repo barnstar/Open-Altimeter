@@ -88,10 +88,9 @@ String WebServer::savedFlightLinks()
 
 void WebServer::handleFlights()
 {
-  pageBuilder.reset("Saved Flights");
-  pageBuilder.startPageStream(server);
-  pageBuilder.sendHeaders(server);
-  pageBuilder.sendTagedChunk(s, "body", savedFlightLinks() );
+  pageBuilder.startPageStream(server, "Saved Flights" );
+  pageBuilder.sendHeaders();
+  pageBuilder.sendTaggedChunk("body", savedFlightLinks() );
   pageBuilder.closePageStream();
 }
 
@@ -100,13 +99,12 @@ void WebServer::handleFlight()
   String path = server->uri();
   DataLogger::log("Reading " + path);
 
-  pageBuilder.reset("Flight :" + path + "<br>\n");
-  pageBuilder.startPageStream(server);
-  pageBuilder.sendHeaders(server);
-  pageBuilder.sendBodyChunk(server, "", true, false);
+  pageBuilder.startPageStream(server,"Flight :" + path + "<br>\n");
+  pageBuilder.sendHeaders();
+  pageBuilder.sendBodyChunk( "", true, false);
   pageBuilder.sendFilePretty(path);
-  pageBuilder.sendBodyChunk(server, "", false, true);
-  pageBuilder.closePageStream(server);
+  pageBuilder.sendBodyChunk( "", false, true);
+  pageBuilder.closePageStream();
 }
 
 
@@ -137,9 +135,8 @@ void WebServer::handleTest()
 
 void WebServer::handleStatus()
 {
-  pageBuilder.reset("Altimeter 1: Status");
-  pageBuilder.startPageStream(server);
-  pageBuilder.sendHeaders(server);
+  pageBuilder.startPageStream(server,"Altimeter 1: Status");
+  pageBuilder.sendHeaders();
 
   String body = FlightController::shared().getStatus();
 
@@ -147,7 +144,7 @@ void WebServer::handleStatus()
   FlightController::shared().readSensorData(&d);
   body += d.toString();
 
-  pageBuilder.sendTaggedChunk(s, String("body"), body);
+  pageBuilder.sendTaggedChunk(String("body"), body);
   pageBuilder.closePageStream();
 }
 
@@ -173,10 +170,9 @@ void WebServer::handleConfigSetting(String &arg, String &val)
 
 void WebServer::handleRoot()
 {
-  pageBuilder.reset("Altimeter 1");
-  pageBuilder.startPageStream(server);
-  pageBuilder.sendHeaders(server);
-  pageBuilder.sendBodyChunk(server, "", true, false);
+  pageBuilder.startPageStream(server,"Altimeter 1");
+  pageBuilder.sendHeaders();
+  pageBuilder.sendBodyChunk("", true, false);
 
   String body;
 
@@ -185,15 +181,15 @@ void WebServer::handleRoot()
   body += PageBuilder::makeLink(String(resetURL), "Set To Ready State<br/>");
   body += PageBuilder::makeLink(String(statusURL), "Show Status<br/>");
   body += PageBuilder::makeLink(String(testURL), "Run Flight Test<br/>");
-  body += doubleLine + PageBuilder::makeLink(String(resetAllURL), "Full Reset") + doubleLine );
+  body += doubleLine + PageBuilder::makeLink(String(resetAllURL), "Full Reset") + doubleLine;
   body += "STATUS : <br>";
   body += FlightController::shared().getStatus();
   body += FlightController::shared().checkMPUSettings();
   body += doubleLine;
 
-  pageBuilder.sendBodyChunk(server, body, false, false);
+  pageBuilder.sendBodyChunk(body, false, false);
   pageBuilder.sendFilePretty("/flights.txt");
-  pageBuilder.closePageStream(server);
+  pageBuilder.closePageStream();
 }
 
 
@@ -201,8 +197,9 @@ void WebServer::handleRoot()
 // PageBuilder
 
 
-void PageBuilder::startPageStream(ESP8266WebServer *s)
+void PageBuilder::startPageStream(ESP8266WebServer *s, const String &title)
 {
+  this->title = title;
   server = s;
   server->setContentLength(CONTENT_LENGTH_UNKNOWN);   //Enable Chunked Transfer
 }
@@ -229,7 +226,7 @@ void PageBuilder::sendFilePretty(const String &path)
   if(f) {
     while(f.available()) {
       String line = f.readStringUntil('\n');
-      sendRawText(line + "<br/>", false, false);
+      sendRawText(line + "<br/>");
     }
     f.close();
   }
@@ -237,28 +234,28 @@ void PageBuilder::sendFilePretty(const String &path)
 
 void PageBuilder::sendHeaders()
 {
-  String header = HtmlHtml + String("\n<h1>" + title + "</h1><br/>\n<");
+  String header = HtmlHtml + String("\n<h1>" + title + "</h1><br/>\n");
   server->send(200, "text/html", header);
 }
 
 
-void PageBuilder::sendTagedChunk(const String &tag, const String &chunk)
+void PageBuilder::sendTaggedChunk(const String &tag, const String &chunk)
 {
-  String toSend = String("<" + tag ">" + chunk + "</" + tag + ">\n");
-  sendRawText(server, toSend);
+  String toSend = String("<" + tag + ">" + chunk + "</" + tag + ">\n");
+  sendRawText(toSend);
 }
 
 void PageBuilder::sendBodyChunk(const String &chunk, bool addStartTag, bool addClosingTag)
 {
   String toSend = addStartTag ? "<body>" + chunk : chunk;
   toSend = addClosingTag ? toSend + "</body>" : toSend;
-  sendRawText(server, toSend);
+  sendRawText(toSend);
 }
 
 
 void PageBuilder::sendScript(const String &script)
 {
-  sendTagedChunk(server, String("script"), script);
+  sendTaggedChunk(String("script"), script);
 }
 
 void PageBuilder::sendRawText(const String &rawText)
@@ -269,7 +266,7 @@ void PageBuilder::sendRawText(const String &rawText)
 
 void PageBuilder::closePageStream()
 {
-  sendRawText(s, HtmlHtmlClose);
+  sendRawText(HtmlHtmlClose);
   server->sendContent("");
   server->client().stop();
   server = nullptr;

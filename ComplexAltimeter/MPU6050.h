@@ -73,33 +73,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define MPU6050_REG_PWR_MGMT_1        (0x6B) // Power Management 1
 #define MPU6050_REG_WHO_AM_I          (0x75) // Who Am I
 
+#include "types.h"
+
 #ifndef VECTOR_STRUCT_H
 #define VECTOR_STRUCT_H
-struct Vector
-{
-    float XAxis=0;
-    float YAxis=0;
-    float ZAxis=0;
 
-    Vector() {}
-    
-    Vector(float x, float y, float z) {
-      XAxis=x; YAxis=y; ZAxis=z;
-    }
-
-    double length() {
-      return sqrt( XAxis * XAxis + YAxis * YAxis + ZAxis * ZAxis);
-    }
-
-    Vector operator / (float rhs) {
-      return Vector(XAxis/rhs, YAxis/rhs, ZAxis/rhs);
-    }
-
-   Vector operator * (float rhs) {
-      return Vector(XAxis*rhs, YAxis*rhs, ZAxis*rhs);
-    }
-
-};
 #endif
 
 struct Activites
@@ -255,9 +233,10 @@ class MPU6050
 	Vector tg, dg; // Threshold and Delta for Gyro
 	Vector th;     // Threshold
 	Activites a;   // Activities
-	
-	float dpsPerDigit, rangePerDigit;
-	float actualThreshold;
+  Vector offsets;
+  
+	double dpsPerDigit, rangePerDigit;
+	double actualThreshold;
 	bool useCalibrate;
 	int mpuAddress;
 

@@ -32,11 +32,11 @@ const int MAX_FIRE_TIME = 5000;
 
 const int SERIAL_BAUD_RATE      = 74880;
 const int STATUS_PIN            = D0;   //Unit status pin.  On if OK
-const int MESSAGE_PIN           = D3;   //Blinks out the altitude
+const int MESSAGE_PIN           = D3;   //Blinks out the altitude 
 const int READY_PIN             = D4;   //Inicates the unit is ready for flight
 const int BUZZER_PIN            = D6;   //Audible buzzer on landing
 const int RESET_PIN             = 9;    //SD2
-const int MAIN_DEPL_RELAY_PIN   = D5;  //parachute deployment pin
+const int MAIN_DEPL_RELAY_PIN   = NO_PIN;  //parachute deployment pin
 const int DROGUE_DEPL_RELAY_PIN = NO_PIN;  //parachute deployment pin
 const EjectionType MAIN_TYPE    = kServo;
 const EjectionType DROGUE_TYPE  = kNoEjection; 
