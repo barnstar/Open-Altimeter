@@ -51,7 +51,6 @@ private:
 
     int    flightCount = 0;               //The number of flights recorded in EEPROM
     int    resetTime = 0;                 //millis() after starting the current flight
-    bool   readyToFly = false;            //switches to false at the end of the flight.  Resets on reset.
     bool   enableBuzzer = false;          //True if the buzzer should be sounding
     int    testFlightTimeStep = 0;
     bool   mpuReady = false;              //True if the barometer/altimeter is ready
@@ -75,7 +74,7 @@ private:
     void setDeploymentRelay(RelayState relayState, ChuteState &c);
     void recordFlight(FlightData &d);
     void testFlightData(SensorData *d);
-
+    void resetChuteIfRequired(ChuteState &c)
 };
 
 #endif

@@ -73,7 +73,6 @@ void DataLogger::logDataPoint(FlightDataPoint &p, bool isTriggerPoint)
   if(isTriggerPoint) {
     triggerIndex = dataIndex - 20;
     if(dataIndex < 0)dataIndex = dataIndex + dataBufferLen;
-
   }
 
   dataBuffer[dataIndex] = p;

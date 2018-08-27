@@ -66,6 +66,7 @@ typedef struct {
 }SensorData;
 
 typedef enum {
+  kReadyToFly,
   kInFlight,
   kAscending,
   kDescending,
@@ -79,19 +80,28 @@ typedef enum {
 }PeizoStyle;
 
 
-typedef struct {
+class ChuteState
+{
+  public:
+
+  ChuteState::ChuteState() {
+    this->reset();
+  };
+
+  ChuteState::~ChuteState() {};
+  
   bool         deployed ;         //True if the the chute has been deplyed
   int          deploymentTime ;   //Time at which the chute was deployed
   bool         timedReset ;       //True if we've reset the chute relay due to a timeout
   RelayState   relayState = OFF;  //State of the parachute relay pin.  Recorded separately.  To avoid fire.
   EjectionType type;
   Servo        servo;
-  
+
   int    relayPin=0;
-  int    id = 0; 
-  
+  char   id = 0; 
+
   void init(int id, int pin, EjectionType type) {
-      DataLogger::log("Init Chute " + String(id) + " on pin " + String(pin));
+      log("Init Chute " + String(id) + " on pin " + String(pin));
       this->relayPin = pin;
       this->id = id;
       this->type = type;
@@ -101,7 +111,7 @@ typedef struct {
         case kNoEjection: break;
       }
       reset();
-  }
+  };
 
   void enable() {
     deployed = true;
@@ -109,11 +119,11 @@ typedef struct {
     relayState = ON;
     switch(type){
       case kPyro:  digitalWrite(relayPin, HIGH);; break;
-      case kServo: servo.write(5); break;
+      case kServo: servo.write(kMinServoAngle); break;
       case kNoEjection: break;
     }
-    DataLogger::log("Deploying Chute #" + String(id) );
-  }
+    log("Deploying Chute #" + String(id) );
+  };
 
   
   void disable() {
@@ -121,19 +131,20 @@ typedef struct {
     relayState = OFF;
     switch(type){
       case kPyro:  digitalWrite(relayPin, LOW);; break;
-      case kServo: servo.write(120); break;
+      case kServo: servo.write(kMaxServoAngle); break;
       case kNoEjection: break;
     }
-    DataLogger::log("Disabling Chute #" + String(id) );
-  }
+    log("Disabling Chute #" + String(id) );
+  };
 
   void reset() {
     deployed = false;
     deploymentTime = 0;
     timedReset = false;
     disable();
-  }
-}ChuteState;
+  };
+  
+};
 
 
 

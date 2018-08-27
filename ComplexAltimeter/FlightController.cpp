@@ -1,4 +1,4 @@
-#include "FlightController.hpp"
+ #include "FlightController.hpp"
 #include "DataLogger.hpp"
 #include <FS.h>
 
@@ -106,16 +106,15 @@ void FlightController::loop()
 {
   server.handleClient();
 
-  if(readyToFly && altimeter.isReady()) {
+  if(flightState == kReadyToFly && altimeter.isReady()) {
     if(!sensorTicker.active()) {
-      DataLogger::sharedLogger().clearBuffer();
       sensorTicker.attach_ms(50, readSensors, this);
       digitalWrite(READY_PIN, HIGH);
     }
   }
 
   //Blink out the last recorded apogee on the message pin
-  if (!readyToFly && flightState == kOnGround) {
+  if (flightState == kOnGround) {
     sensorTicker.detach();
     digitalWrite(READY_PIN, LOW);
     blinkLastAltitude();
@@ -138,7 +137,7 @@ void FlightController::resetAll()
 
 void FlightController::reset()
 {
-  if(readyToFly) {
+  if(flightState = kReadyToFly) {
     return;
   }
 
@@ -157,9 +156,9 @@ void FlightController::reset()
   enableBuzzer = true;
   playReadyTone();
   enableBuzzer = false;
-
+  flightState = kReadyToFly;
+  DataLogger::sharedLogger().clearBuffer();
   DataLogger::log("Ready To Fly...");
-  readyToFly = true;
 }
 
 
@@ -249,11 +248,14 @@ void FlightController::flightControl(SensorData *d)
 
   if(logCounter == 0) { 
     DataLogger::log(String("Alt " + String(altitude) +"    acc: " + d->acc_vec.toString() + "  acc mag:" +  String(d->acceleration))); 
-    if(!flightState == kOnGround) {
+    if(!flightState == kOnGround && !flightState == kReadyToFly) {
       DataLogger::sharedLogger().logDataPoint(dp, false);
     }
   }
-  logCounter = !logCounter ? 5 : logCounter-1;
+
+  //Log every 5 samples when going fast and every 20 when in a slow descent.
+  int sampleDelay = (flightState != kDescending) ? 5 : 20; 
+  logCounter = !logCounter ? sampleDelay : logCounter-1;
 
 
   //Keep track or our apogee and our max g load
@@ -263,11 +265,11 @@ void FlightController::flightControl(SensorData *d)
   //Experimental.  Log when we've hit some prescribed g load.  This might be more accurate than starting the
   //flight at some altitude x...  The minimum load will probably have to be too small and will pick up things like
   //wind gusts though.
-  if(flightState == kOnGround && acceleration > FLIGHT_START_THRESHOLD_ACC && flightData.accTriggerTime == 0) {
+  if(flightState == kReadyToFly && acceleration > FLIGHT_START_THRESHOLD_ACC && flightData.accTriggerTime == 0) {
     flightData.accTriggerTime = millis() - resetTime;
   }
 
-  if (flightState == kOnGround && altitude > FLIGHT_START_THRESHOLD_ALT) {
+  if (flightState == kReadyToFly && altitude > FLIGHT_START_THRESHOLD_ALT) {
     //Transition to "InFlight" if we've exceeded the threshold altitude.
     DataLogger::log("Flight Started");
     flightState = kAscending;
@@ -293,20 +295,15 @@ void FlightController::flightControl(SensorData *d)
     DataLogger::sharedLogger().saveFlight(flightData, flightCount);
     server.bindFlight(flightCount);
 
-    //Reset the chutes, reset the relays if we haven't already.  Start the locator
-    //beeper and start blinking...
-    setDeploymentRelay(OFF, drogueChute);
-    drogueChute.reset();
-
-    setDeploymentRelay(OFF, mainChute);
-    mainChute.reset();
+    resetChuteIfRequired(drogueChute);
+    resetChuteIfRequired(mainChute);
 
     enableBuzzer = true;
     readyToFly = false;
   }
 
   //Main chute deployment at kDeployment Altitude
-  if (flightState == kDescending && !mainChute.deployed && altitude < deploymentAltitude) {
+  if (flightState == kDescending || flightState == kOnGround && !mainChute.deployed && altitude < deploymentAltitude) {
     //If we're descening and we're below our deployment altitude, deploy the chute!
     flightData.ejectionAltitude = altitude;
     DataLogger::log("Deploy Main");
@@ -319,6 +316,14 @@ void FlightController::flightControl(SensorData *d)
   checkChuteIgnitionTimeout(drogueChute, MAX_FIRE_TIME);
 }
 
+void FlightController::resetChuteIfRequired(ChuteState &c)
+{
+  if(c.type == kPyro) {
+     setDeploymentRelay(OFF, c);
+     c.reset();
+  }
+}
+
 
 void FlightController::checkChuteIgnitionTimeout(ChuteState &c, int maxIgnitionTime)
 {
@@ -328,7 +333,8 @@ void FlightController::checkChuteIgnitionTimeout(ChuteState &c, int maxIgnitionT
   }
 
     if (!c.timedReset && c.deployed &&
-        millis() - c.deploymentTime > maxIgnitionTime)
+        millis() - c.deploymentTime > maxIgnitionTime &&
+        c.type == kPyro)
     {
       int chuteId = c.id;
       DataLogger::log("Chute #" + String(chuteId) + " Timeout");
