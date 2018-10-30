@@ -231,7 +231,7 @@ int DataLogger::nextFlightIndex()
 
 String FlightDataPoint::toJson()
 {
-  return String("{\"time\":" +  String(ltime) + "," +
-                "\"alt\":" + String(altitude) + "," +
-                "\"acc\":" + String(acelleration) + "}");
+  return String("{\"x\":" +  String(ltime) + "," +
+                "\"y\":" + String(altitude) + "," +
+                "\"g\":" + String(acelleration) + "}");
 }
