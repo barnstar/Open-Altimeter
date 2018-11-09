@@ -29,7 +29,7 @@
  * An Arduino.. Nano preferably
  * A few LEDs and some current limiting resistors
  * A momentary switch
- * A BMP-280 compatible altimeter (Adafruit works)
+ * A BMP280 or BMP085 compatible altimeter (Adafruit works)
  * Optional: An active peizo buzzer
  * Optional: Relay breakout boards for dual deployment
  * A battery and power switch - 9V (lipo, alk, or nihm) or even 2 cr2025 button cells 
@@ -64,274 +64,32 @@
  *********************************************************************************/
 #define VERSION 2
 
-#define Nsta 1     // 1 state values: pressure
-#define Mobs 1     // 1 measurements: baro pressure
-
-
+#include <math.h>
 #include <EEPROM.h>
 #include <Servo.h>
 
 //Sensor libraries
+#if USE_BMP280
 #include <Adafruit_BMP280.h>             //https://github.com/adafruit/Adafruit_BMP280_Library/blob/master/Adafruit_BMP280.h       
+#else if USE_BMP085
+#include <Adafruit_BMP085.h>             //https://github.com/adafruit/Adafruit_BMP280_Library/blob/master/Adafruit_BMP085.h       
+#endif
+
 //#include "I2Cdev.h"                      //https://diyhacking.com/arduino-mpu-6050-imu-sensor-tutorial/
 //#include "MPU6050_6Axis_MotionApps20.h"  //https://diyhacking.com/arduino-mpu-6050-imu-sensor-tutorial/ 
 #include <Wire.h>
 
-#define LOG_TO_SERIAL 1   //Set to 0 to disable serial logging...
-#define PLOT_ALTITUDE 0   //Set to 1 to watch the altitude on the serial plotter
+#include "types.h"
+#include "KalmanFilter.h"
+#include "RecoveryDevice.h"
+#include "Blinker.h"
 
+//Prototypes
 void log(String val);
 void playReadyTone();
-
-//////////////////////////////////////////////////////////////////
-// Types
-
-#include <math.h>
-
-class KalmanFilter
-{
-  private:
-
-  float err_measured = 0;
-  float err_estimated = 0 ;
-  float q = 0;
-  float last_estimate = 0;
-
-  public:
-
-  KalmanFilter::KalmanFilter() {
-    this->reset(1,1,0.001);
-  } 
-
-  KalmanFilter::~KalmanFilter() {};
-  
-  public:
-  double step(double measurement)
-  { 
-    double kalman_gain = err_estimated/(err_estimated + err_measured);
-    double current_estimate = last_estimate + kalman_gain * (measurement - last_estimate);
-    
-    err_estimated =  (1.0 - kalman_gain)* err_estimated + fabs(last_estimate-current_estimate)*q;
-    last_estimate= current_estimate;
-  
-    return current_estimate;
-  };
-
-  void reset(double measuredError, double estimatedError, double gain)
-  {
-     this->err_measured=measuredError;
-     this->err_estimated=estimatedError;
-     this->q = gain;
-     this->last_estimate = 0;
-  }
-};
-
-typedef enum {
-  kNoEjection,
-  kPyro,
-  kServo  
-} EjectionType;
-
-typedef struct  {
-  double apogee = 0;
-  double ejectionAltitude = 0;
-  double drogueEjectionAltitude = 0;
-  double maxAcceleration = 0;
-  double burnoutAltitude = 0;
-
-  int    apogeeTime;
-  int    accTriggerTime;
-  int    altTriggerTime;   
-} FlightData;
-
-//Flight Data operations
 bool isValid(FlightData *d);
 void reset(FlightData *d);
 void logData(int index, FlightData *d);
-
-typedef enum {
-  OFF = 0,
-  ON =1 
-}RelayState;
-
-typedef struct {
-  double altitude =0;
-  double acceleration =0;
-}SensorData;
-
-typedef enum {
-  kReadyToFly,
-  kAscending,
-  kDescending,
-  kOnGround
-} FlightState;
-
-typedef enum {
-  kNone,
-  kActive,
-  kPassive
-}PeizoStyle;
-
-
-static const int kMinServoAngle = 5;
-static const int kMaxServoAngle = 120;
-
-class ChuteState
-{
-  public:
-
-  ChuteState::ChuteState() {
-    this->reset();
-  };
-
-  ChuteState::~ChuteState() {};
-  
-  bool         deployed ;         //True if the the chute has been deplyed
-  int          deploymentTime ;   //Time at which the chute was deployed
-  bool         timedReset ;       //True if we've reset the chute relay due to a timeout
-  RelayState   relayState = OFF;  //State of the parachute relay pin.  Recorded separately.  To avoid fire.
-  EjectionType type;
-  Servo        servo;
-
-  int    relayPin=0;
-  char   id = 0; 
-
-  void init(int id, int pin, EjectionType type) {
-      log("Init Chute " + String(id) + " on pin " + String(pin));
-      this->relayPin = pin;
-      this->id = id;
-      this->type = type;
-      switch(type){
-        case kPyro:  pinMode(pin, OUTPUT); break;
-        case kServo: servo.attach(pin); break;
-        case kNoEjection: break;
-      }
-      reset();
-  };
-
-  void enable() {
-    deployed = true;
-    deploymentTime = millis();
-    relayState = ON;
-    switch(type){
-      case kPyro:  digitalWrite(relayPin, HIGH);; break;
-      case kServo: servo.write(kMinServoAngle); break;
-      case kNoEjection: break;
-    }
-    log("Deploying Chute #" + String(id) );
-  };
-
-  
-  void disable() {
-    deployed = false;
-    relayState = OFF;
-    switch(type){
-      case kPyro:  digitalWrite(relayPin, LOW);; break;
-      case kServo: servo.write(kMaxServoAngle); break;
-      case kNoEjection: break;
-    }
-    log("Disabling Chute #" + String(id) );
-  };
-
-  void reset() {
-    deployed = false;
-    deploymentTime = 0;
-    timedReset = false;
-    disable();
-  };
-  
-};
-
-
-//////////////////////////////////////////////////////////////////
-// Configuration
-
-//Today's pressure at sea level...
-const double SEA_LEVEL_PRESSURE = 1013.7;
-
-//Recording will start at FLIGHT_START_THRESHOLD_ALT m and we'll assume we're on the 
-//ground at FLIGHT_END_THRESHOLD_ALT m.
-//In theory, these could be lower, but we want to account for landing in a tree,
-//on a hill, etc.  30m should be sufficient for most launch sites.
-const double FLIGHT_START_THRESHOLD_ALT = 30;
-const double FLIGHT_END_THRESHOLD_ALT   = 30;
-const double FLIGHT_START_THRESHOLD_ACC = 0.1;  //in G's
-
-//When the altitude is DESCENT_THRESHOLD meters less than the apogee, we'll assume we're 
-//descending.  Hopefully, your rocket has a generally upwards trajectory....
-const double DESCENT_THRESHOLD = 20;
-
-//The deployment relay will be deactivated after this time.
-const int MAX_FIRE_TIME = 5000;
-
-//When grounded the reset pin will cancel the last apogee display and
-//prepare the alitmiter for the next flight.  If it is grounded on boot
-//the eeprom will be erased.
-
-#define USE_PIN_CONFIG_1 0
-#define USE_PIN_CONFIG_2 0
-#define USE_PIN_CONFIG_3 1
-#define USE_PIN_CONFIG_4 0
-
-#if USE_PIN_CONFIG_1
-//Configuration A: 1 1/2" PCB
-const int SERIAL_BAUD_RATE     = 9600;
-const int STATUS_PIN            = 4;   //Unit status pin.  On if OK
-const int MESSAGE_PIN           = 2;   //Blinks out the altitude
-const int READY_PIN             = 13;  //Inicates the unit is ready for flight
-const int BUZZER_PIN            = 8;   //Audible buzzer on landing
-const int RESET_PIN             = 6;
-const int TEST_PIN              = 7;
-const int MAIN_DEPL_RELAY_PIN   = 12;   //parachute deployment pin
-const int DROGUE_DEPL_RELAY_PIN = 11;  //parachute deployment pin
-const int ALT_PIN_A             = 9;  //Main Chute Alitude Altitude Set Pin.
-const int ALT_PIN_B             = 10;  //Main Chute Alitude Altitude Set Pin
-const EjectionType MAIN_TYPE    = kPyro;
-const EjectionType DROGUE_TYPE  = kPyro; 
-const int BARO_I2C_ADDR         = 0x77;
-const PeizoStyle PEIZO_TYPE     = kActive;
-#elif USE_PIN_CONFIG_2
-//Configuration B: 2" PCB w. Servo Sled
-const int SERIAL_BAUD_RATE     = 9600;
-const int STATUS_PIN            = 4;   //Unit status pin.  On if OK
-const int MESSAGE_PIN           = 5;   //Blinks out the altitude
-const int READY_PIN             = 6;   //Inicates the unit is ready for flight
-const int BUZZER_PIN            = 3;   //Audible buzzer on landing
-const int RESET_PIN             = 7;
-const int TEST_PIN              = 12;
-const int MAIN_DEPL_RELAY_PIN   = 11;  //parachute deployment pin
-const int DROGUE_DEPL_RELAY_PIN = 10;  //parachute deployment pin
-const int ALT_PIN_A             = 8;   //Main Chute AlitudeAltitude Set Pin.
-const int ALT_PIN_B             = 9;   //Main Chute Alitude Altitude Set Pin
-const EjectionType MAIN_TYPE    = kServo;
-const EjectionType DROGUE_TYPE  = kServo; 
-const int BARO_I2C_ADDR         = 0x76;
-const PeizoStyle PEIZO_TYPE     = kPassive;
-#elif USE_PIN_CONFIG_3
-//Configuration B: Small PCB with servo pinout
-const int SERIAL_BAUD_RATE     = 9600;
-const int STATUS_PIN            = 5;   //Unit status pin.  On if OK
-const int MESSAGE_PIN           = 3;   //Blinks out the altitude
-const int READY_PIN             = 13;   //Inicates the unit is ready for flight
-const int BUZZER_PIN            = 2;   //Audible buzzer on landing
-const int RESET_PIN             = 4;
-const int TEST_PIN              = 10;
-const int MAIN_DEPL_RELAY_PIN   = 11;  //parachute deployment pin
-const int DROGUE_DEPL_RELAY_PIN = 12;  //parachute deployment pin
-const int ALT_PIN_A             = 8;   //Main Chute AlitudeAltitude Set Pin.
-const int ALT_PIN_B             = 9;   //Main Chute Alitude Altitude Set Pin
-const EjectionType MAIN_TYPE    = kServo;
-const EjectionType DROGUE_TYPE  = kNoEjection; 
-#define BARO_I2C_ADDR
-#define STATUS_PIN_LEVEL 800
-const PeizoStyle PEIZO_TYPE     = kPassive;
-#endif
-
-//The barometer can only refresh at about 50Hz. 
-const int SENSOR_READ_DELAY_MS = 5;
-
-//Delay between digit blinks.  Any faster is too quick to keep up with
-const int BLINK_SPEED_MS       = 200;
 
 
 //////////////////////////////////////////////////////////////////
@@ -340,22 +98,25 @@ const int BLINK_SPEED_MS       = 200;
 FlightData flightData;
 FlightState flightState = kOnGround;  //The flight state
 
-ChuteState mainChute;
-ChuteState drogueChute;
+RecoveryDevice mainChute;
+RecoveryDevice drogueChute;
 
 double refAltitude = 0;               //The reference altitude (altitude of the launch pad)
 int    flightCount = 0;               //The number of flights recorded in EEPROM
 int    resetTime = 0;                 //millis() after starting the current flight
-bool   readyToFly = false;            //switches to false at the end of the flight.  Resets on reset.
-bool   enableBuzzer = false;          //True if the buzzer should be sounding
-double deploymentAltitude = 100;      //Deployment altitude in ft.
+double deploymentAltitude = 100;      //Deployment altitude in m.
 int    testFlightTimeStep = 0;
 
-Adafruit_BMP280   barometer;
-//MPU6050           mpu;
+BARO_TYPE   barometer;
+
+#if ENABLE_MPU
+MPU6050           mpu;
+#endif
+
 bool              barometerReady = false;        //True if the barometer/altimeter is ready
 bool              mpuReady = false;              //True if the barometer/altimeter is ready
 KalmanFilter      filter;
+Blinker           *blinker;
 
 //////////////////////////////////////////////////////////////////
 // main()
@@ -378,6 +139,8 @@ void setup()
     pinMode(TEST_PIN, INPUT_PULLUP);
   }
 
+  blinker = new Blinker(MESSAGE_PIN, BUZZER_PIN);
+
   //Start in the "error" state.  Status pin should be high and message
   //pin should be low to indicate a good startup
   digitalWrite(STATUS_PIN, LOW);
@@ -397,18 +160,17 @@ void setup()
     log("Barometer Started");
     barometerReady = true;
   } else {
-    //If the unit starts with the status pin off and the message pin on,
-    //the barometer failed to initialize
     log("Barometer Init Fail");
   }
 
-//  mpu.initialize();
-//  mpuReady = mpu.testConnection();
-//  log(mpuReady? "MPU6050 connection successful" : "MPU6050 connection failed");
-//  if(mpuReady) {
-//    Don't really care if it's not ready or not present
-//    mpu.setFullScaleAccelRange(MPU6050_ACCEL_FS_8);
-//  }
+#if ENABLE_MPU
+  mpu.initialize();
+  mpuReady = mpu.testConnection();
+  log(mpuReady? "MPU6050 connection successful" : "MPU6050 connection failed");
+  if(mpuReady) {
+   mpu.setFullScaleAccelRange(MPU6050_ACCEL_FS_8);
+  }
+#endif
 
   reset(&flightData);
   deploymentAltitude = readDeploymentAltitude();
@@ -417,10 +179,39 @@ void setup()
   log("Pad Altitude:" + String(refAltitude));
 
   configureEeprom();
-
-  //We don't want to sound the buzzer on first boot, only after a flight
-  enableBuzzer = false;
 }
+
+static unsigned long lastFireTime = 0;
+void loop()
+{
+  static SensorData data;
+  if(barometerReady) {
+    if(filghtState != kOnGround) {
+      readSensorData(&data);
+      flightControl(&data);
+      digitalWrite(READY_PIN, HIGH);
+    }else if (flightState == kOnGround) {
+      digitalWrite(READY_PIN, LOW);
+      if(flightData.apogee && !blinker->isBlinking()) {}
+        blinker->blinkValue(flightData.apogee, BLINK_SPEED_MS);
+      }
+      checkResetPin();
+    }
+  }else{
+      if(blinker->isBlinking()) {
+        blinker->blinkValue(2, BLINK_SPEED_MS);
+      }
+  }
+
+  unsigned long time = millis();
+  unsigned long loopTime = time - lastFireTime;
+  lastFireTime = time;
+  unsigned long delayTime = SENSOR_READ_DELAY_MS - loopTime;
+  if(delayTime > 0) {
+    delay(delayTime);
+  }
+}
+
 
 int readDeploymentAltitude()
 {
@@ -439,37 +230,19 @@ int readDeploymentAltitude()
 }
 
 
-void loop()
-{
-  static SensorData data;
-  if(filghtState !=kOnGround && barometerReady) {
-    readSensorData(&data);
-    flightControl(&data);
-    delay(SENSOR_READ_DELAY_MS);
-    digitalWrite(READY_PIN, HIGH);
-  }
-
-  //Blink out the last recorded apogee on the message pin
-  if (flightState == kOnGround) {
-        digitalWrite(READY_PIN, LOW);
-        blinkLastAltitude();
-  }
-}
 
 bool checkResetPin()
 {
-  if (digitalRead(RESET_PIN) == LOW) {
+  if (digitalRead(RESET_PIN) == LOW && flightState != kReadyToFly) {
+    blinker->cancelSequence();
     reset(&flightData); 
     resetTime = millis(); 
-    readyToFly = true; 
     setDeploymentRelay(OFF, &drogueChute); 
     drogueChute.reset(); 
     setDeploymentRelay(OFF, &mainChute); 
     mainChute.reset(); 
     testFlightTimeStep = 0;
-    enableBuzzer = true;
     playReadyTone();
-    enableBuzzer = false;   
     flightState = kReadyToFly; 
     filter.reset(1,1,0.001);
     return true;
@@ -477,58 +250,12 @@ bool checkResetPin()
   return false;
 }
 
-void blinkWithDelay(int onTime, int offTime, int frequency)
-{
-  digitalWrite(MESSAGE_PIN, HIGH); 
-  if(enableBuzzer){
-    if(PEIZO_TYPE == kActive){
-      digitalWrite(BUZZER_PIN, HIGH); 
-    }else if(PEIZO_TYPE == kPassive) {
-      tone(BUZZER_PIN, frequency);
-    }
-  }
-  delay(onTime);
-  digitalWrite(MESSAGE_PIN, LOW);
-  if(enableBuzzer){
-    if(PEIZO_TYPE == kActive){
-      digitalWrite(BUZZER_PIN, LOW); 
-    }else if(PEIZO_TYPE == kPassive) {
-      noTone(BUZZER_PIN);
-    }
-  }
-  delay(offTime);
-}
-
-
-//Not particularily pretty... We could use timers or interrupts here
-//but it's good enough.  You'll need to hold down the reset button for
-//a couple of seconds at worst.  
-void blinkLastAltitude()
-{
-  int tempApogee = flightData.apogee;
-  bool foundDigit = false;         //Don't blink leading 0s
-  for(int m=10000; m>0; m=m/10) {  //If we make it past 99km, we're in trouble :)
-    int digit = tempApogee / m;
-    if (digit || foundDigit){
-      foundDigit = true;
-      for (int i = 0; i < (digit ?: 10); i++) {
-        blinkWithDelay(BLINK_SPEED_MS, BLINK_SPEED_MS, 1760);
-        if(checkResetPin())return;
-      }
-      delay(BLINK_SPEED_MS * 2);
-      tempApogee = tempApogee - digit * m;
-    }
-  }
-  if(checkResetPin())return;
-  blinkWithDelay(BLINK_SPEED_MS * 10, BLINK_SPEED_MS, 1760*2);
-  if(checkResetPin())return;
-}
 
 void playReadyTone()
 {
-  blinkWithDelay(150,50,880);
-  blinkWithDelay(150,50,1109);
-  blinkWithDelay(150,450,1318);
+  Blink sequence[3] = [{150,50},{150,50},{150,450}];
+  //Blink sequence[3] = [{150,50,880},{150,50,1109},{150,450,1318}];
+  blinker->blinkSequence(sequence, 3, false);
 }
 
 
@@ -574,8 +301,6 @@ void readSensorData(SensorData *d)
 
 ////////////////////////////////////////////////////////////////////////
 // Flight Control 
-
-static const int kSamples = 8;
 
 void flightControl(SensorData *d)
 {
@@ -632,10 +357,6 @@ void flightControl(SensorData *d)
     //beeper and start blinking...
     resetChuteIfRequired(&drogueChute);
     resetChuteIfRequired(&mainChute);
-     
-        
-    enableBuzzer = true;
-    readyToFly = false;
   }
 
   //Main chute deployment at kDeployment Altitude.  
@@ -763,13 +484,6 @@ void logData(int index, FlightData *d) {
        "ms] : [Apogee Time  " + String(d->apogeeTime) +
        "ms]: [Acc Trigger Time" + String(d->accTriggerTime) + 
        "ms] : [Alt Trigger Time " + String(d->altTriggerTime) + "s]");
-}
-
-void log(String msg)
-{
-#if LOG_TO_SERIAL
-  Serial.println(msg);
-#endif
 }
 
 
