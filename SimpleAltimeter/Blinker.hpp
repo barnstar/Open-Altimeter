@@ -27,7 +27,9 @@
 #define BLINKER_H
 
 #include "types.h"
-#include <Ticker.h>
+#include "SimpleTimer.h"
+
+#define kMaxBlinks 64
 
 typedef struct {
   int onTime;
@@ -37,7 +39,8 @@ typedef struct {
 class Blinker
 {
 public:
-  Blinker(int ledPin, int piezoPin) :
+  Blinker(SimpleTimer &timer, int ledPin, int piezoPin) :
+    timer(timer),
     ledPin(ledPin),
     piezoPin(piezoPin) {}
 
@@ -47,12 +50,15 @@ public:
 
   void blinkValue(double value, double speed);
 
-  void blinkSequence(Blink *sequence, size_t len, bool repeat);
+  void blinkSequence(Blink *sequence, int len, bool repeat);
   void cancelSequence();
   bool isBlinking();
   void handleTimeout();
 
 private:
+  SimpleTimer &timer;
+  int timerNumber = 0;
+
   BlinkerState state;
   void setHardwareState(BlinkerState hwState);
 
@@ -61,11 +67,11 @@ private:
 
   Blink sequence[kMaxBlinks];
 
-  size_t sequenceLen =0;
+  int sequenceLen =0;
   int position = 0;
   bool repeat = 0;
 
-  Ticker ticker;
+  //Ticker ticker;
   bool isRunning;
 };
 

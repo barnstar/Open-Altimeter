@@ -26,19 +26,13 @@
 #ifndef CONFIGURATION_H
 #define CONFIGURATION_H
 
+#include "types.h"
+
 #define LOG_TO_SERIAL 1   //Set to 0 to disable serial logging...
 #define PLOT_ALTITUDE 0   //Set to 1 to watch the altitude on the serial plotter
 
 #define USE_BMP085 1
 #define USE_BMP280 0
-
-#if USE_BMP280
-#define BARO_TYPE Adafruit_BMP280
-const double SEA_LEVEL_PRESSURE = 1013.7;
-#elseif USE_BMP085
-#define BARO_TYPE Adafruit_BMP085
-#define SEA_LEVEL_PRESSURE
-#endif 
 
 static const int kMinServoAngle = 5;
 static const int kMaxServoAngle = 120;
@@ -87,8 +81,8 @@ const int MAIN_DEPL_RELAY_PIN   = 12;   //parachute deployment pin
 const int DROGUE_DEPL_RELAY_PIN = 11;  //parachute deployment pin
 const int ALT_PIN_A             = 9;  //Main Chute Alitude Altitude Set Pin.
 const int ALT_PIN_B             = 10;  //Main Chute Alitude Altitude Set Pin
-const EjectionType MAIN_TYPE    = kPyro;
-const EjectionType DROGUE_TYPE  = kPyro; 
+const DeploymentType MAIN_TYPE    = kPyro;
+const DeploymentType DROGUE_TYPE  = kPyro; 
 const int BARO_I2C_ADDR         = 0x77;
 const PeizoStyle PEIZO_TYPE     = kActive;
 #define ENABLE_MPU 0
@@ -105,8 +99,8 @@ const int MAIN_DEPL_RELAY_PIN   = 11;  //parachute deployment pin
 const int DROGUE_DEPL_RELAY_PIN = 10;  //parachute deployment pin
 const int ALT_PIN_A             = 8;   //Main Chute AlitudeAltitude Set Pin.
 const int ALT_PIN_B             = 9;   //Main Chute Alitude Altitude Set Pin
-const EjectionType MAIN_TYPE    = kServo;
-const EjectionType DROGUE_TYPE  = kServo; 
+const DeploymentType MAIN_TYPE    = kServo;
+const DeploymentType DROGUE_TYPE  = kServo; 
 const int BARO_I2C_ADDR         = 0x76;
 const PeizoStyle PEIZO_TYPE     = kPassive;
 #define ENABLE_MPU 0
@@ -123,8 +117,8 @@ const int MAIN_DEPL_RELAY_PIN   = 11;  //parachute deployment pin
 const int DROGUE_DEPL_RELAY_PIN = 12;  //parachute deployment pin
 const int ALT_PIN_A             = 8;   //Main Chute AlitudeAltitude Set Pin.
 const int ALT_PIN_B             = 9;   //Main Chute Alitude Altitude Set Pin
-const EjectionType MAIN_TYPE    = kServo;
-const EjectionType DROGUE_TYPE  = kNoEjection; 
+const DeploymentType MAIN_TYPE    = kServo;
+const DeploymentType DROGUE_TYPE  = kNoEjection; 
 #define BARO_I2C_ADDR
 #define STATUS_PIN_LEVEL 800
 const PeizoStyle PEIZO_TYPE     = kPassive;

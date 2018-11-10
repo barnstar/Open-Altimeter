@@ -26,14 +26,11 @@
 #ifndef TYPES_H
 #define TYPES_H
 
-void log(String msg)
-{
-#if LOG_TO_SERIAL
-  Serial.println(msg);
-#endif
-}
+#include <Arduino.h>
 
+#define NO_PIN 0
 
+void log(String msg);
 
 typedef enum {
   kNoEjection,

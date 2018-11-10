@@ -25,8 +25,9 @@
 
 #include "RecoveryDevice.h"
 #include "Configuration.h"
+#include "types.h"
 
-void RecoveryDevice::init(int id, int pin, EjectionType type) {
+void RecoveryDevice::init(int id, int pin, DeploymentType type) {
 	log("Init Recovery Device " + String(id) + " on pin " + String(pin));
 	this->relayPin = pin;
 	this->id = id;

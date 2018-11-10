@@ -37,11 +37,11 @@ class KalmanFilter
 
   public:
 
-  KalmanFilter::KalmanFilter() {
+  KalmanFilter() {
     this->reset(1,1,0.001);
   } 
 
-  KalmanFilter::~KalmanFilter() {};
+  ~KalmanFilter() {};
   
   double step(double measurement);
   

@@ -33,11 +33,11 @@ class RecoveryDevice
 {
 
 public:
-  RecoveryDevice::RecoveryDevice() {
+  RecoveryDevice() {
     this->reset();
   };
   
-  RecoveryDevice::~RecoveryDevice() {};
+  ~RecoveryDevice() {};
   
   bool           deployed = false;         //True if the the chute has been deplyed
   int            deploymentTime = 0;   //Time at which the chute was deployed
@@ -46,12 +46,11 @@ public:
   DeploymentType type = kServo;
   Servo          servo;
 
-private:
   int    relayPin=0;
   char   id = 0; 
 
 public:
-  void init(int id, int pin, EjectionType type);
+  void init(int id, int pin, DeploymentType type);
   void enable();
   void disable();
   void reset();

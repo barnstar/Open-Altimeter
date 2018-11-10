@@ -64,15 +64,21 @@
  *********************************************************************************/
 #define VERSION 2
 
-#include <math.h>
+#include "Configuration.h"
 #include <EEPROM.h>
 #include <Servo.h>
 
 //Sensor libraries
 #if USE_BMP280
 #include <Adafruit_BMP280.h>             //https://github.com/adafruit/Adafruit_BMP280_Library/blob/master/Adafruit_BMP280.h       
-#else if USE_BMP085
+typedef  Adafruit_BMP280  Barometer;
+const double SEA_LEVEL_PRESSURE = 1013.7;
+#endif
+
+#if USE_BMP085
 #include <Adafruit_BMP085.h>             //https://github.com/adafruit/Adafruit_BMP280_Library/blob/master/Adafruit_BMP085.h       
+typedef  Adafruit_BMP085 Barometer ;
+const double SEA_LEVEL_PRESSURE = 101370;
 #endif
 
 //#include "I2Cdev.h"                      //https://diyhacking.com/arduino-mpu-6050-imu-sensor-tutorial/
@@ -80,19 +86,30 @@
 #include <Wire.h>
 
 #include "types.h"
+#include "SimpleTimer.h"
 #include "KalmanFilter.h"
 #include "RecoveryDevice.h"
-#include "Blinker.h"
+#include "Blinker.hpp"
+
+void log(String msg)
+{
+#if LOG_TO_SERIAL
+  Serial.println(msg);
+#endif
+}
 
 //Prototypes
-void log(String val);
 void playReadyTone();
 bool isValid(FlightData *d);
 void reset(FlightData *d);
 void logData(int index, FlightData *d);
+int readDeploymentAltitude();
+void configureEeprom();
+void readSensorData(SensorData *d);
+void flightControl(SensorData *d);
+bool checkResetPin();
 
-
-//////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
 // Global State
 
 FlightData flightData;
@@ -107,7 +124,7 @@ int    resetTime = 0;                 //millis() after starting the current flig
 double deploymentAltitude = 100;      //Deployment altitude in m.
 int    testFlightTimeStep = 0;
 
-BARO_TYPE   barometer;
+Barometer   barometer;
 
 #if ENABLE_MPU
 MPU6050           mpu;
@@ -117,6 +134,7 @@ bool              barometerReady = false;        //True if the barometer/altimet
 bool              mpuReady = false;              //True if the barometer/altimeter is ready
 KalmanFilter      filter;
 Blinker           *blinker;
+SimpleTimer       timer;
 
 //////////////////////////////////////////////////////////////////
 // main()
@@ -139,7 +157,7 @@ void setup()
     pinMode(TEST_PIN, INPUT_PULLUP);
   }
 
-  blinker = new Blinker(MESSAGE_PIN, BUZZER_PIN);
+  blinker = new Blinker(timer, MESSAGE_PIN, BUZZER_PIN);
 
   //Start in the "error" state.  Status pin should be high and message
   //pin should be low to indicate a good startup
@@ -186,30 +204,33 @@ void loop()
 {
   static SensorData data;
   if(barometerReady) {
-    if(filghtState != kOnGround) {
+    if(flightState != kOnGround) {
       readSensorData(&data);
       flightControl(&data);
       digitalWrite(READY_PIN, HIGH);
+
+      unsigned long time = millis();
+      unsigned long loopTime = time - lastFireTime;
+      lastFireTime = time;
+      unsigned long delayTime = SENSOR_READ_DELAY_MS - loopTime;
+      if(delayTime > 0) {
+        delay(delayTime);
+      }      
     }else if (flightState == kOnGround) {
+      timer.run();
       digitalWrite(READY_PIN, LOW);
-      if(flightData.apogee && !blinker->isBlinking()) {}
+      if(flightData.apogee && !blinker->isBlinking()) {
         blinker->blinkValue(flightData.apogee, BLINK_SPEED_MS);
       }
       checkResetPin();
     }
+
   }else{
       if(blinker->isBlinking()) {
         blinker->blinkValue(2, BLINK_SPEED_MS);
       }
   }
 
-  unsigned long time = millis();
-  unsigned long loopTime = time - lastFireTime;
-  lastFireTime = time;
-  unsigned long delayTime = SENSOR_READ_DELAY_MS - loopTime;
-  if(delayTime > 0) {
-    delay(delayTime);
-  }
 }
 
 
@@ -253,7 +274,7 @@ bool checkResetPin()
 
 void playReadyTone()
 {
-  Blink sequence[3] = [{150,50},{150,50},{150,450}];
+  Blink sequence[3] = {{150,50},{150,50},{150,450}};
   //Blink sequence[3] = [{150,50,880},{150,50,1109},{150,450,1318}];
   blinker->blinkSequence(sequence, 3, false);
 }
@@ -374,7 +395,7 @@ void flightControl(SensorData *d)
   checkChuteIgnitionTimeout(&drogueChute, MAX_FIRE_TIME);
 }
 
-void resetChuteIfRequired(ChuteState *c)
+void resetChuteIfRequired(RecoveryDevice *c)
 {
   if(c->type == kPyro) {
      setDeploymentRelay(OFF, c);
@@ -382,7 +403,7 @@ void resetChuteIfRequired(ChuteState *c)
   }
 }
 
-void checkChuteIgnitionTimeout(ChuteState *c, int maxIgnitionTime)
+void checkChuteIgnitionTimeout(RecoveryDevice *c, int maxIgnitionTime)
 {
     if (!c->timedReset && c->deployed &&
         millis() - c->deploymentTime > maxIgnitionTime &&
@@ -396,7 +417,7 @@ void checkChuteIgnitionTimeout(ChuteState *c, int maxIgnitionTime)
 }
 
 
-void setDeploymentRelay(RelayState relayState, ChuteState *c)
+void setDeploymentRelay(RelayState relayState, RecoveryDevice *c)
 {
   if(relayState == c->relayState)return;
   int chuteId = c->id;

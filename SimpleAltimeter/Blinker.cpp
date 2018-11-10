@@ -24,8 +24,10 @@
  **********************************************************************************/
 
 #include "Blinker.hpp"
+#include "types.h"
 
-void Blinker::blinkValue(double value, double speed, int frequency)
+
+void Blinker::blinkValue(double value, double speed)
 {
   if(isBlinking()) {
     cancelSequence();
@@ -35,7 +37,7 @@ void Blinker::blinkValue(double value, double speed, int frequency)
   bool foundDigit = false;         //Don't blink leading 0s
   int n=0;
   //If we make it past 999km then this failing is probably not a big deal
-  for(int m=1000000; m>0; m=m/10) {  
+  for(long m=100000; m>0; m=m/10) {  
     int digit = tempValue / m;
     if (digit || foundDigit){
       foundDigit = true;
@@ -54,14 +56,13 @@ void Blinker::blinkValue(double value, double speed, int frequency)
   sequence[n].onTime = speed*2;
   sequence[n].offTime = speed*2;
   //sequence[n].frequency = frequency;
-  blinker->blinkSequence(sequence, n+1, true);
+  blinkSequence(sequence, n+1, true);
 }
 
 
-void Blinker::blinkSequence(Blink *msequence, size_t len, bool repeat)
+void Blinker::blinkSequence(Blink *msequence, int len, bool repeat)
 {
-  if(len > kMaxBlinks)
-    log("Blink Sequece too long");
+  if(len > kMaxBlinks) {
     return;
   }
   cancelSequence();
@@ -79,17 +80,14 @@ void Blinker::blinkSequence(Blink *msequence, size_t len, bool repeat)
 
 void Blinker::cancelSequence()
 {
-  ticker.detach();
+  timer.deleteTimer(timerNumber);
   setHardwareState(OFF);
-  if(sequence != nullptr) {
-    delete sequence;
-    sequence = nullptr;
-    isRunning = false;
-  }
+  isRunning = false;
 }
 
+static Blinker *blinker;
 
-void interrupt(Blinker *blinker)
+void interrupt()
 {
   blinker->handleTimeout();
 }
@@ -100,11 +98,11 @@ void Blinker::handleTimeout()
     int duration = 0;
     Blink b = sequence[position];
     if(state == OFF) {
-      setHardwareState(ON, b.frequency);
+      setHardwareState(ON);
       duration = b.onTime;
     }
     else if(state == ON) {
-      setHardwareState(OFF, b.frequency);
+      setHardwareState(OFF);
       duration = b.offTime;
       position++;
     }
@@ -117,7 +115,10 @@ void Blinker::handleTimeout()
         return;
       }
     }
-    ticker.once_ms(duration, interrupt, this);
+    //Horrible... But Simpletimer is... simple and takes (*void)() so we have
+    //no good way of passing the Blinker instance to it.
+    blinker = this;
+    timerNumber = timer.setTimeout(duration, &interrupt);
 }
 
 
@@ -127,7 +128,7 @@ bool Blinker::isBlinking()
 }
 
 
-void Blinker::setHardwareState(BlinkerState hwState, int frequency)
+void Blinker::setHardwareState(BlinkerState hwState)
 {
   //TODO - use tone(), noTone() for passive piezos.
   if(hwState==ON)

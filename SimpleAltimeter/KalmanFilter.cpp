@@ -24,6 +24,7 @@
  **********************************************************************************/
 
 #include "KalmanFilter.h"
+#include <math.h>
 
 double KalmanFilter::step(double measurement)
 { 
