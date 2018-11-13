@@ -27,55 +27,55 @@
 #include "types.h"
 
 
-void Blinker::blinkValue(double value, double speed)
+void Blinker::blinkValue(long value, int speed, bool repeat)
 {
   if(isBlinking()) {
     cancelSequence();
   }
 
-  int tempValue = value;
+  if(value > 999999) {
+    return;
+  }
+
+  position = 0;
+  memset(bitMap, 0, kBitMapLen);
+
+  long tempValue = value;
   bool foundDigit = false;         //Don't blink leading 0s
-  int n=0;
+
   //If we make it past 999km then this failing is probably not a big deal
-  for(long m=100000; m>0; m=m/10) {  
-    int digit = tempValue / m;
+  //Bitmask should be 10101000 10101010 0010100011 <- For 342... For example
+  for(long m=1000000; m>0; m=m/10) {  
+    byte digit = tempValue / m;
     if (digit || foundDigit){
       foundDigit = true;
       tempValue = tempValue - digit*m;
-      if(digit == 0)digit = 10;
-      for(int i=0;i<digit;i++) {
-        sequence[n].onTime = speed;
-        sequence[n].offTime = speed;
-        if(n<kMaxBlinks)n++;
+      if(digit == 0) { digit = 10; } //Blink "0" as 10
+      for(byte i=0;i<digit;i++) {
+        byte byteNumber = position / 8;
+        byte bitNumber = position % 8;
+        bitMap[byteNumber] = bitMap[byteNumber] | 0b100000000>>bitNumber;
+        position+=2;
       }
     }
     if(foundDigit) {
-      sequence[n-1].offTime = speed*2;
+      position += 2;
     }
   }
-  sequence[n].onTime = speed*2;
-  sequence[n].offTime = speed*2;
-  //sequence[n].frequency = frequency;
-  blinkSequence(sequence, n+1, true);
-}
+  byte byteNumber = position / 8;
+  byte bitNumber = position % 8; 
+  bitMap[byteNumber] = bitMap[byteNumber] | 0b11000000>>bitNumber;
+  position += 4; //2 for the 11 and 2 for a 00 pause
+  sequenceLen = position ;
 
-
-void Blinker::blinkSequence(Blink *msequence, int len, bool repeat)
-{
-  if(len > kMaxBlinks) {
-    return;
-  }
-  cancelSequence();
-  if(msequence != this->sequence) {
-    memcpy(msequence, this->sequence, len*sizeof(Blink));
-  }
   state = OFF;
   position = 0;
-  sequenceLen = len;
   isRunning = true;
   this->repeat = repeat;
+  this->speed = speed;
   handleTimeout();
 }
+
 
 
 void Blinker::cancelSequence()
@@ -95,30 +95,31 @@ void interrupt()
 
 void Blinker::handleTimeout()
 {
-    int duration = 0;
-    Blink b = sequence[position];
-    if(state == OFF) {
-      setHardwareState(ON);
-      duration = b.onTime;
-    }
-    else if(state == ON) {
-      setHardwareState(OFF);
-      duration = b.offTime;
-      position++;
-    }
+  byte byteNumber = position / 8;
+  byte bitNumber = position % 8; 
+  byte mask = 0b10000000>>bitNumber;
 
-    if(position == sequenceLen) {
-      if(repeat) {
-        position = 0;
-      }else{
-        cancelSequence();
-        return;
-      }
+  byte enable = bitMap[byteNumber] & mask;
+
+  if(enable) {
+    setHardwareState(ON);
+  } else {
+    setHardwareState(OFF);
+  }
+
+  position ++;
+  if(position == sequenceLen) {
+    if(repeat) {
+      position = 0;
+    }else{
+      cancelSequence();
+      return;
     }
-    //Horrible... But Simpletimer is... simple and takes (*void)() so we have
-    //no good way of passing the Blinker instance to it.
-    blinker = this;
-    timerNumber = timer.setTimeout(duration, &interrupt);
+  }
+  //Horrible... But Simpletimer is... simple and takes (*void)() so we have
+  //no good way of passing the Blinker instance to it.
+  blinker = this;
+  timerNumber = timer.setTimeout(speed, &interrupt);
 }
 
 

@@ -29,47 +29,45 @@
 #include "types.h"
 #include "SimpleTimer.h"
 
-#define kMaxBlinks 64
+#define kBitMapLen 16
+#define kMaxBits kBitMapLen*8 //This is enough for 62 blinks + padding.  Enough to render 999999.
 
-typedef struct {
-  int onTime;
-  int offTime;
-}Blink;
 
 class Blinker
 {
 public:
-  Blinker(SimpleTimer &timer, int ledPin, int piezoPin) :
+  Blinker(SimpleTimer &timer, byte ledPin, byte piezoPin) :
     timer(timer),
     ledPin(ledPin),
-    piezoPin(piezoPin) {}
+    piezoPin(piezoPin) {
+      //Zero the bitmap
+      memset(bitMap, 0, kBitMapLen);
+    }
 
   ~Blinker() {
     cancelSequence();
   };
 
-  void blinkValue(double value, double speed);
-
-  void blinkSequence(Blink *sequence, int len, bool repeat);
+  void blinkValue(int value, int speed, bool repeat)
   void cancelSequence();
   bool isBlinking();
   void handleTimeout();
 
 private:
   SimpleTimer &timer;
-  int timerNumber = 0;
+  byte timerNumber = 0;
+  byte bitMap[kBitMapLen];
 
   BlinkerState state;
   void setHardwareState(BlinkerState hwState);
 
-  int ledPin = NO_PIN;
-  int piezoPin = NO_PIN;
+  byte ledPin = NO_PIN;
+  byte piezoPin = NO_PIN;
 
-  Blink sequence[kMaxBlinks];
-
-  int sequenceLen =0;
-  int position = 0;
+  byte sequenceLen =0;
+  byte position = 0;
   bool repeat = 0;
+  int speed = 0;
 
   //Ticker ticker;
   bool isRunning;
