@@ -27,7 +27,7 @@
 #include "types.h"
 
 
-void Blinker::blinkValue(double value, double speed)
+void Blinker::blinkValue(int value, byte speed)
 {
   if(isBlinking()) {
     cancelSequence();
@@ -35,7 +35,7 @@ void Blinker::blinkValue(double value, double speed)
 
   int tempValue = value;
   bool foundDigit = false;         //Don't blink leading 0s
-  int n=0;
+  byte n=0;
   //If we make it past 999km then this failing is probably not a big deal
   for(long m=100000; m>0; m=m/10) {  
     int digit = tempValue / m;
@@ -43,7 +43,7 @@ void Blinker::blinkValue(double value, double speed)
       foundDigit = true;
       tempValue = tempValue - digit*m;
       if(digit == 0)digit = 10;
-      for(int i=0;i<digit;i++) {
+      for(byte i=0;i<digit;i++) {
         sequence[n].onTime = speed;
         sequence[n].offTime = speed;
         if(n<kMaxBlinks)n++;
@@ -60,14 +60,14 @@ void Blinker::blinkValue(double value, double speed)
 }
 
 
-void Blinker::blinkSequence(Blink *msequence, int len, bool repeat)
+void Blinker::blinkSequence(Blink *msequence, byte len, bool repeat)
 {
   if(len > kMaxBlinks) {
     return;
   }
   cancelSequence();
   if(msequence != this->sequence) {
-    memcpy(msequence, this->sequence, len*sizeof(Blink));
+    memcpy(this->sequence, msequence, len*sizeof(Blink));
   }
   state = OFF;
   position = 0;
@@ -99,11 +99,11 @@ void Blinker::handleTimeout()
     Blink b = sequence[position];
     if(state == OFF) {
       setHardwareState(ON);
-      duration = b.onTime;
+      duration = b.onTime * 10;
     }
     else if(state == ON) {
       setHardwareState(OFF);
-      duration = b.offTime;
+      duration = b.offTime * 10;
       position++;
     }
 

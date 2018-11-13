@@ -62,7 +62,7 @@
  * See comments on the various pin-outs for operation 
  *
  *********************************************************************************/
-#define VERSION 2
+#define VERSION 3
 
 #include "Configuration.h"
 #include <EEPROM.h>
@@ -83,6 +83,10 @@ const double SEA_LEVEL_PRESSURE = 101370;
 
 //#include "I2Cdev.h"                      //https://diyhacking.com/arduino-mpu-6050-imu-sensor-tutorial/
 //#include "MPU6050_6Axis_MotionApps20.h"  //https://diyhacking.com/arduino-mpu-6050-imu-sensor-tutorial/ 
+
+#include "MPU9250.h"
+typedef MPU9250 ImuSensor;
+
 #include <Wire.h>
 
 #include "types.h"
@@ -133,8 +137,9 @@ MPU6050           mpu;
 bool              barometerReady = false;        //True if the barometer/altimeter is ready
 bool              mpuReady = false;              //True if the barometer/altimeter is ready
 KalmanFilter      filter;
-Blinker           *blinker;
+Blinker           blinker;
 SimpleTimer       timer;
+ImuSensor         imu(Wire,0x68);
 
 //////////////////////////////////////////////////////////////////
 // main()
@@ -142,7 +147,7 @@ SimpleTimer       timer;
 void setup()
 {
   Serial.begin(SERIAL_BAUD_RATE);
-  log("Initializing. Version " + String(VERSION));
+  log("V " + String(VERSION));
   
   pinMode(RESET_PIN, INPUT_PULLUP);
 
@@ -157,7 +162,7 @@ void setup()
     pinMode(TEST_PIN, INPUT_PULLUP);
   }
 
-  blinker = new Blinker(timer, MESSAGE_PIN, BUZZER_PIN);
+  blinker.configure(timer, MESSAGE_PIN, BUZZER_PIN);
 
   //Start in the "error" state.  Status pin should be high and message
   //pin should be low to indicate a good startup
@@ -175,16 +180,19 @@ void setup()
     digitalWrite(STATUS_PIN, HIGH);
     #endif
     digitalWrite(MESSAGE_PIN, LOW);
-    log("Barometer Started");
+    log("Baro Started");
     barometerReady = true;
   } else {
-    log("Barometer Init Fail");
+    log("Baro Fail");
   }
+
+  mpuReady = !(imu.begin() < 0);
+  log(mpuReady? "IMU OK" : "IMU failed");
 
 #if ENABLE_MPU
   mpu.initialize();
   mpuReady = mpu.testConnection();
-  log(mpuReady? "MPU6050 connection successful" : "MPU6050 connection failed");
+  log(mpuReady? "IMU OK" : "IMU failed");
   if(mpuReady) {
    mpu.setFullScaleAccelRange(MPU6050_ACCEL_FS_8);
   }
@@ -192,9 +200,9 @@ void setup()
 
   reset(&flightData);
   deploymentAltitude = readDeploymentAltitude();
-  log("Deployment Altitude: " + String(deploymentAltitude));
+  log("Depl Alt: " + String(deploymentAltitude));
   refAltitude = barometer.readAltitude(SEA_LEVEL_PRESSURE);
-  log("Pad Altitude:" + String(refAltitude));
+  log("Pad Alt:" + String(refAltitude));
 
   configureEeprom();
 }
@@ -203,31 +211,32 @@ static unsigned long lastFireTime = 0;
 void loop()
 {
   static SensorData data;
+  timer.run();
   if(barometerReady) {
     if(flightState != kOnGround) {
       readSensorData(&data);
       flightControl(&data);
       digitalWrite(READY_PIN, HIGH);
 
-      unsigned long time = millis();
-      unsigned long loopTime = time - lastFireTime;
-      lastFireTime = time;
-      unsigned long delayTime = SENSOR_READ_DELAY_MS - loopTime;
-      if(delayTime > 0) {
-        delay(delayTime);
-      }      
+      delay(SENSOR_READ_DELAY_MS);
+//      unsigned long time = millis();
+//      unsigned long loopTime = time - lastFireTime;
+//      lastFireTime = time;
+//      unsigned long delayTime = SENSOR_READ_DELAY_MS - loopTime;
+//      if(delayTime > 0) {
+//        delay(delayTime);
+//      }      
     }else if (flightState == kOnGround) {
-      timer.run();
       digitalWrite(READY_PIN, LOW);
-      if(flightData.apogee && !blinker->isBlinking()) {
-        blinker->blinkValue(flightData.apogee, BLINK_SPEED_MS);
+      if(flightData.apogee && !blinker.isBlinking()) {
+        blinker.blinkValue(flightData.apogee, BLINK_SPEED_MS);
       }
       checkResetPin();
     }
 
   }else{
-      if(blinker->isBlinking()) {
-        blinker->blinkValue(2, BLINK_SPEED_MS);
+      if(blinker.isBlinking()) {
+        blinker.blinkValue(3, BLINK_SPEED_MS);
       }
   }
 
@@ -255,7 +264,8 @@ int readDeploymentAltitude()
 bool checkResetPin()
 {
   if (digitalRead(RESET_PIN) == LOW && flightState != kReadyToFly) {
-    blinker->cancelSequence();
+    log("Resetting");
+    blinker.cancelSequence();
     reset(&flightData); 
     resetTime = millis(); 
     setDeploymentRelay(OFF, &drogueChute); 
@@ -276,7 +286,7 @@ void playReadyTone()
 {
   Blink sequence[3] = {{150,50},{150,50},{150,450}};
   //Blink sequence[3] = [{150,50,880},{150,50,1109},{150,450,1318}];
-  blinker->blinkSequence(sequence, 3, false);
+  blinker.blinkSequence(sequence, 3, false);
 }
 
 
@@ -289,10 +299,33 @@ int16_t gx, gy, gz;
 int16_t grx, gry, grz;
 const double onegee = 65536.0 / 16.0; //units/g for scale of +/- 8g
 
+const char* tabChar = "\t";
+
 double getacceleration()
 {
   //mpu.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
+  imu.readSensor();
 
+//  Serial.print(imu.getAccelX_mss(),6);
+//  Serial.print(tabChar);
+//  Serial.print(imu.getAccelY_mss(),6);
+//  Serial.print(tabChar);
+//  Serial.print(imu.getAccelZ_mss(),6);
+//  Serial.print(tabChar);
+//  Serial.print(imu.getGyroX_rads(),6);
+//  Serial.print(tabChar);
+//  Serial.print(imu.getGyroY_rads(),6);
+//  Serial.print(tabChar);
+//  Serial.print(imu.getGyroZ_rads(),6);
+//  Serial.print(tabChar);
+//  Serial.print(imu.getMagX_uT(),6);
+//  Serial.print(tabChar);
+//  Serial.print(imu.getMagY_uT(),6);
+//  Serial.print(tabChar);
+//  Serial.print(imu.getMagZ_uT(),6);
+//  Serial.print(tabChar);
+//  Serial.println(imu.getTemperature_C(),6);
+  
   double axd = ax / onegee ;
   double ayd = ay / onegee ;
   double azd = az / onegee ;
@@ -410,7 +443,6 @@ void checkChuteIgnitionTimeout(RecoveryDevice *c, int maxIgnitionTime)
         c->type == kPyro) 
     {
       int chuteId = c->id;
-      log("Chute #" + String(chuteId) + " Timeout");
       setDeploymentRelay(OFF, c);
       c->timedReset = true;
     }
@@ -451,7 +483,6 @@ void configureEeprom()
     }
     log("EEProm Wiped");
   }
-  log("Reading Flights");
   flightCount = getFlightCount();
 }
 
@@ -468,7 +499,6 @@ int getFlightCount()
     logData(i, &d);
     flightData = d;
   }
-  log("EEPROM Full.  That's probably an error.  Reset your EEPROM");
   return 0;
 }
 
@@ -497,14 +527,14 @@ void reset(FlightData *d) {
 }
 
 void logData(int index, FlightData *d) {
-   log("Flight " + String(index) + 
-       " : [Apogee " + String(d->apogee) + 
-       "m] : [Main " + String(d->ejectionAltitude) + 
-       "m] : [Drogue " + String(d->drogueEjectionAltitude) + 
-       "m] : [Acc " + String(d->maxAcceleration) + 
-       "ms] : [Apogee Time  " + String(d->apogeeTime) +
-       "ms]: [Acc Trigger Time" + String(d->accTriggerTime) + 
-       "ms] : [Alt Trigger Time " + String(d->altTriggerTime) + "s]");
+   log("# " + String(index) + 
+       ": Apo " + String(d->apogee) + 
+       "m:Main " + String(d->ejectionAltitude));
+//       "m:Dro " + String(d->drogueEjectionAltitude) + 
+//       "m:Acc " + String(d->maxAcceleration) + 
+//       "ms:ApT " + String(d->apogeeTime) +
+//       "ms:AcT" + String(d->accTriggerTime) + 
+//       "ms:AltTT " + String(d->altTriggerTime) + "s");
 }
 
 

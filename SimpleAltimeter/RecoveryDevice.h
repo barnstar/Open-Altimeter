@@ -46,11 +46,11 @@ public:
   DeploymentType type = kServo;
   Servo          servo;
 
-  int    relayPin=0;
-  char   id = 0; 
+  byte    relayPin=0;
+  byte    id = 0; 
 
 public:
-  void init(int id, int pin, DeploymentType type);
+  void init(byte id, byte pin, DeploymentType type);
   void enable();
   void disable();
   void reset();

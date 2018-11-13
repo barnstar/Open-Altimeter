@@ -29,28 +29,31 @@
 #include "types.h"
 #include "SimpleTimer.h"
 
-#define kMaxBlinks 64
+#define kMaxBlinks 30
 
 typedef struct {
-  int onTime;
-  int offTime;
+  byte onTime;
+  byte offTime;
 }Blink;
 
 class Blinker
 {
 public:
-  Blinker(SimpleTimer &timer, int ledPin, int piezoPin) :
-    timer(timer),
-    ledPin(ledPin),
-    piezoPin(piezoPin) {}
+  Blinker() {}
 
   ~Blinker() {
     cancelSequence();
   };
 
-  void blinkValue(double value, double speed);
+  void configure(SimpleTimer &timer, byte ledPin, byte piezoPin) {
+    this->timer = timer;
+    this->ledPin = ledPin;
+    this->piezoPin = piezoPin;
+  }
 
-  void blinkSequence(Blink *sequence, int len, bool repeat);
+  void blinkValue(int value, byte speed);
+
+  void blinkSequence(Blink *sequence, byte len, bool repeat);
   void cancelSequence();
   bool isBlinking();
   void handleTimeout();
@@ -62,13 +65,13 @@ private:
   BlinkerState state;
   void setHardwareState(BlinkerState hwState);
 
-  int ledPin = NO_PIN;
-  int piezoPin = NO_PIN;
+  byte ledPin = NO_PIN;
+  byte piezoPin = NO_PIN;
 
   Blink sequence[kMaxBlinks];
 
-  int sequenceLen =0;
-  int position = 0;
+  byte sequenceLen =0;
+  byte position = 0;
   bool repeat = 0;
 
   //Ticker ticker;
