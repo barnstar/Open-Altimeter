@@ -75,7 +75,7 @@ void Blinker::blinkValue(long value, int speed, bool repeat)
   isRunning = true;
   this->repeat = repeat;
   this->speed = speed;
-  handleTimeout();
+  timerFired(0);
 }
 
 
@@ -91,13 +91,9 @@ void Blinker::cancelSequence()
 }
 
 
-void Blinker::timerFired() override
-{
-  handleTimeout();
-}
+ 
 
-
-void Blinker::handleTimeout()
+void Blinker::timerFired(int number)
 {
   byte byteNumber = position / 8;
   byte bitNumber = position % 8; 

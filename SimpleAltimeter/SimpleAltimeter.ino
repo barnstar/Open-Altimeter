@@ -234,6 +234,7 @@ void loop()
     }
 }
 
+
 void flightControllInterrupt()
 {
     if(flightState != kOnGround) {
@@ -260,6 +261,7 @@ int readDeploymentAltitude()
 }
 
 
+TimerProxy flightControlInterruptProxy(flightControllInterrupt);
 
 bool checkResetPin()
 {
@@ -277,7 +279,7 @@ bool checkResetPin()
     flightState = kReadyToFly; 
     filter.reset(1,1,0.001);
     sensorFusion.begin(1000/SENSOR_READ_DELAY_MS);
-    flightControlTimer = timer.setInterval(SENSOR_READ_DELAY_MS, flightControllInterrupt);
+    flightControlTimer = timer.setInterval(SENSOR_READ_DELAY_MS, &flightControlInterruptProxy);
 
     return true;
   }

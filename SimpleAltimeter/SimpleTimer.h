@@ -41,22 +41,23 @@
 class TimerDelegate
 {
 public:
-    virtual void timerFired(int timerNumber);
-}
+    virtual void timerFired(int timerNumber) {}
+};
 
 using timer_callback = void(*)();
 
-class TimerProxy : TimerDelegate
+class TimerProxy : public TimerDelegate
 {
 public:
     TimerProxy(timer_callback callback) : callback(callback) {};
-private:
-    timer_callback callback = nullptr;
 
-    void timerFired(int timerNumber) override {
+    void timerFired(int timerNumber) {
       callback();
     }
-}
+    
+private:
+    timer_callback callback = nullptr;
+};
 
 class SimpleTimer {
 

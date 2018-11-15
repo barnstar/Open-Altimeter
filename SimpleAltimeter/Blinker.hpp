@@ -33,7 +33,7 @@
 #define kMaxBits kBitMapLen*8 //This is enough for 62 blinks + padding.  Enough to render 999999.
 
 
-class Blinker : TimerDelegate
+class Blinker : public TimerDelegate
 {
 public:
   Blinker(SimpleTimer &timer, byte ledPin, byte piezoPin) :
@@ -52,7 +52,8 @@ public:
   void blinkValue(long value, int speed, bool repeat);
   void cancelSequence();
   bool isBlinking();
-  void handleTimeout();
+  void timerFired(int timerNumber) override;
+
 
 private:
   SimpleTimer &timer;

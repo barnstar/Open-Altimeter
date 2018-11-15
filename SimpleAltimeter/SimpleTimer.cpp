@@ -92,12 +92,13 @@ void SimpleTimer::run() {
     }
 
     for (i = 0; i < MAX_TIMERS; i++) {
+        TimerDelegate *target = callbacks[i];
         switch(toBeCalled[i]) {
+
             case DEFCALL_DONTRUN:
                 break;
 
             case DEFCALL_RUNONLY:
-                TimerCallable target = callbacks[i];
                 target->timerFired(i);
                 break;
 
