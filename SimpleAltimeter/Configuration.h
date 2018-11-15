@@ -126,9 +126,9 @@ const PeizoStyle PEIZO_TYPE     = kPassive;
 #endif
 
 //The barometer can only refresh at about 50Hz. 
-const byte SENSOR_READ_DELAY_MS = 5;
+const byte SENSOR_READ_DELAY_MS = 50;
 
 //Delay between digit blinks.  Any faster is too quick to keep up with
-const byte BLINK_SPEED_MS       = 3;
+const short BLINK_SPEED_MS       = 300;
 
 #endif //CONFIGURATION_H

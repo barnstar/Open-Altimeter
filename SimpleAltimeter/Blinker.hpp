@@ -48,7 +48,8 @@ public:
     cancelSequence();
   };
 
-  void blinkValue(int value, int speed, bool repeat)
+
+  void blinkValue(long value, int speed, bool repeat);
   void cancelSequence();
   bool isBlinking();
   void handleTimeout();

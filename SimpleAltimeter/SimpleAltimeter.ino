@@ -94,6 +94,8 @@ typedef MPU9250 ImuSensor;
 #include "KalmanFilter.h"
 #include "RecoveryDevice.h"
 #include "Blinker.hpp"
+#include "MahonyAHRS.h"
+
 
 void log(String msg)
 {
@@ -132,6 +134,10 @@ double deploymentAltitude = 100;      //Deployment altitude in m.
 int    testFlightTimeStep = 0;
 
 Barometer   barometer;
+ImuSensor   imu(Wire,0x68);
+
+KalmanFilter      filter;
+Mahony            sensorFusion;
 
 #if ENABLE_MPU
 MPU6050           mpu;
@@ -139,10 +145,8 @@ MPU6050           mpu;
 
 bool              barometerReady = false;        //True if the barometer/altimeter is ready
 bool              mpuReady = false;              //True if the barometer/altimeter is ready
-KalmanFilter      filter;
-Blinker           blinker;
 SimpleTimer       timer;
-ImuSensor         imu(Wire,0x68);
+Blinker           blinker(timer, MESSAGE_PIN, BUZZER_PIN);
 
 
 //////////////////////////////////////////////////////////////////
@@ -166,8 +170,6 @@ void setup()
     pinMode(TEST_PIN, INPUT_PULLUP);
   }
 
-  blinker.configure(timer, MESSAGE_PIN, BUZZER_PIN);
-
   //Start in the "error" state.  Status pin should be high and message
   //pin should be low to indicate a good startup
   digitalWrite(STATUS_PIN, LOW);
@@ -176,7 +178,6 @@ void setup()
   mainChute.init(2, MAIN_DEPL_RELAY_PIN, MAIN_TYPE);
   drogueChute.init(1, DROGUE_DEPL_RELAY_PIN, DROGUE_TYPE);
 
-  delay(100);   //The barometer doesn't like being queried immediately
   if (barometer.begin(BARO_I2C_ADDR)) {  //Omit the parameter for adafruit
     #ifdef STATUS_PIN_LEVEL
     analogWrite(STATUS_PIN, STATUS_PIN_LEVEL);
@@ -212,40 +213,35 @@ void setup()
 }
 
 static unsigned long lastFireTime = 0;
+int flightControlTimer = 0;
+ SensorData data;
+
 void loop()
 {
-  static SensorData data;
   timer.run();
-  if(barometerReady) {
-    if(flightState != kOnGround) {
-      readSensorData(&data);
-      flightControl(&data);
-      digitalWrite(READY_PIN, HIGH);
-
-      delay(SENSOR_READ_DELAY_MS);
-//      unsigned long time = millis();
-//      unsigned long loopTime = time - lastFireTime;
-//      lastFireTime = time;
-//      unsigned long delayTime = SENSOR_READ_DELAY_MS - loopTime;
-//      if(delayTime > 0) {
-//        delay(delayTime);
-//      }      
-    }else if (flightState == kOnGround) {
+  if(!barometerReady && !blinker.isBlinking()) {
+    blinker.blinkValue(3, BLINK_SPEED_MS, true);
+  }
+  if (flightState == kOnGround) {
+      //Kill Timer
+      timer.deleteTimer(flightControlTimer);
+      flightControlTimer = -1;
       digitalWrite(READY_PIN, LOW);
       if(flightData.apogee && !blinker.isBlinking()) {
-        blinker.blinkValue(flightData.apogee, BLINK_SPEED_MS);
+        blinker.blinkValue(flightData.apogee, BLINK_SPEED_MS, true);
       }
       checkResetPin();
     }
-
-  }else{
-      if(blinker.isBlinking()) {
-        blinker.blinkValue(3, BLINK_SPEED_MS);
-      }
-  }
-
 }
 
+void flightControllInterrupt()
+{
+    if(flightState != kOnGround) {
+      readSensorData(&data);
+      flightControl(&data);
+      digitalWrite(READY_PIN, HIGH); 
+    }
+}
 
 int readDeploymentAltitude()
 {
@@ -280,6 +276,9 @@ bool checkResetPin()
     playReadyTone();
     flightState = kReadyToFly; 
     filter.reset(1,1,0.001);
+    sensorFusion.begin(1000/SENSOR_READ_DELAY_MS);
+    flightControlTimer = timer.setInterval(SENSOR_READ_DELAY_MS, flightControllInterrupt);
+
     return true;
   }
   return false;
@@ -288,57 +287,13 @@ bool checkResetPin()
 
 void playReadyTone()
 {
-  Blink sequence[3] = {{150,50},{150,50},{150,450}};
-  //Blink sequence[3] = [{150,50,880},{150,50,1109},{150,450,1318}];
-  blinker.blinkSequence(sequence, 3, false);
+  blinker.blinkValue(3, 100, false);
 }
 
 
 
 ////////////////////////////////////////////////////////////////////////
 // Sensors 
-
-int16_t ax, ay, az;
-int16_t gx, gy, gz;
-int16_t grx, gry, grz;
-const double onegee = 65536.0 / 16.0; //units/g for scale of +/- 8g
-
-const char* tabChar = "\t";
-
-double getacceleration()
-{
-  //mpu.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
-  imu.readSensor();
-
-//  Serial.print(imu.getAccelX_mss(),6);
-//  Serial.print(tabChar);
-//  Serial.print(imu.getAccelY_mss(),6);
-//  Serial.print(tabChar);
-//  Serial.print(imu.getAccelZ_mss(),6);
-//  Serial.print(tabChar);
-//  Serial.print(imu.getGyroX_rads(),6);
-//  Serial.print(tabChar);
-//  Serial.print(imu.getGyroY_rads(),6);
-//  Serial.print(tabChar);
-//  Serial.print(imu.getGyroZ_rads(),6);
-//  Serial.print(tabChar);
-//  Serial.print(imu.getMagX_uT(),6);
-//  Serial.print(tabChar);
-//  Serial.print(imu.getMagY_uT(),6);
-//  Serial.print(tabChar);
-//  Serial.print(imu.getMagZ_uT(),6);
-//  Serial.print(tabChar);
-//  Serial.println(imu.getTemperature_C(),6);
-  
-  double axd = ax / onegee ;
-  double ayd = ay / onegee ;
-  double azd = az / onegee ;
-
-  //Remove gravity.. We now have the absolute acceleration
-  double acc = sqrt( axd * axd + ayd * ayd + azd * azd) - 1.0;
-  return acc;
-}
-
 void readSensorData(SensorData *d)
 {
   if(TEST_PIN && ((digitalRead(TEST_PIN) == LOW) || testFlightTimeStep)) {
@@ -351,7 +306,17 @@ void readSensorData(SensorData *d)
     d->altitude = barometer.readAltitude(SEA_LEVEL_PRESSURE) - refAltitude;
   }
   if(mpuReady) {
-    d->acceleration = getacceleration();
+    imu.readSensor();
+    sensorFusion.update(
+      imu.getGyroX_rads(),
+      imu.getGyroY_rads(),
+      imu.getGyroZ_rads(),
+      imu.getAccelX_mss(),
+      imu.getAccelY_mss(),
+      imu.getAccelZ_mss(),
+      imu.getMagX_uT(),
+      imu.getMagY_uT(),
+      imu.getMagZ_uT());
   }
 }
 
@@ -365,7 +330,10 @@ void flightControl(SensorData *d)
   double acceleration = d->acceleration;
   double altitude = filter.step(d->altitude);
 
-  if(PLOT_ALTITUDE) { log(String(altitude)); }
+  if(PLOT_ALTITUDE) { 
+    log(String(altitude)); 
+    log(String(sensorFusion.getYaw()) +":"+String(sensorFusion.getPitch()) +":" + String(sensorFusion.getRoll()));
+   }
 
   //Failsafe.. Nothing should happen while we're ready but the altitude is below our threshold
   if(flightState == kReadyToFly && altitude < FLIGHT_START_THRESHOLD_ALT){
@@ -396,7 +364,7 @@ void flightControl(SensorData *d)
   } 
   else if (flightState == kAscending && altitude < (flightData.apogee - DESCENT_THRESHOLD)) {
     //Transition to kDescendining if we've we're DESCENT_THRESHOLD meters below our apogee
-    log("Descending");
+    log("Desc");
     flightState = kDescending;
 
     //Deploy our drogue chute
@@ -405,7 +373,7 @@ void flightControl(SensorData *d)
   }
   else if (flightState == kDescending && altitude < FLIGHT_END_THRESHOLD_ALT) {
     flightState = kOnGround;
-    log(String("Landed"));
+    log(String("Land"));
     
     logData(flightCount, &flightData);
     recordFlight(flightData);

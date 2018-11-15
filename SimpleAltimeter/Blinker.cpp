@@ -46,15 +46,15 @@ void Blinker::blinkValue(long value, int speed, bool repeat)
   //If we make it past 999km then this failing is probably not a big deal
   //Bitmask should be 10101000 10101010 0010100011 <- For 342... For example
   for(long m=1000000; m>0; m=m/10) {  
-    byte digit = tempValue / m;
+    int digit = tempValue / m;
     if (digit || foundDigit){
       foundDigit = true;
       tempValue = tempValue - digit*m;
       if(digit == 0) { digit = 10; } //Blink "0" as 10
-      for(byte i=0;i<digit;i++) {
+      for(int i=0;i<digit;i++) {
         byte byteNumber = position / 8;
         byte bitNumber = position % 8;
-        bitMap[byteNumber] = bitMap[byteNumber] | 0b100000000>>bitNumber;
+        bitMap[byteNumber] = bitMap[byteNumber] | 0b10000000>>bitNumber;
         position+=2;
       }
     }
@@ -62,10 +62,12 @@ void Blinker::blinkValue(long value, int speed, bool repeat)
       position += 2;
     }
   }
-  byte byteNumber = position / 8;
-  byte bitNumber = position % 8; 
-  bitMap[byteNumber] = bitMap[byteNumber] | 0b11000000>>bitNumber;
-  position += 4; //2 for the 11 and 2 for a 00 pause
+  if(repeat) {
+    byte byteNumber = position / 8;
+    byte bitNumber = position % 8; 
+    bitMap[byteNumber] = bitMap[byteNumber] | 0b11000000>>bitNumber;
+    position += 4; //2 for the 11 and 2 for a 00 pause
+    }
   sequenceLen = position ;
 
   state = OFF;
@@ -80,7 +82,10 @@ void Blinker::blinkValue(long value, int speed, bool repeat)
 
 void Blinker::cancelSequence()
 {
+  position = 0;
+  memset(bitMap, 0, kBitMapLen);
   timer.deleteTimer(timerNumber);
+  timerNumber = -1;
   setHardwareState(OFF);
   isRunning = false;
 }
