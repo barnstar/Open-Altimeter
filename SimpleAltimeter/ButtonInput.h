@@ -1,33 +1,49 @@
 #ifndef BUTTONINPUT_H
 #define BUTTONINPUT_H
 
-typedef void (*button_callback)();
+using button_callback = void(*)();
+class ButtonInput;
 
+
+class ButtonInputDelegate
+{
+public:
+	virtual void buttonShortPress(ButtonInput *button);
+	virtual void buttonLongPress(ButtonInput *button);
+}
 
 class ButtonInput
 {
 public:
-	ButtonInput(byte pin, short longPressInterval = 1000) {
-		this->pin = pin;
-		this->longPressInterval = longPressInterval;
+	ButtonInput(uint8_t pin, uint16_t longPressInterval = 1000)  :
+		pin(pin),
+		longPressInterval(longPressInterval)
+	{
 		pinMode(pin, INPUT_PULLUP);
 	}
 
 	//call in loop();
-	void update() {
+	void update() 
+	{
 		if(pushedTime == 0 && digitalRead(pin) == LOW ) {
 			pushedTime = millis();
 		}
 		if(pushedTime && digitalRead(pin) == HIGH) {
 			int onTime = millis() - pushedTime;
-			if(pushedTime < longPressInterval && shortPressCallback) {
-				shortPressCallback();
+			if(pushedTime < longPressInterval) {
+				if(shortPressCallback != nullptr) { shortPressCallback(); }
+  			    if(delegate != nullptr) { delegate->buttonShortPress(this); }
 			}
-			if(pushedTime >= longPressInterval && longPressCallback) {
-				longPressCallback();
+			if(pushedTime >= longPressInterval) {
+				if(longPressCallback != nullptr) { longPressCallback(); }
+				if(delegate != nullptr) { delegate->buttonLongPress(this); }
 			}
 			pushedTime = 0;
 		}
+	}
+
+	void setDelegate(ButtonInputDelegate *delegate) {
+		this->delegate = delegate;
 	}
 
 	void setShortPressCallback(button_callback callback) {
@@ -39,10 +55,11 @@ public:
 	}
 
 private:
-	byte pin;
-	short longPressInterval;
-	int pushedTime = 0;
+	uint8_t pin;
+	uint16_t longPressInterval;
+	uint32_t pushedTime = 0;
 
+	ButtonInputDelegate *delegate = nullptr;
 	button_callback shortPressCallback = nullptr;
 	button_callback longPressCallback = nullptr;
 }

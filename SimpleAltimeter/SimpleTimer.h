@@ -44,7 +44,8 @@ public:
     virtual void timerFired(int timerNumber);
 }
 
-typedef void (*timer_callback)();
+using timer_callback = void(*)();
+
 class TimerProxy : TimerDelegate
 {
 public:
