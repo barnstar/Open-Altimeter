@@ -97,11 +97,12 @@ void SimpleTimer::run() {
                 break;
 
             case DEFCALL_RUNONLY:
-                callbacks[i]();
+                TimerCallable target = callbacks[i];
+                target->timerFired(i);
                 break;
 
             case DEFCALL_RUNANDDEL:
-                callbacks[i]();
+                target->timerFired(i);
                 deleteTimer(i);
                 break;
         }
@@ -121,7 +122,7 @@ int SimpleTimer::findFirstFreeSlot() {
 
     // return the first slot with no callback (i.e. free)
     for (i = 0; i < MAX_TIMERS; i++) {
-        if (callbacks[i] == 0) {
+        if (callbacks[i] == nullptr) {
             return i;
         }
     }
@@ -131,7 +132,7 @@ int SimpleTimer::findFirstFreeSlot() {
 }
 
 
-int SimpleTimer::setTimer(unsigned long d, timer_callback f, int n) {
+int SimpleTimer::setTimer(unsigned long d, TimerDelegate *f, int n) {
     int freeTimer;
 
     freeTimer = findFirstFreeSlot();
@@ -139,7 +140,7 @@ int SimpleTimer::setTimer(unsigned long d, timer_callback f, int n) {
         return -1;
     }
 
-    if (f == NULL) {
+    if (f == nullptr) {
         return -1;
     }
 
@@ -155,12 +156,12 @@ int SimpleTimer::setTimer(unsigned long d, timer_callback f, int n) {
 }
 
 
-int SimpleTimer::setInterval(unsigned long d, timer_callback f) {
+int SimpleTimer::setInterval(unsigned long d, TimerDelegate * f) {
     return setTimer(d, f, RUN_FOREVER);
 }
 
 
-int SimpleTimer::setTimeout(unsigned long d, timer_callback f) {
+int SimpleTimer::setTimeout(unsigned long d, TimerDelegate * f) {
     return setTimer(d, f, RUN_ONCE);
 }
 

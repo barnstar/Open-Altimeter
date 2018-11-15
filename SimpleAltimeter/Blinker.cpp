@@ -85,11 +85,10 @@ void Blinker::cancelSequence()
   isRunning = false;
 }
 
-static Blinker *blinker;
 
-void interrupt()
+void Blinker::timerFired() override
 {
-  blinker->handleTimeout();
+  handleTimeout();
 }
 
 
@@ -118,8 +117,7 @@ void Blinker::handleTimeout()
   }
   //Horrible... But Simpletimer is... simple and takes (*void)() so we have
   //no good way of passing the Blinker instance to it.
-  blinker = this;
-  timerNumber = timer.setTimeout(speed, &interrupt);
+  timerNumber = timer.setTimeout(speed, this);
 }
 
 

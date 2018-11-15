@@ -113,6 +113,9 @@ void readSensorData(SensorData *d);
 void flightControl(SensorData *d);
 bool checkResetPin();
 
+
+
+
 /////////////////////////////////////////////////////////////////
 // Global State
 
@@ -140,6 +143,7 @@ KalmanFilter      filter;
 Blinker           blinker;
 SimpleTimer       timer;
 ImuSensor         imu(Wire,0x68);
+
 
 //////////////////////////////////////////////////////////////////
 // main()

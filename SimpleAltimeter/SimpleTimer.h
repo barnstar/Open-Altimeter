@@ -38,11 +38,24 @@
 #include <WProgram.h>
 #endif
 
-#ifndef __AVR__
-typedef std::function<void(void)> timer_callback;
-#else
+class TimerDelegate
+{
+public:
+    virtual void timerFired(int timerNumber);
+}
+
 typedef void (*timer_callback)();
-#endif // __AVR__
+class TimerProxy : TimerDelegate
+{
+public:
+    TimerProxy(timer_callback callback) : callback(callback) {};
+private:
+    timer_callback callback = nullptr;
+
+    void timerFired(int timerNumber) override {
+      callback();
+    }
+}
 
 class SimpleTimer {
 
@@ -61,13 +74,13 @@ public:
     void run();
 
     // call function f every d milliseconds
-    int setInterval(unsigned long d, timer_callback f);
+    int setInterval(unsigned long d, TimerDelegate *f);
 
     // call function f once after d milliseconds
-    int setTimeout(unsigned long d, timer_callback f);
+    int setTimeout(unsigned long d, TimerDelegate *f);
 
     // call function f every d milliseconds for n times
-    int setTimer(unsigned long d, timer_callback f, int n);
+    int setTimer(unsigned long d, TimerDelegate *f, int n);
 
     // destroy the specified timer
     void deleteTimer(int numTimer);
@@ -108,7 +121,7 @@ private:
     unsigned long prev_millis[MAX_TIMERS];
 
     // pointers to the callback functions
-    timer_callback callbacks[MAX_TIMERS];
+    TimerDelegate* callbacks[MAX_TIMERS];
 
     // delay values
     unsigned long delays[MAX_TIMERS];
