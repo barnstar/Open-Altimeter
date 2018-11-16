@@ -84,8 +84,10 @@ const double SEA_LEVEL_PRESSURE = 101370;
 //#include "I2Cdev.h"                      //https://diyhacking.com/arduino-mpu-6050-imu-sensor-tutorial/
 //#include "MPU6050_6Axis_MotionApps20.h"  //https://diyhacking.com/arduino-mpu-6050-imu-sensor-tutorial/ 
 
+#if ENABLE_MPU
 #include "MPU9250.h"
 typedef MPU9250 ImuSensor;
+#endif
 
 #include <Wire.h>
 
@@ -134,14 +136,14 @@ double deploymentAltitude = 100;      //Deployment altitude in m.
 int    testFlightTimeStep = 0;
 
 Barometer   barometer;
+#if ENABLE_MPU
 ImuSensor   imu(Wire,0x68);
+#endif
 
 KalmanFilter      filter;
 Mahony            sensorFusion;
 
-#if ENABLE_MPU
-MPU6050           mpu;
-#endif
+
 
 bool              barometerReady = false;        //True if the barometer/altimeter is ready
 bool              mpuReady = false;              //True if the barometer/altimeter is ready
@@ -278,7 +280,9 @@ bool checkResetPin()
     playReadyTone();
     flightState = kReadyToFly; 
     filter.reset(1,1,0.001);
+    #if ENABLE_MPU
     sensorFusion.begin(1000/SENSOR_READ_DELAY_MS);
+    #endif
     flightControlTimer = timer.setInterval(SENSOR_READ_DELAY_MS, &flightControlInterruptProxy);
 
     return true;
@@ -308,6 +312,7 @@ void readSensorData(SensorData *d)
     d->altitude = barometer.readAltitude(SEA_LEVEL_PRESSURE) - refAltitude;
   }
   if(mpuReady) {
+    #if ENABLE_MPU
     imu.readSensor();
     sensorFusion.update(
       imu.getGyroX_rads(),
@@ -320,6 +325,7 @@ void readSensorData(SensorData *d)
       imu.getMagY_uT(),
       imu.getMagZ_uT());
   }
+  #endif
 }
 
 
