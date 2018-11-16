@@ -10,7 +10,7 @@
 
 #define VERSION 1
 
-#include "FlightController.hpp"
+#include "src/FlightController.hpp"
 
 void setup()
 {

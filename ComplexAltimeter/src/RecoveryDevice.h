@@ -23,63 +23,38 @@
  * OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  **********************************************************************************/
 
-#ifndef TYPES_H
-#define TYPES_H
+#ifndef RECOVERYDEVICE_H
+#define RECOVERYDEVICE_H
 
-#include <Arduino.h>
+#include "types.h"
+#include <Servo.h>
 
-#define NO_PIN 0
+class RecoveryDevice
+{
 
-void log(String msg);
+public:
+  RecoveryDevice() {
+    this->reset();
+  };
+  
+  ~RecoveryDevice() {};
+  
+  bool           deployed = false;         //True if the the chute has been deplyed
+  int            deploymentTime = 0;   //Time at which the chute was deployed
+  bool           timedReset = false;       //True if we've reset the chute relay due to a timeout
+  RelayState     relayState = OFF;  //State of the parachute relay pin.  Recorded separately.  To avoid fire.
+  DeploymentType type = kServo;
+  Servo          servo;
 
-typedef enum {
-  kNoEjection,
-  kPyro,
-  kServo  
-} DeploymentType;
+  byte    relayPin=0;
+  byte    id = 0; 
 
+public:
+  void init(byte id, byte pin, DeploymentType type);
+  void enable();
+  void disable();
+  void reset();
+  
+};
 
-typedef struct  {
-  float apogee = 0;
-  float ejectionAltitude = 0;
-  float drogueEjectionAltitude = 0;
-  float maxAcceleration = 0;
-  float burnoutAltitude = 0;
-
-  int16_t    apogeeTime;
-  int16_t    accTriggerTime;
-  int16_t    altTriggerTime;   
-} FlightData;
-
-
-typedef struct {
-  double altitude =0;
-  double acceleration =0;
-}SensorData;
-
-
-typedef enum {
-  kReadyToFly,
-  kAscending,
-  kDescending,
-  kOnGround
-} FlightState;
-
-
-typedef enum {
-  kNone,
-  kActive,
-  kPassive
-}PeizoStyle;
-
-
-typedef enum {
-  OFF = 0,
-  ON =1 
-}OnOffState;
-
-
-using RelayState = OnOffState;
-using BlinkerState = OnOffState;
-
-#endif //TYPES_H
+#endif //RECOVERYDEVICE_H

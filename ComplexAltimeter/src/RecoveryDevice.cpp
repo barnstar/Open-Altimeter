@@ -23,63 +23,52 @@
  * OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  **********************************************************************************/
 
-#ifndef TYPES_H
-#define TYPES_H
+#include "RecoveryDevice.h"
+#include "Configuration.h"
+#include "types.h"
 
-#include <Arduino.h>
+void RecoveryDevice::init(byte id, byte pin, DeploymentType type) {
+	log("Init RD " + String(id) + " p:" + String(pin));
+	this->relayPin = pin;
+	this->id = id;
+	this->type = type;
+	switch(type){
+		case kPyro:  pinMode(pin, OUTPUT); break;
+		case kServo: servo.attach(pin); break;
+		case kNoEjection: break;
+	}
+	reset();
+};
 
-#define NO_PIN 0
-
-void log(String msg);
-
-typedef enum {
-  kNoEjection,
-  kPyro,
-  kServo  
-} DeploymentType;
-
-
-typedef struct  {
-  float apogee = 0;
-  float ejectionAltitude = 0;
-  float drogueEjectionAltitude = 0;
-  float maxAcceleration = 0;
-  float burnoutAltitude = 0;
-
-  int16_t    apogeeTime;
-  int16_t    accTriggerTime;
-  int16_t    altTriggerTime;   
-} FlightData;
-
-
-typedef struct {
-  double altitude =0;
-  double acceleration =0;
-}SensorData;
+void RecoveryDevice::enable() 
+{
+	deployed = true;
+	deploymentTime = millis();
+	relayState = ON;
+	switch(type){
+	  case kPyro:  digitalWrite(relayPin, HIGH);; break;
+	  case kServo: servo.write(kMinServoAngle); break;
+	  case kNoEjection: break;
+	}
+	log("RD En" + String(id) );
+};
 
 
-typedef enum {
-  kReadyToFly,
-  kAscending,
-  kDescending,
-  kOnGround
-} FlightState;
+void RecoveryDevice::disable()
+ {
+	deployed = false;
+	relayState = OFF;
+	switch(type){
+	  case kPyro:  digitalWrite(relayPin, LOW);; break;
+	  case kServo: servo.write(kMaxServoAngle); break;
+	  case kNoEjection: break;
+	}
+	log("RD Dis" + String(id) );
+};
 
-
-typedef enum {
-  kNone,
-  kActive,
-  kPassive
-}PeizoStyle;
-
-
-typedef enum {
-  OFF = 0,
-  ON =1 
-}OnOffState;
-
-
-using RelayState = OnOffState;
-using BlinkerState = OnOffState;
-
-#endif //TYPES_H
+void RecoveryDevice::reset() {
+	deployed = false;
+	deploymentTime = 0;
+	timedReset = false;
+	disable();
+};

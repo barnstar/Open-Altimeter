@@ -4,13 +4,16 @@
 #include <Arduino.h>
 
 #include "WebServer.hpp"
-#include "Altimeter.hpp"
-#include "BlinkSequence.hpp"
-#include "MPU6050.h"
+#include "Sensor/Altimeter.hpp"
+#include "IO/Blinker.hpp"
+#include "Sensor/Imu.h"
 #include <Ticker.h>
 
 #include "config.h"
 #include "types.h"
+
+#define SENSOR_FREQUENCY 100  //Hz
+
 
 class FlightController
 {
@@ -29,7 +32,7 @@ public:
 
     WebServer server;
     Altimeter altimeter;
-    MPU6050 mpu;
+    Imu imu( 1000 / SENSOR_FREQUENCY );
 
     void fly();
     String getStatus();

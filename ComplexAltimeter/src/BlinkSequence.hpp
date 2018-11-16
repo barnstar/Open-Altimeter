@@ -20,6 +20,7 @@ public:
     cancelSequence();
   };
 
+void Blinker::blinkValue(long value, int speed, bool repeat);
   void blinkSequence(Blink *sequence, size_t len, bool repeat);
   void cancelSequence();
   bool isBlinking();

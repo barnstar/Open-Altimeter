@@ -9,7 +9,6 @@ Altimeter::~Altimeter() {}
 
 void Altimeter::start()
 {
-  
   if (barometer.begin(BARO_I2C_ADDR)) {  //Omit the parameter for adafruit
     #ifdef STATUS_PIN_LEVEL
     analogWrite(STATUS_PIN, STATUS_PIN_LEVEL);

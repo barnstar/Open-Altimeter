@@ -23,63 +23,30 @@
  * OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  **********************************************************************************/
 
-#ifndef TYPES_H
-#define TYPES_H
+#ifndef FILTER_H
+#define FILTER_H
 
-#include <Arduino.h>
+class KalmanFilter
+{
+  private:
 
-#define NO_PIN 0
+  float err_measured = 0;
+  float err_estimated = 0 ;
+  float q = 0;
+  float last_estimate = 0;
 
-void log(String msg);
+  public:
 
-typedef enum {
-  kNoEjection,
-  kPyro,
-  kServo  
-} DeploymentType;
+  KalmanFilter() {
+    this->reset(1,1,0.001);
+  } 
 
+  ~KalmanFilter() {};
+  
+  double step(double measurement);
+  double lastEstimate();
+  
+  void reset(double measuredError, double estimatedError, double gain);
+};
 
-typedef struct  {
-  float apogee = 0;
-  float ejectionAltitude = 0;
-  float drogueEjectionAltitude = 0;
-  float maxAcceleration = 0;
-  float burnoutAltitude = 0;
-
-  int16_t    apogeeTime;
-  int16_t    accTriggerTime;
-  int16_t    altTriggerTime;   
-} FlightData;
-
-
-typedef struct {
-  double altitude =0;
-  double acceleration =0;
-}SensorData;
-
-
-typedef enum {
-  kReadyToFly,
-  kAscending,
-  kDescending,
-  kOnGround
-} FlightState;
-
-
-typedef enum {
-  kNone,
-  kActive,
-  kPassive
-}PeizoStyle;
-
-
-typedef enum {
-  OFF = 0,
-  ON =1 
-}OnOffState;
-
-
-using RelayState = OnOffState;
-using BlinkerState = OnOffState;
-
-#endif //TYPES_H
+#endif

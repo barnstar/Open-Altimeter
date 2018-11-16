@@ -23,63 +23,30 @@
  * OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  **********************************************************************************/
 
-#ifndef TYPES_H
-#define TYPES_H
+#include "KalmanFilter.h"
+#include <math.h>
 
-#include <Arduino.h>
+double KalmanFilter::step(double measurement)
+{ 
+    double kalman_gain = err_estimated/(err_estimated + err_measured);
+    double current_estimate = last_estimate + kalman_gain * (measurement - last_estimate);
+    
+    err_estimated =  (1.0 - kalman_gain)* err_estimated + fabs(last_estimate-current_estimate)*q;
+    last_estimate= current_estimate;
+  
+    return current_estimate;
+};
 
-#define NO_PIN 0
-
-void log(String msg);
-
-typedef enum {
-  kNoEjection,
-  kPyro,
-  kServo  
-} DeploymentType;
-
-
-typedef struct  {
-  float apogee = 0;
-  float ejectionAltitude = 0;
-  float drogueEjectionAltitude = 0;
-  float maxAcceleration = 0;
-  float burnoutAltitude = 0;
-
-  int16_t    apogeeTime;
-  int16_t    accTriggerTime;
-  int16_t    altTriggerTime;   
-} FlightData;
+double KalmanFilter::lastEstimate();
+{
+	return last_estimate;
+}
 
 
-typedef struct {
-  double altitude =0;
-  double acceleration =0;
-}SensorData;
-
-
-typedef enum {
-  kReadyToFly,
-  kAscending,
-  kDescending,
-  kOnGround
-} FlightState;
-
-
-typedef enum {
-  kNone,
-  kActive,
-  kPassive
-}PeizoStyle;
-
-
-typedef enum {
-  OFF = 0,
-  ON =1 
-}OnOffState;
-
-
-using RelayState = OnOffState;
-using BlinkerState = OnOffState;
-
-#endif //TYPES_H
+void KalmanFilter::reset(double measuredError, double estimatedError, double gain)
+{
+     this->err_measured=measuredError;
+     this->err_estimated=estimatedError;
+     this->q = gain;
+     this->last_estimate = 0;
+}

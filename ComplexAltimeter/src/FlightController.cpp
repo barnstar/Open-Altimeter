@@ -57,9 +57,9 @@ void FlightController::initialize()
   drogueChute.init(1, DROGUE_DEPL_RELAY_PIN, DROGUE_TYPE);
 
   altimeter.start();
-  if(!(mpuReady = mpu.begin(MPU6050_SCALE_250DPS, MPU6050_RANGE_8G))) {
-    DataLogger::log("IMU Startup failed");
-  }
+  // if(!(mpuReady = mpu.begin(MPU6050_SCALE_250DPS, MPU6050_RANGE_8G))) {
+  //   DataLogger::log("IMU Startup failed");
+  // }
 
 
   flightData.reset();
@@ -97,6 +97,8 @@ void readSensors(FlightController *f)
 void FlightController::fly()
 {
   SensorData data;
+  altimeter.update();
+
   readSensorData(&data);
   flightControl(&data);
 }
@@ -108,7 +110,7 @@ void FlightController::loop()
 
   if(flightState == kReadyToFly && altimeter.isReady()) {
     if(!sensorTicker.active()) {
-      sensorTicker.attach_ms(50, readSensors, this);
+      sensorTicker.attach_ms(1000/SENSOR_FREQUENCY, readSensors, this);
       digitalWrite(READY_PIN, HIGH);
     }
   }
@@ -117,7 +119,7 @@ void FlightController::loop()
   if (flightState == kOnGround) {
     sensorTicker.detach();
     digitalWrite(READY_PIN, LOW);
-    blinkLastAltitude();
+    blinker->blinkValue(flightData.apogee, BLINK_SPEED_MS, true);
   }
 }
 
@@ -162,40 +164,6 @@ void FlightController::reset()
 }
 
 
-void FlightController::blinkLastAltitude()
-{
-  if(blinker->isBlinking()) {
-    return;
-  }
-
-  static Blink sequence[kMaxBlinks];
-  int tempApogee = flightData.apogee;
-  if(tempApogee < 30){
-    return;
-  }
-  bool foundDigit = false;         //Don't blink leading 0s
-  int n=0;
-  for(int m=100000; m>0; m=m/10) {  //If we make it past 99km, we're in trouble :)
-    int digit = tempApogee / m;
-    if (digit || foundDigit){
-      foundDigit = true;
-      tempApogee = tempApogee - digit*m;
-      if(digit == 0)digit = 10;
-      for(int i=0;i<digit;i++) {
-        sequence[n].onTime = BLINK_SPEED_MS;
-        sequence[n].offTime = BLINK_SPEED_MS;
-        if(n<kMaxBlinks)n++;
-      }
-    }
-    if(foundDigit) {
-      sequence[n-1].offTime = BLINK_SPEED_MS*2;
-    }
-  }
-  sequence[n].onTime = BLINK_SPEED_MS*2;
-  sequence[n].offTime = BLINK_SPEED_MS*2;
-  blinker->blinkSequence(sequence, n+1, true);
-}
-
 
 void FlightController::playReadyTone()
 {
@@ -206,10 +174,10 @@ void FlightController::playReadyTone()
 
 Vector FlightController::getacceleration()
 {
-  Vector v = mpu.readNormalizeAccel();
+  //Vector v = mpu.readNormalizeAccel();
   //Vector v = mpu.readRawAccel();
 
-  return v;
+  return Vector(0,0,0);
 }
 
 
@@ -232,10 +200,7 @@ void FlightController::readSensorData(SensorData *d)
   if(altimeter.isReady()) {
     d->altitude = altimeter.getAltitude();
   }
-  if(mpuReady) {
-    d->acc_vec = getacceleration();
-    d->acceleration = d->acc_vec.length() - 9.80065;
-  }
+
 }
 
 
