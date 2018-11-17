@@ -24,11 +24,13 @@
  **********************************************************************************/
 
 #include "RecoveryDevice.h"
-#include "Configuration.h"
+#include "../config.h"
 #include "types.h"
 
+
+
 void RecoveryDevice::init(byte id, byte pin, DeploymentType type) {
-	log("Init RD " + String(id) + " p:" + String(pin));
+	//log("Init RD " + String(id) + " p:" + String(pin));
 	this->relayPin = pin;
 	this->id = id;
 	this->type = type;
@@ -50,7 +52,7 @@ void RecoveryDevice::enable()
 	  case kServo: servo.write(kMinServoAngle); break;
 	  case kNoEjection: break;
 	}
-	log("RD En" + String(id) );
+	//log("RD En" + String(id) );
 };
 
 
@@ -63,7 +65,7 @@ void RecoveryDevice::disable()
 	  case kServo: servo.write(kMaxServoAngle); break;
 	  case kNoEjection: break;
 	}
-	log("RD Dis" + String(id) );
+	//log("RD Dis" + String(id) );
 };
 
 void RecoveryDevice::reset() {

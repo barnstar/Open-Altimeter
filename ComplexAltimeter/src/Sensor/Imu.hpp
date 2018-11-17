@@ -2,8 +2,8 @@
 #define IMU_H
 
 #include "MPU9250.h"
-#include <Wire.h>
 #include "MahonyAHRS.h"
+#include <Wire.h>
 
 typedef MPU9250 ImuSensor;
 typedef Mahony SensorFusion;
@@ -13,7 +13,7 @@ struct Heading
 	double roll;
 	double pitch;
 	double yaw;
-}
+};
 
 struct Vec3
 {
@@ -23,17 +23,18 @@ struct Vec3
 
 	double len() {
 		return sqrt(x*x + y*y + z*z);
-	};
-}
+	}
+};
 
 class Imu
 {
 public:
 	Imu(int frequency) {
-  		mpuReady = !(imuSensor.begin() < 0);
-  		log(mpuReady? "IMU OK" : "IMU failed");
-  		imuSensor.frequency = frequency;
-	};
+	    //imuSenstor = new ImuSensor(Wire,0x68);
+  		//mpuReady = !(imuSensor.begin() < 0);
+  		//log(mpuReady? "IMU OK" : "IMU failed");
+  		//imuSensor.frequency = frequency;
+	}
 
 	~Imu();
 
@@ -52,7 +53,7 @@ private:
 	Heading heading;
 	Vec3 accelleration;
 
-	ImuSensor         imuSensor(Wire,0x68);
+	//ImuSensor         imuSensor(Wire,0x68);
 	Mahony            sensorFusion;
 
 };

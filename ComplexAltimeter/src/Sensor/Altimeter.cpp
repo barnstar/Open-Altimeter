@@ -1,10 +1,7 @@
 #include "Altimeter.hpp"
-#include "config.h"
-#include "DataLogger.hpp"
-
-Altimeter::Altimeter() {}
-Altimeter::~Altimeter() {}
-
+#include "../../config.h"
+#include "../DataLogger.hpp"
+#include <Wire.h>
 
 
 void Altimeter::start()
@@ -37,7 +34,7 @@ double Altimeter::getAltitude()
   filter.lastEstimate();
 }
 
-double verticalVelocity()
+double Altimeter::verticalVelocity()
 {
   velocityFilter.lastEstimate();
 }

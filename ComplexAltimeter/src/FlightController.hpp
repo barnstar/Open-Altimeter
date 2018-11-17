@@ -6,8 +6,9 @@
 #include "WebServer.hpp"
 #include "Sensor/Altimeter.hpp"
 #include "IO/Blinker.hpp"
-#include "Sensor/Imu.h"
+#include "Sensor/Imu.hpp"
 #include <Ticker.h>
+#include "RecoveryDevice.h"
 
 #include "config.h"
 #include "types.h"
@@ -32,7 +33,7 @@ public:
 
     WebServer server;
     Altimeter altimeter;
-    Imu imu( 1000 / SENSOR_FREQUENCY );
+    //Imu imu( 1000 / SENSOR_FREQUENCY );
 
     void fly();
     String getStatus();
@@ -49,8 +50,8 @@ private:
     FlightData flightData;
     FlightState flightState = kOnGround;  //The flight state
 
-    ChuteState mainChute;
-    ChuteState drogueChute;
+    RecoveryDevice mainChute;
+    RecoveryDevice drogueChute;
 
     int    flightCount = 0;               //The number of flights recorded in EEPROM
     int    resetTime = 0;                 //millis() after starting the current flight
@@ -73,11 +74,11 @@ private:
     void playReadyTone();
     Vector getacceleration();
     void flightControl(SensorData *d);
-    void checkChuteIgnitionTimeout(ChuteState &c, int maxIgnitionTime);
-    void setDeploymentRelay(RelayState relayState, ChuteState &c);
+    void checkChuteIgnitionTimeout(RecoveryDevice &c, int maxIgnitionTime);
+    void setDeploymentRelay(RelayState relayState, RecoveryDevice &c);
     void recordFlight(FlightData &d);
     void testFlightData(SensorData *d);
-    void resetChuteIfRequired(ChuteState &c)
+    void resetChuteIfRequired(RecoveryDevice &c);
 };
 
 #endif

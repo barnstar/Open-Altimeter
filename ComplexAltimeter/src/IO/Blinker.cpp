@@ -1,5 +1,7 @@
 #include "Blinker.hpp"
 
+#define kMaxBlinks 64
+
 void Blinker::blinkValue(long value, int speed, bool repeat)
 {
   if(isBlinking()) {
@@ -7,14 +9,14 @@ void Blinker::blinkValue(long value, int speed, bool repeat)
   }
 
   static Blink sequence[kMaxBlinks];
-  int tempVal = value
+  int tempVal = value;
   if(tempVal < 30){
     return;
   }
   bool foundDigit = false;         //Don't blink leading 0s
   int n=0;
   for(int m=100000; m>0; m=m/10) {  //If we make it past 99km, we're in trouble :)
-    int digit = tempApogee / m;
+    int digit = tempVal / m;
     if (digit || foundDigit){
       foundDigit = true;
       tempVal = tempVal - digit*m;
@@ -31,7 +33,7 @@ void Blinker::blinkValue(long value, int speed, bool repeat)
   }
   sequence[n].onTime = speed*2;
   sequence[n].offTime = speed*2;
-  blinkSequence(sequence, n+1, true, repeat);
+  blinkSequence(sequence, n+1, repeat);
 }
 
 

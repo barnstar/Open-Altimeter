@@ -73,7 +73,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define MPU6050_REG_PWR_MGMT_1        (0x6B) // Power Management 1
 #define MPU6050_REG_WHO_AM_I          (0x75) // Who Am I
 
-#include "types.h"
+#include "../types.h"
 
 #ifndef VECTOR_STRUCT_H
 #define VECTOR_STRUCT_H

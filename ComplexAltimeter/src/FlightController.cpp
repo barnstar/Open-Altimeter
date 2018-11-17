@@ -74,14 +74,14 @@ void FlightController::initialize()
 
 String FlightController::getStatus()
 {
-  String statusStr = (readyToFly ?"Ready To Fly" : "Waiting");
+  String statusStr = (flightState == kReadyToFly ?"Ready To Fly" : "Waiting");
 
   String ret;
   ret += "Status :" + statusStr + "<br/>";
   ret += "Flight Count :" +  String(flightCount) + "<br/>";
   ret += "Deployment Altitude: " + String(deploymentAltitude) + "<br/>";
   ret += "Pad Altitude:" + String(altimeter.referenceAltitude()) + "<br/>";
-  if(!readyToFly) {
+  if(flightState != kReadyToFly) {
     ret += "Last Flight:" + flightData.toString(flightCount) + "<br/>";
   }
   return ret;
@@ -183,7 +183,7 @@ Vector FlightController::getacceleration()
 
 void FlightController::runTest()
 {
-  if(readyToFly && testFlightTimeStep == 0) {
+  if(flightState == kReadyToFly && testFlightTimeStep == 0) {
     testFlightTimeStep=1;
   }
 }
@@ -264,7 +264,6 @@ void FlightController::flightControl(SensorData *d)
     resetChuteIfRequired(mainChute);
 
     enableBuzzer = true;
-    readyToFly = false;
   }
 
   //Main chute deployment at kDeployment Altitude
@@ -281,7 +280,7 @@ void FlightController::flightControl(SensorData *d)
   checkChuteIgnitionTimeout(drogueChute, MAX_FIRE_TIME);
 }
 
-void FlightController::resetChuteIfRequired(ChuteState &c)
+void FlightController::resetChuteIfRequired(RecoveryDevice &c)
 {
   if(c.type == kPyro) {
      setDeploymentRelay(OFF, c);
@@ -290,7 +289,7 @@ void FlightController::resetChuteIfRequired(ChuteState &c)
 }
 
 
-void FlightController::checkChuteIgnitionTimeout(ChuteState &c, int maxIgnitionTime)
+void FlightController::checkChuteIgnitionTimeout(RecoveryDevice &c, int maxIgnitionTime)
 {
   //We only need to timeout pyrocharges
   if(!c.type == kPyro) {
@@ -309,7 +308,7 @@ void FlightController::checkChuteIgnitionTimeout(ChuteState &c, int maxIgnitionT
 }
 
 
-void FlightController::setDeploymentRelay(RelayState relayState, ChuteState &c)
+void FlightController::setDeploymentRelay(RelayState relayState, RecoveryDevice &c)
 {
   if(relayState == c.relayState)return;
   int chuteId = c.id;
@@ -352,44 +351,44 @@ void FlightController::testFlightData(SensorData *d)
 
 String FlightController::checkMPUSettings()
 {
-  if(!mpuReady) {
-    return String("IMU is not ready");
-  }
-
-  String settings;
-
-  settings += " * Sleep Mode: ";
-  settings += mpu.getSleepEnabled() ? "Enabled" : "Disabled";
-
-  settings +=  " *<br>\n  Clock Source: ";
-  switch(mpu.getClockSource())
-  {
-    case MPU6050_CLOCK_KEEP_RESET:     settings +="Stops the clock and keeps the timing generator in reset"; break;
-    case MPU6050_CLOCK_EXTERNAL_19MHZ: settings +="PLL with external 19.2MHz reference"; break;
-    case MPU6050_CLOCK_EXTERNAL_32KHZ: settings +="PLL with external 32.768kHz reference"; break;
-    case MPU6050_CLOCK_PLL_ZGYRO:      settings +="PLL with Z axis gyroscope reference"; break;
-    case MPU6050_CLOCK_PLL_YGYRO:      settings +="PLL with Y axis gyroscope reference"; break;
-    case MPU6050_CLOCK_PLL_XGYRO:      settings +="PLL with X axis gyroscope reference"; break;
-    case MPU6050_CLOCK_INTERNAL_8MHZ:  settings +="Internal 8MHz oscillator"; break;
-  }
-
-  Serial.print("<br>\n * Accelerometer:         ");
-  switch(mpu.getRange())
-  {
-    case MPU6050_RANGE_16G:            settings +="+/- 16 g"; break;
-    case MPU6050_RANGE_8G:             settings +="+/- 8 g"; break;
-    case MPU6050_RANGE_4G:             settings +="+/- 4 g"; break;
-    case MPU6050_RANGE_2G:             settings +="+/- 2 g"; break;
-  }
-
-  settings +="<br>\n  * Accelerometer offsets: ";
-  settings +=String(mpu.getAccelOffsetX());
-  settings +=" / ";
-  settings +=String(mpu.getAccelOffsetY());
-  settings +=" / ";
-  settings +=String(mpu.getAccelOffsetZ());
-
-  settings += "<br>\n";
-  return settings;
+//   if(!mpuReady) {
+//     return String("IMU is not ready");
+//   }
+// 
+//   String settings;
+// 
+//   settings += " * Sleep Mode: ";
+//   settings += mpu.getSleepEnabled() ? "Enabled" : "Disabled";
+// 
+//   settings +=  " *<br>\n  Clock Source: ";
+//   switch(mpu.getClockSource())
+//   {
+//     case MPU6050_CLOCK_KEEP_RESET:     settings +="Stops the clock and keeps the timing generator in reset"; break;
+//     case MPU6050_CLOCK_EXTERNAL_19MHZ: settings +="PLL with external 19.2MHz reference"; break;
+//     case MPU6050_CLOCK_EXTERNAL_32KHZ: settings +="PLL with external 32.768kHz reference"; break;
+//     case MPU6050_CLOCK_PLL_ZGYRO:      settings +="PLL with Z axis gyroscope reference"; break;
+//     case MPU6050_CLOCK_PLL_YGYRO:      settings +="PLL with Y axis gyroscope reference"; break;
+//     case MPU6050_CLOCK_PLL_XGYRO:      settings +="PLL with X axis gyroscope reference"; break;
+//     case MPU6050_CLOCK_INTERNAL_8MHZ:  settings +="Internal 8MHz oscillator"; break;
+//   }
+// 
+//   Serial.print("<br>\n * Accelerometer:         ");
+//   switch(mpu.getRange())
+//   {
+//     case MPU6050_RANGE_16G:            settings +="+/- 16 g"; break;
+//     case MPU6050_RANGE_8G:             settings +="+/- 8 g"; break;
+//     case MPU6050_RANGE_4G:             settings +="+/- 4 g"; break;
+//     case MPU6050_RANGE_2G:             settings +="+/- 2 g"; break;
+//   }
+// 
+//   settings +="<br>\n  * Accelerometer offsets: ";
+//   settings +=String(mpu.getAccelOffsetX());
+//   settings +=" / ";
+//   settings +=String(mpu.getAccelOffsetY());
+//   settings +=" / ";
+//   settings +=String(mpu.getAccelOffsetZ());
+// 
+//   settings += "<br>\n";
+//   return settings;
 }
 

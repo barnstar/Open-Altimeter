@@ -1,4 +1,4 @@
-#import "Imu.h"
+#include "Imu.hpp"
 
 void readSensorData()
 {
@@ -19,32 +19,32 @@ void readSensorData()
  //  float mx = x * mag_softiron_matrix[0][0] + y * mag_softiron_matrix[0][1] + z * mag_softiron_matrix[0][2];
  //  float my = x * mag_softiron_matrix[1][0] + y * mag_softiron_matrix[1][1] + z * mag_softiron_matrix[1][2];
  //  float mz = x * mag_softiron_matrix[2][0] + y * mag_softiron_matrix[2][1] + z * mag_softiron_matrix[2][2];
-
-  if(mpuReady) {
-    int status = imuSensor.readSensor();
-    if(status == -1) {
-    	return;
-    }
-    accelleration.set(imuSensor.getAccelX_mss(),
-                      imuSensor.getAccelY_mss(),
-                      imuSensor.getAccelZ_mss());
-
-
-    sensorFusion.update(
-      imuSensor.getGyroX_rads(),
-      imuSensor.getGyroY_rads(),
-      imuSensor.getGyroZ_rads(),
-      accelleration.x,
-      accelleration.y,
-      accelleration.z,
-      imuSensor.getMagX_uT(),
-      imuSensor.getMagY_uT(),
-      imuSensor.getMagZ_uT());
-  
-    heading.roll = imuSensor.roll();
-    heading.pitch = imuSensor.pitch();
-    heading.yaw = imuSenstor.yaw();
-  }
+// 
+//   if(mpuReady) {
+//     int status = imuSensor.readSensor();
+//     if(status == -1) {
+//     	return;
+//     }
+//     accelleration.set(imuSensor.getAccelX_mss(),
+//                       imuSensor.getAccelY_mss(),
+//                       imuSensor.getAccelZ_mss());
+// 
+// 
+//     sensorFusion.update(
+//       imuSensor.getGyroX_rads(),
+//       imuSensor.getGyroY_rads(),
+//       imuSensor.getGyroZ_rads(),
+//       accelleration.x,
+//       accelleration.y,
+//       accelleration.z,
+//       imuSensor.getMagX_uT(),
+//       imuSensor.getMagY_uT(),
+//       imuSensor.getMagZ_uT());
+//   
+//     heading.roll = imuSensor.roll();
+//     heading.pitch = imuSensor.pitch();
+//     heading.yaw = imuSenstor.yaw();
+//   }
 }
 
 

@@ -5,7 +5,7 @@
 #define config_h
 
 #include <Arduino.h>
-#include "types.h"
+#include "src/types.h"
 
 //Today's pressure at sea level...
 const double SEA_LEVEL_PRESSURE = 1013.7;
@@ -38,8 +38,8 @@ const int BUZZER_PIN            = D6;   //Audible buzzer on landing
 const int RESET_PIN             = 9;    //SD2
 const int MAIN_DEPL_RELAY_PIN   = D5;  //parachute deployment pin
 const int DROGUE_DEPL_RELAY_PIN = NO_PIN;  //parachute deployment pin
-const EjectionType MAIN_TYPE    = kServo;
-const EjectionType DROGUE_TYPE  = kNoEjection; 
+const DeploymentType MAIN_TYPE    = kServo;
+const DeploymentType DROGUE_TYPE  = kNoEjection; 
 const int BARO_I2C_ADDR         = 0x76;
 #define STATUS_PIN_LEVEL 800
 const PeizoStyle PEIZO_TYPE     = kActive;
@@ -50,6 +50,8 @@ const int SENSOR_READ_DELAY_MS = 20;
 //Delay between digit blinks.  Any faster is too quick to keep up with
 const int BLINK_SPEED_MS       = 250;
 
+const int kMaxServoAngle = 180;
+const int kMinServoAngle = 0;
 
 #endif //config_h
 

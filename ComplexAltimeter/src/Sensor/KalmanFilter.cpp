@@ -37,7 +37,7 @@ double KalmanFilter::step(double measurement)
     return current_estimate;
 };
 
-double KalmanFilter::lastEstimate();
+double KalmanFilter::lastEstimate()
 {
 	return last_estimate;
 }
