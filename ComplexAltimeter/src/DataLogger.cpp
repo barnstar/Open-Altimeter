@@ -6,7 +6,7 @@
 #include "types.h"
 #include "FS.h"
 
-static const size_t buffer_size = 16*1024;
+static const size_t buffer_size = 1024;
 static const int sample_rate_hz = 20;
 
 DataLogger::DataLogger()

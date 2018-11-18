@@ -14,8 +14,8 @@ typedef  Adafruit_BMP280  Barometer;
 #endif
 
 #if USE_BMP085
-#include <Adafruit_BMP085.h>             //https://github.com/adafruit/Adafruit_BMP280_Library/blob/master/Adafruit_BMP085.h       
-typedef  Adafruit_BMP085 Barometer ;
+#include "SFE_BMP180.h"            //https://github.com/adafruit/Adafruit_BMP280_Library/blob/master/Adafruit_BMP085.h       
+typedef  SFE_BMP180 Barometer ;
 #define  SEA_LEVEL_PRESSURE  101370
 #endif
 
@@ -23,28 +23,31 @@ typedef  Adafruit_BMP085 Barometer ;
 class Altimeter
 {
    public:
-   Altimeter() {}
-   ~Altimeter() {}
+   Altimeter() {};
+   ~Altimeter() {};
    
    void start();
    bool isReady();
    void update();
+   void reset();
 
    double getAltitude();
    double referenceAltitude();
    double verticalVelocity();
+   double getPressure();
 
    void scanI2cBus();
       
    private:
-   Adafruit_BMP085       barometer;
-   bool            barometerReady;
-   double          refAltitude;
+   Barometer       barometer;
+   bool            barometerReady = false;
+   double          refAltitude = 0;
    KalmanFilter    filter;
    KalmanFilter    velocityFilter;
+   double          baselinePressure = 0;
 
-   long lastRefreshTime;
-   double lastRecordedAltitude;
+   long lastRefreshTime = 0;
+   double lastRecordedAltitude = 0;
 
 };
 

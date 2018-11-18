@@ -6,7 +6,8 @@
 
 void Altimeter::start()
 {
-  if (barometer.begin(BARO_I2C_ADDR)) {  //Omit the parameter for adafruit
+  //scanI2cBus();
+  if (barometer.begin()) {  //Omit the parameter for adafruit
     #ifdef STATUS_PIN_LEVEL
     analogWrite(STATUS_PIN, STATUS_PIN_LEVEL);
     #else
@@ -15,13 +16,27 @@ void Altimeter::start()
     digitalWrite(MESSAGE_PIN, LOW);
     DataLogger::log("Barometer Started");
     barometerReady = true;
-    refAltitude = barometer.readAltitude(SEA_LEVEL_PRESSURE);
+    reset();
   } else {
     //If the unit starts with the status pin off and the message pin on,
     //the barometer failed to initialize
     DataLogger::log("Barometer Init Fail");
   }
-  scanI2cBus();
+}
+
+void Altimeter::reset()
+{
+    filter.reset(1,1,0.001);
+    velocityFilter.reset(1,1,0.001);
+    for(int i=0; i<4; i++) {
+      filter.step(0);
+      velocityFilter.step(0);
+    }
+    
+    baselinePressure = getPressure();
+    lastRefreshTime = 0;
+    DataLogger::log(String("Barometer reset: ") + String(baselinePressure));
+
 }
 
 double Altimeter::referenceAltitude()
@@ -31,7 +46,14 @@ double Altimeter::referenceAltitude()
 
 double Altimeter::getAltitude()
 {
-  filter.lastEstimate();
+//   double pressure = getPressure();
+//   if(pressure == 0) {
+//     return 0;
+//   }
+//   double relativeAlt = barometer.altitude(pressure, baselinePressure);
+//   return relativeAlt;
+
+  return filter.lastEstimate();
 }
 
 double Altimeter::verticalVelocity()
@@ -41,15 +63,49 @@ double Altimeter::verticalVelocity()
 
 void Altimeter::update()
 {
-  double altIn = barometer.readAltitude(SEA_LEVEL_PRESSURE) - refAltitude;
+  double pressure = getPressure();
+  if(pressure == 0) {
+    return;
+  }
+  double relativeAlt = barometer.altitude(pressure, baselinePressure);
 
   long time = millis();
-  long delta = time - lastRefreshTime;
-  double velocity = (altIn - filter.lastEstimate()) / delta * 1000;
+  if(lastRefreshTime) {
+   long delta = time - lastRefreshTime;
+    double velocity = (relativeAlt - filter.lastEstimate()) / delta * 1000;
+    velocityFilter.step(velocity);
+  }
   lastRefreshTime = time;
 
-  velocityFilter.step(velocity);
-  filter.step(altIn);
+  filter.step(relativeAlt);
+  //DataLogger::log(String("Pressure:") + String(pressure));
+
+}
+
+double Altimeter::getPressure()
+{
+  char status;
+  double T,P,p0,a;
+  status = barometer.startTemperature();
+  if (status != 0)
+  {
+    delay(status);
+    status = barometer.getTemperature(T);
+    if (status != 0)
+    {
+      status = barometer.startPressure(3);
+      if (status != 0)
+      {
+        delay(status);
+        status = barometer.getPressure(P,T);
+        if (status != 0)
+        {
+          return(P);
+        }
+      }
+    }
+  }
+  return 0;
 }
 
 

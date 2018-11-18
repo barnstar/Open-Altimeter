@@ -10,7 +10,7 @@ class ButtonInputDelegate
 public:
 	virtual void buttonShortPress(ButtonInput *button);
 	virtual void buttonLongPress(ButtonInput *button);
-}
+};
 
 class ButtonInput
 {
@@ -25,20 +25,32 @@ public:
 	//call in loop();
 	void update() 
 	{
-		if(pushedTime == 0 && digitalRead(pin) == LOW ) {
-			pushedTime = millis();
+	  if(lastReleaseTime) {
+	    if(millis() - lastReleaseTime < 100) {
+	      return;
+	    }
+	  }
+	
+		if(digitalRead(pin) == LOW ) {
+			if(pushedTime == 0) { pushedTime = millis(); }
+			return;
 		}
+		
 		if(pushedTime && digitalRead(pin) == HIGH) {
-			int onTime = millis() - pushedTime;
-			if(pushedTime < longPressInterval) {
-				if(shortPressCallback != nullptr) { shortPressCallback(); }
-  			    if(delegate != nullptr) { delegate->buttonShortPress(this); }
-			}
-			if(pushedTime >= longPressInterval) {
+			long onTime = millis() - pushedTime;
+			if(onTime < 30) {
+			  pushedTime = 0;
+			  return;
+			}else if(onTime >= longPressInterval) {
 				if(longPressCallback != nullptr) { longPressCallback(); }
 				if(delegate != nullptr) { delegate->buttonLongPress(this); }
 			}
+			else if(onTime < longPressInterval) {
+				if(shortPressCallback != nullptr) { shortPressCallback(); }
+  			if(delegate != nullptr) { delegate->buttonShortPress(this); }
+			}
 			pushedTime = 0;
+			lastReleaseTime = millis();
 		}
 	}
 
@@ -57,12 +69,13 @@ public:
 private:
 	uint8_t pin;
 	uint16_t longPressInterval;
-	uint32_t pushedTime = 0;
+	long pushedTime = 0;
+  long lastReleaseTime = 0;
 
 	ButtonInputDelegate *delegate = nullptr;
 	button_callback shortPressCallback = nullptr;
 	button_callback longPressCallback = nullptr;
-}
+};
 
 
 

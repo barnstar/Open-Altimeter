@@ -8,7 +8,7 @@
 #include "src/types.h"
 
 //Today's pressure at sea level...
-const double SEA_LEVEL_PRESSURE = 1013.7;
+const double SEA_LEVEL_PRESSURE = 101307;
 
 //Recording will start at FLIGHT_START_THRESHOLD_ALT m and we'll assume we're on the 
 //ground at FLIGHT_END_THRESHOLD_ALT m.

@@ -57,10 +57,18 @@ struct Vector
    String toString() { return String("(" + String(XAxis) +","+ String(YAxis)+","+String(ZAxis) + ")");}
 };
 
+typedef struct 
+{
+	double roll;
+	double pitch;
+	double yaw;
+}Heading;
+
 typedef struct {
   double altitude =0;
   double acceleration =0;
   Vector acc_vec;
+  Heading heading;
 
   String toString() { return String("Alt " + String(altitude) +"    acc: " + String(acceleration)); }
 }SensorData;

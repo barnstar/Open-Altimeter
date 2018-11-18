@@ -9,6 +9,7 @@
 #include "Sensor/Imu.hpp"
 #include <Ticker.h>
 #include "RecoveryDevice.h"
+#include "IO/ButtonInput.h"
 
 #include "config.h"
 #include "types.h"
@@ -16,7 +17,7 @@
 #define SENSOR_FREQUENCY 100  //Hz
 
 
-class FlightController
+class FlightController : public ButtonInputDelegate
 {
 public:
     static FlightController& shared();
@@ -33,7 +34,7 @@ public:
 
     WebServer server;
     Altimeter altimeter;
-    //Imu imu( 1000 / SENSOR_FREQUENCY );
+    Imu imu;
 
     void fly();
     String getStatus();
@@ -43,6 +44,9 @@ public:
     void resetAll();
 
     void readSensorData(SensorData *d);
+    bool sampleOnNextLoop = false;
+
+
 
 private:
     void initialize();
@@ -65,15 +69,21 @@ private:
     Ticker  sensorTicker;
     int logCounter;
 
+    ButtonInput resetButton;
+
     SensorData fakeData;
     double testApogee = 400;
     bool isTestAscending;
+
+    void buttonShortPress(ButtonInput *button) override;
+    void buttonLongPress(ButtonInput *button) override;
+
 
     bool checkResetPin();
     void blinkLastAltitude();
     void playReadyTone();
     Vector getacceleration();
-    void flightControl(SensorData *d);
+    void flightControl();
     void checkChuteIgnitionTimeout(RecoveryDevice &c, int maxIgnitionTime);
     void setDeploymentRelay(RelayState relayState, RecoveryDevice &c);
     void recordFlight(FlightData &d);
