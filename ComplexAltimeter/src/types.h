@@ -62,6 +62,12 @@ typedef struct
 	double roll;
 	double pitch;
 	double yaw;
+	
+	String toString() {
+	  return String("R: " + String(roll)  + "  " +
+	                "P:"  + String(pitch) + "  " +
+	                "Y:"  + String(yaw) +   "  "); 
+	}
 }Heading;
 
 typedef struct {

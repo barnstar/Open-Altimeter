@@ -10,7 +10,7 @@
 
 FlightController::FlightController() :
   resetButton(RESET_PIN, 900),
-  imu( 1000 / SENSOR_FREQUENCY )
+  imu( 1000 / SENSOR_READ_DELAY_MS )
 {
 
   SPIFFS.begin();
@@ -120,7 +120,7 @@ void FlightController::loop()
   if(flightState == kReadyToFly && altimeter.isReady()) {
     if(!sensorTicker.active()) {
       DataLogger::log("Starting Ticker");
-      sensorTicker.attach_ms(1000 / SENSOR_FREQUENCY, readSensors, this);
+      sensorTicker.attach_ms(1000 / SENSOR_READ_DELAY_MS, readSensors, this);
       digitalWrite(READY_PIN, HIGH);
     }
   }
@@ -177,6 +177,7 @@ void FlightController::reset()
   flightData.reset();
   resetTime = millis();
   altimeter.reset();
+  imu.reset();
 
   setDeploymentRelay(OFF, drogueChute);
   drogueChute.reset();
@@ -247,7 +248,7 @@ void FlightController::flightControl()
   FlightDataPoint dp = FlightDataPoint(millis(), altitude, acceleration);
 
   if(logCounter == 0) { 
-    DataLogger::log("Alt"  + String(altitude)); 
+    DataLogger::log("Alt:"  + String(altitude) + "  " + d.heading.toString() + + "   "  + d.acc_vec.toString()); 
     if(!flightState == kOnGround) {
       DataLogger::sharedLogger().logDataPoint(dp, false);
     }

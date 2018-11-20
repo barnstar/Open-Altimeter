@@ -16,7 +16,8 @@ class Imu
 {
 public:
 	Imu(int frequency) :
-	   imuSensor(Wire,0x68)
+	   imuSensor(Wire,0x68),
+	   frequency(frequency * 0.5)
 	{}
 
 	~Imu() {}
@@ -25,12 +26,12 @@ public:
   void start() {
    		mpuReady = !(imuSensor.begin() < 0);
   		DataLogger::log(mpuReady? "IMU OK" : "IMU failed");
-  		sensorFusion.begin(frequency);
   }
 
+  void reset();
   void update();
 
-	Heading const& getHeading() {
+	Heading getHeading() {
 		return heading;
 	}
 

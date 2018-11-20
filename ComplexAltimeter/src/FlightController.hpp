@@ -14,8 +14,6 @@
 #include "config.h"
 #include "types.h"
 
-#define SENSOR_FREQUENCY 100  //Hz
-
 
 class FlightController : public ButtonInputDelegate
 {
