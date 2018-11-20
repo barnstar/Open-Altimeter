@@ -10,45 +10,43 @@
 typedef MPU9250 ImuSensor;
 typedef Mahony SensorFusion;
 
-
-
 class Imu
 {
-public:
-	Imu(int frequency) :
-	   imuSensor(Wire,0x68),
-	   frequency(frequency * 0.5)
-	{}
+  public:
+	Imu(int frequency) : imuSensor(Wire, 0x68),
+						 frequency(frequency * 0.5)
+	{
+	}
 
 	~Imu() {}
 
+	void start()
+	{
+		mpuReady = !(imuSensor.begin() < 0);
+		DataLogger::log(mpuReady ? "IMU OK" : "IMU failed");
+	}
 
-  void start() {
-   		mpuReady = !(imuSensor.begin() < 0);
-  		DataLogger::log(mpuReady? "IMU OK" : "IMU failed");
-  }
+	void reset();
+	void update();
 
-  void reset();
-  void update();
-
-	Heading getHeading() {
+	Heading getHeading()
+	{
 		return heading;
 	}
 
-	Vector const& getAccelleration() {
+	Vector const &getAccelleration()
+	{
 		return accelleration;
 	}
 
-
-private:
+  private:
 	bool mpuReady;
 	int frequency;
 	Heading heading;
 	Vector accelleration;
 
-	ImuSensor         imuSensor;
-	Mahony            sensorFusion;
-
+	ImuSensor imuSensor;
+	Mahony sensorFusion;
 };
 
 #endif

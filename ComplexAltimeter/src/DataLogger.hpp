@@ -4,18 +4,22 @@
 #include <Arduino.h>
 #include "FlightData.hpp"
 
-typedef void (*PrintCallback)(const String& line);
+typedef void (*PrintCallback)(const String &line);
 
-class PrintFnc {
-public:
-     String operator()(String x) {
-        ret+=x;
+class PrintFnc
+{
+  public:
+    String operator()(String x)
+    {
+        ret += x;
         return ret;
-     }
-     String operator ()(void) {
+    }
+    String operator()(void)
+    {
         return ret;
-     }
-private:
+    }
+
+  private:
     String ret;
 };
 
@@ -23,17 +27,16 @@ void logLine(const String &s);
 
 #define FLIGHTS_DIR "/flights"
 
-
 class FlightDataPoint
 {
   public:
     FlightDataPoint() {}
 
-    FlightDataPoint(long ltime, double altitude, double acelleration) :
-        ltime(ltime),
-        altitude(altitude),
-        acelleration(acelleration)
-        {}
+    FlightDataPoint(long ltime, double altitude, double acelleration) : ltime(ltime),
+                                                                        altitude(altitude),
+                                                                        acelleration(acelleration)
+    {
+    }
 
     long ltime = 0;
     double altitude = 0;
@@ -41,18 +44,18 @@ class FlightDataPoint
 
     String toJson();
 
-    void reset() {
-      ltime = 0;
-      altitude = 0;
-      acelleration = 0;
+    void reset()
+    {
+        ltime = 0;
+        altitude = 0;
+        acelleration = 0;
     }
 };
 
-
 class DataLogger
 {
-public:
-    static DataLogger& sharedLogger();
+  public:
+    static DataLogger &sharedLogger();
 
     DataLogger();
     ~DataLogger();
@@ -82,10 +85,10 @@ public:
 
     static void resetAll();
 
-    DataLogger(DataLogger const&)      = delete;
-    void operator=(DataLogger const&)  = delete;
+    DataLogger(DataLogger const &) = delete;
+    void operator=(DataLogger const &) = delete;
 
-private:
+  private:
     FlightDataPoint *dataBuffer;
     int dataIndex = 0;
     int dataBufferLen = 0;

@@ -9,19 +9,18 @@ const bool FlightData::isValid()
          burnoutAltitude;
 }
 
-
 const String FlightData::toString(int index)
 {
-   return String(\
-       "{\"flight_idx\" : " + String(index) +
-       " , \"data\" : {" +
-         " \"apogee\":" + String(apogee) +"," +
-         " \"main\" : " + String(ejectionAltitude) + "," +
-         " \"drogue_alt\" : " + String(drogueEjectionAltitude) + "," +
-         " \"max_acc\" : " + String(maxAcceleration) + "," +
-         " \"apogee_time\" : " + String(apogeeTime) + "," +
-         " \"acc_trigger_time\" :" + String(accTriggerTime) + "," +
-         " \"alt_trigger_time\" :  " + String(altTriggerTime) + "}}");
+  return String(
+      "{\"flight_idx\" : " + String(index) +
+      " , \"data\" : {" +
+      " \"apogee\":" + String(apogee) + "," +
+      " \"main\" : " + String(ejectionAltitude) + "," +
+      " \"drogue_alt\" : " + String(drogueEjectionAltitude) + "," +
+      " \"max_acc\" : " + String(maxAcceleration) + "," +
+      " \"apogee_time\" : " + String(apogeeTime) + "," +
+      " \"acc_trigger_time\" :" + String(accTriggerTime) + "," +
+      " \"alt_trigger_time\" :  " + String(altTriggerTime) + "}}");
 }
 
 void FlightData::reset()
