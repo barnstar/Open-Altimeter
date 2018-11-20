@@ -18,8 +18,7 @@ void Imu::update()
   if (mpuReady)
   {
     int status = imuSensor.readSensor();
-    if (status == -1)
-    {
+    if (status == -1) {
       return;
     }
     accelleration = Vector(imuSensor.getAccelX_mss(),

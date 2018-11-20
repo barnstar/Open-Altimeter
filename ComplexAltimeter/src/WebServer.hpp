@@ -3,21 +3,21 @@
 
 #include <Arduino.h>
 
+#include <ESP8266WebServer.h>
 #include <ESP8266WiFi.h>
 #include <WiFiClient.h>
-#include <ESP8266WebServer.h>
 
 class WebServer;
 
 class PageBuilder
 {
-public:
-  PageBuilder() {};
-  ~PageBuilder() {};
+ public:
+  PageBuilder(){};
+  ~PageBuilder(){};
 
   String title;
 
-  void startPageStream(ESP8266WebServer *s, const String& title);
+  void startPageStream(ESP8266WebServer *s, const String &title);
   void sendHeaders();
   void sendTaggedChunk(const String &tag, const String &chunk);
   void sendBodyChunk(const String &chunk, bool addStartTag, bool addClosingTag);
@@ -32,23 +32,22 @@ public:
   static String makeLink(const String &link, const String &string);
   static String makeDiv(const String &name, const String &contents);
 
-private:
+ private:
   ESP8266WebServer *server = nullptr;
 };
 
-
 class WebServer
 {
-public:
+ public:
   WebServer();
   ~WebServer();
 
-  void start(const IPAddress& ipAddress);
+  void start(const IPAddress &ipAddress);
   void handleClient();
 
   void bindFlight(int index);
 
-private:
+ private:
   IPAddress ipAddress;
   ESP8266WebServer *server;
 
@@ -70,7 +69,4 @@ private:
   void handleTest();
 };
 
-
-
-
-#endif //webserver_h
+#endif  // webserver_h

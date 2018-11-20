@@ -8,19 +8,16 @@ typedef void (*PrintCallback)(const String &line);
 
 class PrintFnc
 {
-  public:
-    String operator()(String x)
-    {
-        ret += x;
-        return ret;
-    }
-    String operator()(void)
-    {
-        return ret;
-    }
+ public:
+  String operator()(String x)
+  {
+    ret += x;
+    return ret;
+  }
+  String operator()(void) { return ret; }
 
-  private:
-    String ret;
+ private:
+  String ret;
 };
 
 void logLine(const String &s);
@@ -29,71 +26,70 @@ void logLine(const String &s);
 
 class FlightDataPoint
 {
-  public:
-    FlightDataPoint() {}
+ public:
+  FlightDataPoint() {}
 
-    FlightDataPoint(long ltime, double altitude, double acelleration) : ltime(ltime),
-                                                                        altitude(altitude),
-                                                                        acelleration(acelleration)
-    {
-    }
+  FlightDataPoint(long ltime, double altitude, double acelleration)
+      : ltime(ltime), altitude(altitude), acelleration(acelleration)
+  {
+  }
 
-    long ltime = 0;
-    double altitude = 0;
-    double acelleration = 0;
+  long ltime          = 0;
+  double altitude     = 0;
+  double acelleration = 0;
 
-    String toJson();
+  String toJson();
 
-    void reset()
-    {
-        ltime = 0;
-        altitude = 0;
-        acelleration = 0;
-    }
+  void reset()
+  {
+    ltime        = 0;
+    altitude     = 0;
+    acelleration = 0;
+  }
 };
 
 class DataLogger
 {
-  public:
-    static DataLogger &sharedLogger();
+ public:
+  static DataLogger &sharedLogger();
 
-    DataLogger();
-    ~DataLogger();
+  DataLogger();
+  ~DataLogger();
 
-    void initializeBuffer(int sampleRate, size_t bufferSize);
+  void initializeBuffer(int sampleRate, size_t bufferSize);
 
-    FlightDataPoint *getDataBuffer();
-    int dataBufferLength();
+  FlightDataPoint *getDataBuffer();
+  int dataBufferLength();
 
-    static void log(const String &msg);
-    static String getFlightList();
+  static void log(const String &msg);
+  static String getFlightList();
 
-    void saveFlight(FlightData &d, int index);
-    void logDataPoint(FlightDataPoint &p, bool isTriggerPoint);
-    void writeFlightDataFileWithIndex(FlightData &ddata, int index);
+  void saveFlight(FlightData &d, int index);
+  void logDataPoint(FlightDataPoint &p, bool isTriggerPoint);
+  void writeFlightDataFileWithIndex(FlightData &ddata, int index);
 
-    void clearBuffer();
-    void printFlightData();
-    void printBufferData();
+  void clearBuffer();
+  void printFlightData();
+  void printBufferData();
 
-    void readFlightData(PrintCallback callback);
-    void readFlightDetails(int index, PrintCallback callback);
+  void readFlightData(PrintCallback callback);
+  void readFlightDetails(int index, PrintCallback callback);
 
-    void readBufferData(PrintCallback callback);
+  void readBufferData(PrintCallback callback);
 
-    int nextFlightIndex();
+  int nextFlightIndex();
 
-    static void resetAll();
+  static void resetAll();
 
-    DataLogger(DataLogger const &) = delete;
-    void operator=(DataLogger const &) = delete;
+  DataLogger(DataLogger const &) = delete;
+  void operator=(DataLogger const &) = delete;
 
-  private:
-    FlightDataPoint *dataBuffer;
-    int dataIndex = 0;
-    int dataBufferLen = 0;
-    int triggerIndex = -1;
-    int dataPointsLogged = 0;
+ private:
+  FlightDataPoint *dataBuffer;
+  int dataIndex        = 0;
+  int dataBufferLen    = 0;
+  int triggerIndex     = -1;
+  int dataPointsLogged = 0;
 };
 
 #endif

@@ -15,7 +15,7 @@ void Blinker::blinkValue(long value, int speed, bool repeat)
   }
   bool foundDigit = false;  // Don't blink leading 0s
   int n           = 0;
-  for (int m = 100000; m > 0; m = m / 10) {  
+  for (int m = 100000; m > 0; m = m / 10) {
     int digit = tempVal / m;
     if (digit || foundDigit) {
       foundDigit = true;
