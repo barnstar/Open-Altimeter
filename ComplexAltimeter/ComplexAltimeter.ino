@@ -22,4 +22,3 @@ void loop()
 {
   FlightController::shared().loop();
 }
-

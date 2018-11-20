@@ -30,30 +30,28 @@
 #include "SimpleTimer.h"
 
 #define kBitMapLen 16
-#define kMaxBits kBitMapLen*8 //This is enough for 62 blinks + padding.  Enough to render 999999.
-
+#define kMaxBits kBitMapLen * 8 //This is enough for 62 blinks + padding.  Enough to render 999999.
 
 class Blinker : public TimerDelegate
 {
 public:
-  Blinker(SimpleTimer &timer, byte ledPin, byte piezoPin) :
-    timer(timer),
-    ledPin(ledPin),
-    piezoPin(piezoPin) {
-      //Zero the bitmap
-      memset(bitMap, 0, kBitMapLen);
-    }
+  Blinker(SimpleTimer &timer, byte ledPin, byte piezoPin) : timer(timer),
+                                                            ledPin(ledPin),
+                                                            piezoPin(piezoPin)
+  {
+    //Zero the bitmap
+    memset(bitMap, 0, kBitMapLen);
+  }
 
-  ~Blinker() {
+  ~Blinker()
+  {
     cancelSequence();
   };
-
 
   void blinkValue(long value, int speed, bool repeat);
   void cancelSequence();
   bool isBlinking();
   void timerFired(int timerNumber) override;
-
 
 private:
   SimpleTimer &timer;
@@ -66,7 +64,7 @@ private:
   byte ledPin = NO_PIN;
   byte piezoPin = NO_PIN;
 
-  byte sequenceLen =0;
+  byte sequenceLen = 0;
   byte position = 0;
   bool repeat = 0;
   int speed = 0;

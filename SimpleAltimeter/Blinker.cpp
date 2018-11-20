@@ -26,14 +26,15 @@
 #include "Blinker.hpp"
 #include "types.h"
 
-
 void Blinker::blinkValue(long value, int speed, bool repeat)
 {
-  if(isBlinking()) {
+  if (isBlinking())
+  {
     cancelSequence();
   }
 
-  if(value > 999999) {
+  if (value > 999999)
+  {
     return;
   }
 
@@ -41,34 +42,42 @@ void Blinker::blinkValue(long value, int speed, bool repeat)
   memset(bitMap, 0, kBitMapLen);
 
   long tempValue = value;
-  bool foundDigit = false;         //Don't blink leading 0s
+  bool foundDigit = false; //Don't blink leading 0s
 
   //If we make it past 999km then this failing is probably not a big deal
   //Bitmask should be 10101000 10101010 0010100011 <- For 342... For example
-  for(long m=1000000; m>0; m=m/10) {  
+  for (long m = 1000000; m > 0; m = m / 10)
+  {
     int digit = tempValue / m;
-    if (digit || foundDigit){
+    if (digit || foundDigit)
+    {
       foundDigit = true;
-      tempValue = tempValue - digit*m;
-      if(digit == 0) { digit = 10; } //Blink "0" as 10
-      for(int i=0;i<digit;i++) {
+      tempValue = tempValue - digit * m;
+      if (digit == 0)
+      {
+        digit = 10;
+      } //Blink "0" as 10
+      for (int i = 0; i < digit; i++)
+      {
         byte byteNumber = position / 8;
         byte bitNumber = position % 8;
-        bitMap[byteNumber] = bitMap[byteNumber] | 0b10000000>>bitNumber;
-        position+=2;
+        bitMap[byteNumber] = bitMap[byteNumber] | 0b10000000 >> bitNumber;
+        position += 2;
       }
     }
-    if(foundDigit) {
+    if (foundDigit)
+    {
       position += 2;
     }
   }
-  if(repeat) {
+  if (repeat)
+  {
     byte byteNumber = position / 8;
-    byte bitNumber = position % 8; 
-    bitMap[byteNumber] = bitMap[byteNumber] | 0b11000000>>bitNumber;
+    byte bitNumber = position % 8;
+    bitMap[byteNumber] = bitMap[byteNumber] | 0b11000000 >> bitNumber;
     position += 4; //2 for the 11 and 2 for a 00 pause
-    }
-  sequenceLen = position ;
+  }
+  sequenceLen = position;
 
   state = OFF;
   position = 0;
@@ -77,8 +86,6 @@ void Blinker::blinkValue(long value, int speed, bool repeat)
   this->speed = speed;
   timerFired(0);
 }
-
-
 
 void Blinker::cancelSequence()
 {
@@ -90,28 +97,32 @@ void Blinker::cancelSequence()
   isRunning = false;
 }
 
-
- 
-
 void Blinker::timerFired(int number)
 {
   byte byteNumber = position / 8;
-  byte bitNumber = position % 8; 
-  byte mask = 0b10000000>>bitNumber;
+  byte bitNumber = position % 8;
+  byte mask = 0b10000000 >> bitNumber;
 
   byte enable = bitMap[byteNumber] & mask;
 
-  if(enable) {
+  if (enable)
+  {
     setHardwareState(ON);
-  } else {
+  }
+  else
+  {
     setHardwareState(OFF);
   }
 
-  position ++;
-  if(position == sequenceLen) {
-    if(repeat) {
+  position++;
+  if (position == sequenceLen)
+  {
+    if (repeat)
+    {
       position = 0;
-    }else{
+    }
+    else
+    {
       cancelSequence();
       return;
     }
@@ -121,33 +132,35 @@ void Blinker::timerFired(int number)
   timerNumber = timer.setTimeout(speed, this);
 }
 
-
 bool Blinker::isBlinking()
 {
   return isRunning;
 }
 
-
 void Blinker::setHardwareState(BlinkerState hwState)
 {
   //TODO - use tone(), noTone() for passive piezos.
-  if(hwState==ON)
+  if (hwState == ON)
   {
-    if(ledPin != NO_PIN) {
+    if (ledPin != NO_PIN)
+    {
       digitalWrite(ledPin, HIGH);
     }
-    if(piezoPin != NO_PIN){
-       digitalWrite(piezoPin, HIGH);
+    if (piezoPin != NO_PIN)
+    {
+      digitalWrite(piezoPin, HIGH);
     }
   }
-  else if(hwState == OFF) {
-    if(ledPin != NO_PIN) {
+  else if (hwState == OFF)
+  {
+    if (ledPin != NO_PIN)
+    {
       digitalWrite(ledPin, LOW);
     }
-    if(piezoPin != NO_PIN){
+    if (piezoPin != NO_PIN)
+    {
       digitalWrite(piezoPin, LOW);
     }
   }
   this->state = hwState;
 }
-

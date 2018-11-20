@@ -4,19 +4,20 @@
 #include "../types.h"
 #include <Ticker.h>
 
-typedef struct {
+typedef struct
+{
   int onTime;
   int offTime;
-}Blink;
+} Blink;
 
 class Blinker
 {
 public:
-  Blinker(int ledPin, int piezoPin) :
-    ledPin(ledPin),
-    piezoPin(piezoPin) {}
+  Blinker(int ledPin, int piezoPin) : ledPin(ledPin),
+                                      piezoPin(piezoPin) {}
 
-  ~Blinker() {
+  ~Blinker()
+  {
     cancelSequence();
   };
 
@@ -34,7 +35,7 @@ private:
   int piezoPin = NO_PIN;
 
   Blink *sequence = nullptr;
-  size_t sequenceLen =0;
+  size_t sequenceLen = 0;
   int position = 0;
   bool repeat = 0;
 
