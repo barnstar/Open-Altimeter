@@ -23,38 +23,29 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  **********************************************************************************/
-**********************************************************************************/
 
-#ifndef RECOVERYDEVICE_H
-#define RECOVERYDEVICE_H
+#ifndef FILTER_H
+#define FILTER_H
 
-#include <Servo.h>
-#include "types.h"
-
-class RecoveryDevice
+class KalmanFilter
 {
- public:
-  RecoveryDevice() { this->reset(); };
+private:
+  float err_measured = 0;
+  float err_estimated = 0;
+  float q = 0;
+  float last_estimate = 0;
 
-  ~RecoveryDevice(){};
+public:
+  KalmanFilter()
+  {
+    this->reset(1, 1, 0.001);
+  }
 
-  bool deployed      = false;  // True if the the chute has been deplyed
-  int deploymentTime = 0;      // Time at which the chute was deployed
-  bool timedReset =
-      false;  // True if we've reset the chute relay due to a timeout
-  RelayState relayState = OFF;  // State of the parachute relay pin.  Recorded
-                                // separately.  To avoid fire.
-  DeploymentType type = kServo;
-  Servo servo;
+  ~KalmanFilter(){};
 
-  byte relayPin = 0;
-  byte id       = 0;
+  double step(double measurement);
 
- public:
-  void init(byte id, byte pin, DeploymentType type);
-  void enable();
-  void disable();
-  void reset();
+  void reset(double measuredError, double estimatedError, double gain);
 };
 
-#endif  // RECOVERYDEVICE_H
+#endif

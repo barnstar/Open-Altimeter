@@ -23,38 +23,25 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  **********************************************************************************/
-**********************************************************************************/
 
-#ifndef RECOVERYDEVICE_H
-#define RECOVERYDEVICE_H
+#include "KalmanFilter.h"
+#include <math.h>
 
-#include <Servo.h>
-#include "types.h"
-
-class RecoveryDevice
+double KalmanFilter::step(double measurement)
 {
- public:
-  RecoveryDevice() { this->reset(); };
+    double kalman_gain = err_estimated / (err_estimated + err_measured);
+    double current_estimate = last_estimate + kalman_gain * (measurement - last_estimate);
 
-  ~RecoveryDevice(){};
+    err_estimated = (1.0 - kalman_gain) * err_estimated + fabs(last_estimate - current_estimate) * q;
+    last_estimate = current_estimate;
 
-  bool deployed      = false;  // True if the the chute has been deplyed
-  int deploymentTime = 0;      // Time at which the chute was deployed
-  bool timedReset =
-      false;  // True if we've reset the chute relay due to a timeout
-  RelayState relayState = OFF;  // State of the parachute relay pin.  Recorded
-                                // separately.  To avoid fire.
-  DeploymentType type = kServo;
-  Servo servo;
-
-  byte relayPin = 0;
-  byte id       = 0;
-
- public:
-  void init(byte id, byte pin, DeploymentType type);
-  void enable();
-  void disable();
-  void reset();
+    return current_estimate;
 };
 
-#endif  // RECOVERYDEVICE_H
+void KalmanFilter::reset(double measuredError, double estimatedError, double gain)
+{
+    this->err_measured = measuredError;
+    this->err_estimated = estimatedError;
+    this->q = gain;
+    this->last_estimate = 0;
+}

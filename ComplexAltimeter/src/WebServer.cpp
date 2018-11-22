@@ -1,3 +1,30 @@
+/*********************************************************************************
+ * Open Altimeter
+ *
+ * Mid power rocket avionics software for altitude recording and dual deployment
+ *
+ * Copyright 2018, Jonathan Nobels
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ **********************************************************************************/
+
+
 #include "WebServer.hpp"
 #include <FS.h>
 #include "DataLogger.hpp"
@@ -21,11 +48,12 @@ const char *statusURL   = "/status";
 const char *settingsURL = "/settings";
 const char *configURL   = "/config";
 
-WebServer::WebServer() { server = new ESP8266WebServer(80); }
+WebServer::WebServer() : server(80)
+{}
 
-WebServer::~WebServer() { delete server; }
+WebServer::~WebServer() {}
 
-void WebServer::handleClient() { server->handleClient(); }
+void WebServer::handleClient() { server.handleClient(); }
 
 void WebServer::start(const IPAddress &ipAddress)
 {
@@ -38,31 +66,31 @@ void WebServer::start(const IPAddress &ipAddress)
   Serial.print("Actual Server Address: ");
   Serial.println(apip);
 
-  server->on("/", std::bind(&WebServer::handleRoot, this));
-  server->on(resetURL, std::bind(&WebServer::handleReset, this));
-  server->on(statusURL, std::bind(&WebServer::handleStatus, this));
-  server->on(testURL, std::bind(&WebServer::handleTest, this));
-  server->on(flightsURL, std::bind(&WebServer::handleFlights, this));
-  server->on(resetAllURL, std::bind(&WebServer::handleResetAll, this));
-  server->on(configURL, std::bind(&WebServer::handleConfig, this));
-  server->serveStatic(settingsURL, SPIFFS, "/settings.html");
+  server.on("/", std::bind(&WebServer::handleRoot, this));
+  server.on(resetURL, std::bind(&WebServer::handleReset, this));
+  server.on(statusURL, std::bind(&WebServer::handleStatus, this));
+  server.on(testURL, std::bind(&WebServer::handleTest, this));
+  server.on(flightsURL, std::bind(&WebServer::handleFlights, this));
+  server.on(resetAllURL, std::bind(&WebServer::handleResetAll, this));
+  server.on(configURL, std::bind(&WebServer::handleConfig, this));
+  server.serveStatic(settingsURL, SPIFFS, "/settings.html");
 
   bindSavedFlights();
-  server->begin();
+  server.begin();
   Serial.println("HTTP server initialized");
 }
 
 void WebServer::bindFlight(int index)
 {
   String fname = String(FLIGHTS_DIR) + String("/") + String(index);
-  server->on(fname.c_str(), std::bind(&WebServer::handleFlight, this));
+  server.on(fname.c_str(), std::bind(&WebServer::handleFlight, this));
 }
 
 void WebServer::bindSavedFlights()
 {
   Dir dir = SPIFFS.openDir(FLIGHTS_DIR);
   while (dir.next()) {
-    server->on(dir.fileName().c_str(),
+    server.on(dir.fileName().c_str(),
                std::bind(&WebServer::handleFlight, this));
   }
 }
@@ -79,7 +107,7 @@ String WebServer::savedFlightLinks()
 
 void WebServer::handleFlights()
 {
-  pageBuilder.startPageStream(server, "Saved Flights");
+  pageBuilder.startPageStream(&server, "Saved Flights");
   pageBuilder.sendHeaders();
   pageBuilder.sendTaggedChunk("body", savedFlightLinks());
   pageBuilder.closePageStream();
@@ -87,10 +115,10 @@ void WebServer::handleFlights()
 
 void WebServer::handleFlight()
 {
-  String path = server->uri();
+  String path = server.uri();
   DataLogger::log("Reading " + path);
 
-  pageBuilder.startPageStream(server, "Flight :" + path + "<br>\n");
+  pageBuilder.startPageStream(&server, "Flight :" + path + "<br>\n");
   pageBuilder.sendHeaders();
   pageBuilder.sendBodyChunk("", true, false);
   pageBuilder.sendFilePretty(path);
@@ -122,7 +150,7 @@ void WebServer::handleTest()
 
 void WebServer::handleStatus()
 {
-  pageBuilder.startPageStream(server, "Altimeter 1: Status");
+  pageBuilder.startPageStream(&server, "Altimeter 1: Status");
   pageBuilder.sendHeaders();
 
   String body = FlightController::shared().getStatus();
@@ -137,9 +165,9 @@ void WebServer::handleStatus()
 
 void WebServer::handleConfig()
 {
-  for (int i = 0; i < server->args(); i++) {
-    String argName = server->argName(i);
-    String argVal  = server->arg(i);
+  for (int i = 0; i < server.args(); i++) {
+    String argName = server.argName(i);
+    String argVal  = server.arg(i);
     handleConfigSetting(argName, argVal);
   }
   handleStatus();
@@ -156,7 +184,7 @@ void WebServer::handleConfigSetting(String &arg, String &val)
 
 void WebServer::handleRoot()
 {
-  pageBuilder.startPageStream(server, "Altimeter 1");
+  pageBuilder.startPageStream(&server, "Altimeter 1");
   pageBuilder.sendHeaders();
   pageBuilder.sendBodyChunk("", true, false);
 

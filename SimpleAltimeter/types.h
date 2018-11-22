@@ -1,7 +1,7 @@
 /*********************************************************************************
- * Simple Alitimeter
+ * Simple Altimeter
  *
- * Mid power rocket avionics software for alitidue recording and dual deployment
+ * Mid power rocket avionics software for altitude recording and dual deployment
  *
  * Copyright 2018, Jonathan Nobels
  *

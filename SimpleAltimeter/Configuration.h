@@ -1,27 +1,27 @@
 /*********************************************************************************
- * Simple Alitimeter
+ * Open Altimeter
  *
- * Mid power rocket avionics software for alitidue recording and dual deployment
+ * Mid power rocket avionics software for altitude recording and dual deployment
  *
  * Copyright 2018, Jonathan Nobels
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
- *of this software and associated documentation files (the "Software"), to deal
- *in the Software without restriction, including without limitation the rights
- *to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- *copies of the Software, and to permit persons to whom the Software is
- *furnished to do so, subject to the following conditions:
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
  *
  * The above copyright notice and this permission notice shall be included in
- *all copies or substantial portions of the Software.
+ * all copies or substantial portions of the Software.
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- *IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- *FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- *AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- *LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- *OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- *SOFTWARE.
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
  **********************************************************************************/
 
 #ifndef CONFIGURATION_H
@@ -73,14 +73,14 @@ const int MAX_FIRE_TIME = 5000;
 const int SERIAL_BAUD_RATE = 9600;
 const int STATUS_PIN = 4;    // Unit status pin.  On if OK
 const int MESSAGE_PIN = 2;   // Blinks out the altitude
-const int READY_PIN   = 13;  // Inicates the unit is ready for flight
+const int READY_PIN   = 13;  // Indicates the unit is ready for flight
 const int BUZZER_PIN = 8;    // Audible buzzer on landing
 const int RESET_PIN  = 6;
 const int TEST_PIN   = 7;
 const int MAIN_DEPL_RELAY_PIN = 12;    // parachute deployment pin
 const int DROGUE_DEPL_RELAY_PIN = 11;  // parachute deployment pin
-const int ALT_PIN_A             = 9;   // Main Chute Alitude Altitude Set Pin.
-const int ALT_PIN_B             = 10;  // Main Chute Alitude Altitude Set Pin
+const int ALT_PIN_A             = 9;   // Main Chute Altitude Altitude Set Pin.
+const int ALT_PIN_B             = 10;  // Main Chute Altitude Altitude Set Pin
 const DeploymentType MAIN_TYPE   = kPyro;
 const DeploymentType DROGUE_TYPE = kPyro;
 const int BARO_I2C_ADDR          = 0x77;
@@ -91,14 +91,14 @@ const PeizoStyle PEIZO_TYPE      = kActive;
 const int SERIAL_BAUD_RATE = 9600;
 const int STATUS_PIN = 4;   // Unit status pin.  On if OK
 const int MESSAGE_PIN = 5;  // Blinks out the altitude
-const int READY_PIN   = 6;  // Inicates the unit is ready for flight
+const int READY_PIN   = 6;  // Indicates the unit is ready for flight
 const int BUZZER_PIN = 3;   // Audible buzzer on landing
 const int RESET_PIN  = 7;
 const int TEST_PIN   = 12;
 const int MAIN_DEPL_RELAY_PIN = 11;    // parachute deployment pin
 const int DROGUE_DEPL_RELAY_PIN = 10;  // parachute deployment pin
-const int ALT_PIN_A = 8;               // Main Chute AlitudeAltitude Set Pin.
-const int ALT_PIN_B = 9;               // Main Chute Alitude Altitude Set Pin
+const int ALT_PIN_A = 8;               // Main Chute Altitude Set Pin.
+const int ALT_PIN_B = 9;               // Main Chute Altitude Set Pin
 const DeploymentType MAIN_TYPE   = kServo;
 const DeploymentType DROGUE_TYPE = kServo;
 const int BARO_I2C_ADDR          = 0x76;
@@ -109,14 +109,14 @@ const PeizoStyle PEIZO_TYPE      = kPassive;
 const int SERIAL_BAUD_RATE = 9600;
 const byte STATUS_PIN = 5;    // Unit status pin.  On if OK
 const byte MESSAGE_PIN = 3;   // Blinks out the altitude
-const byte READY_PIN   = 13;  // Inicates the unit is ready for flight
+const byte READY_PIN   = 13;  // Indicates the unit is ready for flight
 const byte BUZZER_PIN = 2;    // Audible buzzer on landing
 const byte RESET_PIN           = 4;
 const byte TEST_PIN            = 10;
 const byte MAIN_DEPL_RELAY_PIN = 11;    // parachute deployment pin
 const char DROGUE_DEPL_RELAY_PIN = 12;  // parachute deployment pin
-const byte ALT_PIN_A = 8;               // Main Chute AlitudeAltitude Set Pin.
-const byte ALT_PIN_B = 9;               // Main Chute Alitude Altitude Set Pin
+const byte ALT_PIN_A = 8;               // Main Chute Altitude Set Pin.
+const byte ALT_PIN_B = 9;               // Main Chute Altitude Set Pin
 const DeploymentType MAIN_TYPE   = kServo;
 const DeploymentType DROGUE_TYPE = kNoEjection;
 #define BARO_I2C_ADDR
