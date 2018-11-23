@@ -24,7 +24,6 @@
  * SOFTWARE.
  **********************************************************************************/
 
-
 #include "FlightController.hpp"
 #include <FS.h>
 #include "DataLogger.hpp"
@@ -35,7 +34,11 @@
 #define kMaxBlinks 64
 
 FlightController::FlightController()
-    : resetButton(RESET_PIN, 900), imu(1000 / SENSOR_READ_DELAY_MS)
+    : resetButton(RESET_PIN, 900),
+      inputButton(INPUT_PIN, 1500),
+      imu(1000 / SENSOR_READ_DELAY_MS),
+      statusView(DisplayIface::shared()),
+      sensorDataView(DisplayIface::shared())
 {
   SPIFFS.begin();
   Serial.begin(SERIAL_BAUD_RATE);
@@ -44,6 +47,9 @@ FlightController::FlightController()
   DataLogger::log("Creating Flight Controller");
   blinker = new Blinker(MESSAGE_PIN, BUZZER_PIN);
   resetButton.setDelegate(this);
+
+  DisplayIface.shared().addView(&sensorDataView, false);
+  DisplayIface.shared().addView(&statusView, true);
 
   this->initialize();
 }
@@ -123,18 +129,18 @@ void FlightController::loop()
 {
   server.handleClient();
   resetButton.update();
+  inputButton.update();
 
   if (sampleOnNextLoop) {
     flightControl();
     sampleOnNextLoop = false;
   }
 
-  if (flightState == kReadyToFly && altimeter.isReady()) {
-    if (!sensorTicker.active()) {
-      DataLogger::log("Starting Ticker");
-      sensorTicker.attach_ms(1000 / SENSOR_READ_DELAY_MS, readSensors, this);
-      digitalWrite(READY_PIN, HIGH);
-    }
+  if (flightState == kReadyToFly && altimeter.isReady() &&
+      !sensorTicker.active()) {
+    DataLogger::log("Starting Ticker");
+    sensorTicker.attach_ms(1000 / SENSOR_READ_DELAY_MS, readSensors, this);
+    digitalWrite(READY_PIN, HIGH);
   }
 
   // Blink out the last recorded apogee on the message pin
@@ -144,6 +150,8 @@ void FlightController::loop()
     digitalWrite(READY_PIN, LOW);
     if (!blinker->isBlinking() && flightData.apogee) {
       blinker->blinkValue(flightData.apogee, BLINK_SPEED_MS, true);
+      statusView.setInfo(deploymentAltitude, flightState, barometerReady,
+                         mpuReady, altimeter.referenceAltitude());
     }
   }
 }
@@ -163,17 +171,20 @@ void FlightController::resetAll()
 
 void FlightController::buttonShortPress(ButtonInput *button)
 {
-  DataLogger::log("Short Press");
-  reset();
-  // altimeter.update();
-  // double val = altimeter.getAltitude();
-  // DataLogger::log("Read:" + String(val));
+  if (button == &resetButton) {
+    DataLogger::log("Reset Short Press");
+    reset();
+  } else if (button == &inputButton) {
+    DisplayIface::shared().nextView();
+  }
 }
 
 void FlightController::buttonLongPress(ButtonInput *button)
 {
-  DataLogger::log("Long Press");
-  flightState = kOnGround;
+  if (button == &resetButton) {
+    DataLogger::log("Reset Long Press");
+    flightState = kOnGround;
+  }
 }
 
 void FlightController::reset()
@@ -201,6 +212,8 @@ void FlightController::reset()
   flightState  = kReadyToFly;
   DataLogger::sharedLogger().clearBuffer();
   DataLogger::log("Ready To Fly...");
+  statusView.setInfo(deploymentAltitude, flightState, barometerReady, mpuReady,
+                     altimeter.referenceAltitude());
 }
 
 void FlightController::playReadyTone()
@@ -209,13 +222,7 @@ void FlightController::playReadyTone()
   blinker->blinkSequence(sequence, 3, false);
 }
 
-Vector FlightController::getacceleration()
-{
-  // Vector v = mpu.readNormalizeAccel();
-  // Vector v = mpu.readRawAccel();
-
-  return Vector(0, 0, 0);
-}
+Vector FlightController::getacceleration() { return Vector(0, 0, 0); }
 
 void FlightController::runTest()
 {
@@ -253,6 +260,7 @@ void FlightController::flightControl()
   if (logCounter == 0) {
     DataLogger::log("Alt:" + String(altitude) + "  " + d.heading.toString() +
                     +"   " + d.acc_vec.toString());
+    sensorDataView.setData(d);
     if (!flightState == kOnGround) {
       DataLogger::sharedLogger().logDataPoint(dp, false);
     }
@@ -263,11 +271,8 @@ void FlightController::flightControl()
   logCounter      = !logCounter ? sampleDelay : logCounter - 1;
 
   // Keep track or our apogee and our max g load
-  flightData.apogee =
-      altitude > flightData.apogee ? altitude : flightData.apogee;
-  flightData.maxAcceleration = acceleration > flightData.maxAcceleration
-                                   ? acceleration
-                                   : flightData.maxAcceleration;
+  flightData.apogee          = MAX(flightData.apogee, altitude);
+  flightData.maxAcceleration = MAX(flightData.maxAcceleration, accelleration);
 
   // Experimental.  Log when we've hit some prescribed g load.  This might be
   // more accurate than starting the flight at some altitude x...  The minimum
@@ -287,6 +292,8 @@ void FlightController::flightControl()
     digitalWrite(READY_PIN, LOW);
     digitalWrite(MESSAGE_PIN, HIGH);
     DataLogger::sharedLogger().logDataPoint(dp, true);
+    statusView.setInfo(deploymentAltitude, flightState, barometerReady,
+                       mpuReady, altimeter.referenceAltitude());
   } else if (flightState == kAscending &&
              altitude < (flightData.apogee - DESCENT_THRESHOLD)) {
     // Transition to kDescendining if we've we're DESCENT_THRESHOLD meters below
@@ -296,6 +303,8 @@ void FlightController::flightControl()
     // Deploy our drogue chute
     setDeploymentRelay(ON, drogueChute);
     flightData.drogueEjectionAltitude = altitude;
+    statusView.setInfo(deploymentAltitude, flightState, barometerReady,
+                       mpuReady, altimeter.referenceAltitude());
   } else if (flightState == kDescending &&
              altitude < FLIGHT_END_THRESHOLD_ALT) {
     flightState = kOnGround;
@@ -307,6 +316,8 @@ void FlightController::flightControl()
 
     resetChuteIfRequired(drogueChute);
     resetChuteIfRequired(mainChute);
+    statusView.setInfo(deploymentAltitude, flightState, barometerReady,
+                       mpuReady, altimeter.referenceAltitude());
 
     enableBuzzer = true;
   }

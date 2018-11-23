@@ -24,38 +24,16 @@
  * SOFTWARE.
  **********************************************************************************/
 
-#include "DisplayIface.h"
+#include "StatusView.hpp"
 
-DisplayIface &DisplayIface::shared()
+void StatusView::setInfo(uint8_t deploymentAlt, FlightState status,
+                         bool baroReady, bool mpuReady, double padAlt)
 {
-  static DisplayIface sharedInstance;
-  return sharedInstance;
+  setText(String("Status"), 0, false);
+  setText(flightStateString(status), 1, false);
+  setText(baroReady ? String("Baro OK") : String("Baro Fail"), 2, false);
+  setText(mpuReady ? String("IMU OK") : String("IMU Fail"), 3, false);
+  setText(String("Depl:") + String(deploymentAlt), 4, false);
+  setText(String("Pad:") + String(lastAlt), 5, false);
+  update();
 }
-
-void DisplayIface::nextView()
-{
-  int8_t index = activeViewIndex + 1 > viewCount : 0 ? activeViewIndex + 1;
-  setActiveView(index);
-}
-
-void DisplayIface::previousView()
-{
-  int8_t index = activeViewIndex - 1 < 0 : viewCount ? activeViewIndex - 1;
-  setActiveView(index);
-}
-
-void DisplayIface::setActiveView(uint_8t index)
-{
-  activeViewIndex = index;
-  OledView *view  = views[index];
-  view.update();
-}
-
-void DisplayIface::buttonShortPress(ButtonInput *button)
-{
-  if (button == &nextButton) {
-    nextView();
-  }
-}
-
-void DisplayIface::buttonLongPress(ButtonInput *button) {}

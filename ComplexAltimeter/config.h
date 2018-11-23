@@ -60,6 +60,7 @@ const int MESSAGE_PIN           = D3;   //Blinks out the altitude
 const int READY_PIN             = D4;   //Inicates the unit is ready for flight
 const int BUZZER_PIN            = D6;   //Audible buzzer on landing
 const int RESET_PIN             = 9;    //SD2
+const int INPUT_PIN             = 10;   //???
 const int MAIN_DEPL_RELAY_PIN   = D5;  //parachute deployment pin
 const int DROGUE_DEPL_RELAY_PIN = NO_PIN;  //parachute deployment pin
 const DeploymentType MAIN_TYPE    = kServo;

@@ -114,6 +114,27 @@ typedef enum {
   kOnGround
 } FlightState;
 
+inline String flightStateString(FlightState s)
+{
+  switch (s) {
+    case kReadyToFly:
+      return String("Ready");
+      break;
+    case kInFlight:
+      return String("In Flight");
+      break;
+    case kAscending:
+      return String("Ascending");
+      break;
+    case kDescending:
+      return String("Descending");
+      break;
+    case kOnGround:
+      return String("On Ground");
+      break;
+  }
+}
+
 typedef enum { kNone, kActive, kPassive } PeizoStyle;
 
 #endif  // types_h

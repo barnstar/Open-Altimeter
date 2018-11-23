@@ -30,29 +30,57 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 #include <Wire.h>
-#include "OledView.hpp"
 #include "ButtonInput.h"
+#include "OledView.hpp"
+
+#define kDispWidth 64
+#define kDispHeight 64
+#define kScrollButtonPin 0
+
+typedef Adafruit_SD1306 Display;
 
 class DisplayIface
 {
-public:
+ public:
   DisplayIface()
+      : display(kDispWidth, kDispHeight, &Wire, OLED_RESET)
   {
-    display.begin(SSD1306_SWITCHCAPVCC, 0x3C); // initialize with the I2C
+    display.begin(SSD1306_SWITCHCAPVCC, 0x3C);  // initialize with the I2C
     display.clearDisplay();
     display.setTextColor(WHITE);
     display.setTextSize(1);
+    display.cp437(true);
+    display.display();
+    nextButton.setDelegate(this);
   }
 
-  void addView(OledView &view);
+  ~DisplayIface() {}
 
+  static DisplayIface &shared();
+  DisplayIface(DisplayIface const &) = delete;
 
-private:
-  ButtonInput scrollButton;
-  
-  short visibleViewIndex;
+  void addView(OledView *view, bool show)
+  {
+    if (viewCount < 7) {
+      views[viewCount] = view;
+      viewCount++;
+    }
+    if (show) {
+      setActiveView(viewCount);
+    }
+  }
+
   void nextView();
+  void previousView();
+  void setActiveView(uint_8t index);
 
+ private:
+  ButtonInput nextButton;
+
+  Display display;
+  OledView *views[8];
+  uint8_t activeViewIndex = 0;
+  uint8_t viewCount       = 0;
 }
 
 #endif

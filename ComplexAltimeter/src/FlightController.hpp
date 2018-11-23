@@ -37,9 +37,13 @@
 #include "Sensor/Altimeter.hpp"
 #include "Sensor/Imu.hpp"
 #include "WebServer.hpp"
+#include "DisplayIface.h"
+#include "SensorDataView.hpp"
+#include "StatusView.hpp"
 
 #include "config.h"
 #include "types.h"
+
 
 class FlightController : public ButtonInputDelegate
 {
@@ -91,6 +95,10 @@ class FlightController : public ButtonInputDelegate
   int logCounter;
 
   ButtonInput resetButton;
+  ButtonInput inputButton;
+
+  SensorDataView sensorDataView;
+  StatusView statusView;
 
   SensorData fakeData;
   double testApogee = 400;

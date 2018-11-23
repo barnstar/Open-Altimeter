@@ -24,38 +24,12 @@
  * SOFTWARE.
  **********************************************************************************/
 
-#include "DisplayIface.h"
+#include "SensorDataView.hpp"
 
-DisplayIface &DisplayIface::shared()
+void SensorDataView::updasetDatateData(SensorData const &data)
 {
-  static DisplayIface sharedInstance;
-  return sharedInstance;
+    setText(String("Raw Data"), 0, false);
+    setText(data.heading.toString(), 2, false);
+    setText(data.toString(), 1, false);
+    update();
 }
-
-void DisplayIface::nextView()
-{
-  int8_t index = activeViewIndex + 1 > viewCount : 0 ? activeViewIndex + 1;
-  setActiveView(index);
-}
-
-void DisplayIface::previousView()
-{
-  int8_t index = activeViewIndex - 1 < 0 : viewCount ? activeViewIndex - 1;
-  setActiveView(index);
-}
-
-void DisplayIface::setActiveView(uint_8t index)
-{
-  activeViewIndex = index;
-  OledView *view  = views[index];
-  view.update();
-}
-
-void DisplayIface::buttonShortPress(ButtonInput *button)
-{
-  if (button == &nextButton) {
-    nextView();
-  }
-}
-
-void DisplayIface::buttonLongPress(ButtonInput *button) {}
