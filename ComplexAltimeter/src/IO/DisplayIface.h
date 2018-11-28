@@ -27,8 +27,8 @@
 #ifndef DISPLAYIFACE_H
 #define DISPLAYIFACE_H
 
-#include <Adafruit_GFX.h>
-#include <Adafruit_SSD1306.h>
+#include "lib/Adafruit_GFX.h"
+#include "lib/Adafruit_SSD1306.h"
 #include <Wire.h>
 #include "ButtonInput.h"
 #include "../../config.h"

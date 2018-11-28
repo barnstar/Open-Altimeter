@@ -34,6 +34,6 @@ void StatusView::setInfo(uint8_t deploymentAlt, FlightState status,
   setText(baroReady ? String("Baro OK") : String("Baro Fail"), 2, false);
   setText(mpuReady ? String("IMU OK") : String("IMU Fail"), 3, false);
   setText(String("Depl:") + String(deploymentAlt), 4, false);
-  setText(String("Pad:") + String(lastAlt), 5, false);
+  setText(String("Pad:") + String(padAlt), 5, false);
   update();
 }

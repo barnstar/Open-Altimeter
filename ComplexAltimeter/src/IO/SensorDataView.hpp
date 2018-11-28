@@ -35,7 +35,7 @@ class SensorDataView : public OledView
  public:
   SensorDataView(Display &display) : OledView(display){};
 
-  void setData(SensorData const &data);
+  void setData(SensorData &data);
 };
 
 #endif

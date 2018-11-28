@@ -26,10 +26,12 @@
 
 #include "SensorDataView.hpp"
 
-void SensorDataView::setData(SensorData const &data)
+void SensorDataView::setData(SensorData &data)
 {
+    String heading = data.heading.toString();
+    String dataStr = data.toString();
     setText(String("Raw Data"), 0, false);
-    setText(data.heading.toString(), 2, false);
-    setText(data.toString(), 1, false);
+    setText(heading, 2, false);
+    setText(dataStr, 1, false);
     update();
 }
