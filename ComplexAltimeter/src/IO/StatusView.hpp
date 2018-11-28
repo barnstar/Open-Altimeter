@@ -24,11 +24,19 @@
  * SOFTWARE.
  **********************************************************************************/
 
+#ifndef STATUSVIEW_H
+#define STATUSVIEW_H
 
+#include "../types.h"
 #include "OledView.hpp"
-#include "types.h"
 
 class StatusView : public OledView
 {
-    void setInfo(uint8_t deploymentAlt, FlightState status, bool baroReady, bool mpuReady, double padAlt);
-}
+ public:
+   StatusView(Display &display) : OledView(display){};
+
+  void setInfo(uint8_t deploymentAlt, FlightState status, bool baroReady,
+               bool mpuReady, double padAlt);
+};
+
+#endif

@@ -26,7 +26,7 @@
 
 #include "SensorDataView.hpp"
 
-void SensorDataView::updasetDatateData(SensorData const &data)
+void SensorDataView::setData(SensorData const &data)
 {
     setText(String("Raw Data"), 0, false);
     setText(data.heading.toString(), 2, false);

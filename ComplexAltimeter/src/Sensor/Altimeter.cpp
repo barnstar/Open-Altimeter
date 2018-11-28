@@ -30,10 +30,11 @@
 #include "../../config.h"
 #include "../DataLogger.hpp"
 
-void Altimeter::start()
+bool Altimeter::start()
 {
   // scanI2cBus();
-  if (barometer.begin()) {  // Omit the parameter for adafruit
+  bool ready = false;
+  if (ready = barometer.begin()) {  // Omit the parameter for adafruit
 #ifdef STATUS_PIN_LEVEL
     analogWrite(STATUS_PIN, STATUS_PIN_LEVEL);
 #else
@@ -48,6 +49,7 @@ void Altimeter::start()
     // the barometer failed to initialize
     DataLogger::log("Barometer Init Fail");
   }
+  return ready;
 }
 
 void Altimeter::reset()

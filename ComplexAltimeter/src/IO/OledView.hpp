@@ -30,23 +30,21 @@
 #define kMaxLines 6
 
 #include <Arduino.h>
-#inlude "DisplayIFace.h"
+#include "DisplayIFace.h"
 
 class OledView
 {
-  public:
-
-    OledView(Display &display) : display(display) {}}
+  public: 
+    OledView(Display &display) : display(display) {};
+    ~OledView() {};
 
     void setText(String text, int line, boolean update);
     void clear();
+    void update();
 
   private:
     Display &display;
-    void String lines[kMaxLines];
-    void update();
-
-
+    String lines[kMaxLines];
 };
 
 

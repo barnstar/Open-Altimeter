@@ -44,10 +44,11 @@ public:
 
   ~Imu() {}
 
-  void start()
+  bool start()
   {
     mpuReady = !(imuSensor.begin() < 0);
     DataLogger::log(mpuReady ? "IMU OK" : "IMU failed");
+    return mpuReady;
   }
 
   void reset();

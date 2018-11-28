@@ -41,7 +41,8 @@ class ButtonInputDelegate
 class ButtonInput
 {
  public:
-  ButtonInput(uint8_t pin, uint16_t longPressInterval = 1000)
+
+  ButtonInput(short pin, int longPressInterval = 1000)
       : pin(pin), longPressInterval(longPressInterval)
   {
     pinMode(pin, INPUT_PULLUP);

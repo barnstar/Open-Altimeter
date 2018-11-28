@@ -31,19 +31,21 @@
 #include <Adafruit_SSD1306.h>
 #include <Wire.h>
 #include "ButtonInput.h"
-#include "OledView.hpp"
+#include "../../config.h"
 
 #define kDispWidth 64
 #define kDispHeight 64
 #define kScrollButtonPin 0
 
-typedef Adafruit_SD1306 Display;
+class OledView;
+
+typedef Adafruit_SSD1306 Display;
 
 class DisplayIface
 {
  public:
   DisplayIface()
-      : display(kDispWidth, kDispHeight, &Wire, OLED_RESET)
+      : display(kDispWidth, kDispHeight, &Wire)
   {
     display.begin(SSD1306_SWITCHCAPVCC, 0x3C);  // initialize with the I2C
     display.clearDisplay();
@@ -51,12 +53,11 @@ class DisplayIface
     display.setTextSize(1);
     display.cp437(true);
     display.display();
-    nextButton.setDelegate(this);
   }
 
   ~DisplayIface() {}
 
-  static DisplayIface &shared();
+  static DisplayIface& shared();
   DisplayIface(DisplayIface const &) = delete;
 
   void addView(OledView *view, bool show)
@@ -72,15 +73,13 @@ class DisplayIface
 
   void nextView();
   void previousView();
-  void setActiveView(uint_8t index);
+  void setActiveView(int index);
+  Display display;
 
  private:
-  ButtonInput nextButton;
-
-  Display display;
   OledView *views[8];
-  uint8_t activeViewIndex = 0;
-  uint8_t viewCount       = 0;
-}
+  short activeViewIndex = 0;
+  short viewCount       = 0;
+};
 
 #endif

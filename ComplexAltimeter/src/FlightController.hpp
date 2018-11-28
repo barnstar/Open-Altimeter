@@ -33,17 +33,16 @@
 #include <Ticker.h>
 #include "IO/Blinker.hpp"
 #include "IO/ButtonInput.h"
+#include "IO/DisplayIface.h"
+#include "IO/SensorDataView.hpp"
+#include "IO/StatusView.hpp"
 #include "RecoveryDevice.h"
 #include "Sensor/Altimeter.hpp"
 #include "Sensor/Imu.hpp"
 #include "WebServer.hpp"
-#include "DisplayIface.h"
-#include "SensorDataView.hpp"
-#include "StatusView.hpp"
 
 #include "config.h"
 #include "types.h"
-
 
 class FlightController : public ButtonInputDelegate
 {
@@ -88,6 +87,7 @@ class FlightController : public ButtonInputDelegate
   bool enableBuzzer      = false;  // True if the buzzer should be sounding
   int testFlightTimeStep = 0;
   bool mpuReady          = false;   // True if the barometer/altimeter is ready
+  bool barometerReady    = false;   // True if the barometer/altimeter is ready
   double deploymentAltitude = 100;  // Deployment altitude in ft.
 
   Blinker *blinker;

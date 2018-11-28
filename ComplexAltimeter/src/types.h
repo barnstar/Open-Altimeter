@@ -33,6 +33,10 @@
 
 #define NO_PIN -1
 
+#define MIN(a,b) (((a)<(b))?(a):(b))
+#define MAX(a,b) (((a)>(b))?(a):(b))
+
+
 typedef enum { kNoEjection, kPyro, kServo } DeploymentType;
 
 typedef enum { OFF = 0, ON = 1 } OnOffState;

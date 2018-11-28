@@ -25,6 +25,7 @@
  **********************************************************************************/
 
 #include "DisplayIface.h"
+#include "OledView.hpp"
 
 DisplayIface &DisplayIface::shared()
 {
@@ -34,28 +35,20 @@ DisplayIface &DisplayIface::shared()
 
 void DisplayIface::nextView()
 {
-  int8_t index = activeViewIndex + 1 > viewCount : 0 ? activeViewIndex + 1;
+  int8_t index = activeViewIndex + 1 > viewCount ? 0 : activeViewIndex + 1;
   setActiveView(index);
 }
 
 void DisplayIface::previousView()
 {
-  int8_t index = activeViewIndex - 1 < 0 : viewCount ? activeViewIndex - 1;
+  int8_t index = activeViewIndex - 1 < 0 ? viewCount : activeViewIndex - 1;
   setActiveView(index);
 }
 
-void DisplayIface::setActiveView(uint_8t index)
+void DisplayIface::setActiveView(int index)
 {
   activeViewIndex = index;
   OledView *view  = views[index];
-  view.update();
+  view->update();
 }
 
-void DisplayIface::buttonShortPress(ButtonInput *button)
-{
-  if (button == &nextButton) {
-    nextView();
-  }
-}
-
-void DisplayIface::buttonLongPress(ButtonInput *button) {}

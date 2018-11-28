@@ -26,13 +26,15 @@
 
 #include "OledView.hpp"
 
-void OledView::setText(String text, int line, boolean update)
+void OledView::setText(String text, int line, boolean updateDisplay)
 {
   if (line >= kMaxLines) {
     return;
   }
   lines[line] = text;
-  if (update) update();
+  if (updateDisplay) {
+    this->update();
+  }
 }
 
 void OledView::clear()
@@ -45,7 +47,7 @@ void OledView::clear()
 
 void OledView::update()
 {
-  display.clear();
+  display.clearDisplay();
   for (int i = 0; i < kMaxLines; i++) {
     if (lines[i].length() > 0) {
       display.println(lines[i].c_str());

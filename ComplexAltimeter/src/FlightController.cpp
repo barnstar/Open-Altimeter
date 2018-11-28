@@ -37,8 +37,8 @@ FlightController::FlightController()
     : resetButton(RESET_PIN, 900),
       inputButton(INPUT_PIN, 1500),
       imu(1000 / SENSOR_READ_DELAY_MS),
-      statusView(DisplayIface::shared()),
-      sensorDataView(DisplayIface::shared())
+      statusView(DisplayIface::shared().display),
+      sensorDataView(DisplayIface::shared().display)
 {
   SPIFFS.begin();
   Serial.begin(SERIAL_BAUD_RATE);
@@ -48,8 +48,8 @@ FlightController::FlightController()
   blinker = new Blinker(MESSAGE_PIN, BUZZER_PIN);
   resetButton.setDelegate(this);
 
-  DisplayIface.shared().addView(&sensorDataView, false);
-  DisplayIface.shared().addView(&statusView, true);
+  DisplayIface::shared().addView(&sensorDataView, false);
+  DisplayIface::shared().addView(&statusView, true);
 
   this->initialize();
 }
@@ -85,11 +85,8 @@ void FlightController::initialize()
   mainChute.init(2, MAIN_DEPL_RELAY_PIN, MAIN_TYPE);
   drogueChute.init(1, DROGUE_DEPL_RELAY_PIN, DROGUE_TYPE);
 
-  altimeter.start();
-  imu.start();
-  // if(!(mpuReady = mpu.begin(MPU6050_SCALE_250DPS, MPU6050_RANGE_8G))) {
-  //   DataLogger::log("IMU Startup failed");
-  // }
+  barometerReady = altimeter.start();
+  mpuReady = imu.start();
 
   flightData.reset();
 
@@ -272,7 +269,7 @@ void FlightController::flightControl()
 
   // Keep track or our apogee and our max g load
   flightData.apogee          = MAX(flightData.apogee, altitude);
-  flightData.maxAcceleration = MAX(flightData.maxAcceleration, accelleration);
+  flightData.maxAcceleration = MAX(flightData.maxAcceleration, acceleration);
 
   // Experimental.  Log when we've hit some prescribed g load.  This might be
   // more accurate than starting the flight at some altitude x...  The minimum

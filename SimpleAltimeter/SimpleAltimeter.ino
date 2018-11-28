@@ -150,16 +150,18 @@ void setup()
     log("Baro Fail");
   }
 
+#if ENABLE_MPU
   mpuReady = !(imu.begin() < 0);
   log(mpuReady ? "IMU OK" : "IMU failed");
+#endif
 
 #if ENABLE_MPU
-  mpu.initialize();
-  mpuReady = mpu.testConnection();
-  log(mpuReady ? "IMU OK" : "IMU failed");
-  if (mpuReady) {
-    mpu.setFullScaleAccelRange(MPU6050_ACCEL_FS_8);
-  }
+//  mpu.initialize();
+//  mpuReady = mpu.testConnection();
+//  log(mpuReady ? "IMU OK" : "IMU failed");
+//  if (mpuReady) {
+//    mpu.setFullScaleAccelRange(MPU6050_ACCEL_FS_8);
+//  }
 #endif
 
   reset(&flightData);

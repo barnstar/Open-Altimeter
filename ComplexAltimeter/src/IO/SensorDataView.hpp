@@ -24,11 +24,18 @@
  * SOFTWARE.
  **********************************************************************************/
 
+#ifndef SENSORDATAVIEW
+#define SENSORDATAVIEW
 
+#include "../types.h"
 #include "OledView.hpp"
-#inlude "types.h"
 
 class SensorDataView : public OledView
 {
-    void setData(SensorData &data);
-}
+ public:
+  SensorDataView(Display &display) : OledView(display){};
+
+  void setData(SensorData const &data);
+};
+
+#endif

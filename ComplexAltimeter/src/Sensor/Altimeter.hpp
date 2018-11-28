@@ -51,7 +51,7 @@ class Altimeter
   Altimeter(){};
   ~Altimeter(){};
 
-  void start();
+  bool start();
   bool isReady();
   void update();
   void reset();
