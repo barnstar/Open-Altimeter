@@ -38,7 +38,8 @@ FlightController::FlightController()
       inputButton(INPUT_PIN, 1500),
       imu(1000 / SENSOR_READ_DELAY_MS),
       statusView(DisplayIface::shared().display),
-      sensorDataView(DisplayIface::shared().display)
+      sensorDataView(DisplayIface::shared().display),
+      historyView(DisplayIface::shared().display)
 {
   SPIFFS.begin();
   Serial.begin(SERIAL_BAUD_RATE);
@@ -47,11 +48,14 @@ FlightController::FlightController()
   DataLogger::log("Creating Flight Controller");
   blinker = new Blinker(MESSAGE_PIN, BUZZER_PIN);
   resetButton.setDelegate(this);
+  inputButton.setDelegate(this);
 
   DisplayIface::shared().addView(&sensorDataView, false);
+  DisplayIface::shared().addView(&historyView, true);
   DisplayIface::shared().addView(&statusView, true);
 
   this->initialize();
+  DataLogger::log("Flight Controller Initialized");
 }
 
 FlightController::~FlightController() { delete blinker; }
@@ -86,7 +90,7 @@ void FlightController::initialize()
   drogueChute.init(1, DROGUE_DEPL_RELAY_PIN, DROGUE_TYPE);
 
   barometerReady = altimeter.start();
-  mpuReady = imu.start();
+  mpuReady       = imu.start();
 
   flightData.reset();
 
@@ -96,6 +100,11 @@ void FlightController::initialize()
 
   // We don't want to sound the buzzer on first boot, only after a flight
   enableBuzzer = false;
+
+  statusView.setInfo(deploymentAltitude, flightState, barometerReady, mpuReady,
+                     altimeter.referenceAltitude());
+  historyView.setHistoryInfo(DataLogger::sharedLogger().apogeeHistory());
+  sensorDataView.setWaiting();
 }
 
 String FlightController::getStatus()
@@ -143,12 +152,18 @@ void FlightController::loop()
   // Blink out the last recorded apogee on the message pin
   if (flightState == kOnGround && sensorTicker.active()) {
     DataLogger::log("Stopping Ticker");
+
+    statusView.setInfo(deploymentAltitude, flightState, barometerReady,
+                       mpuReady, flightData.apogee);
+
+    sensorDataView.setWaiting();
+
+    historyView.setHistoryInfo(DataLogger::sharedLogger().apogeeHistory());
+
     sensorTicker.detach();
     digitalWrite(READY_PIN, LOW);
     if (!blinker->isBlinking() && flightData.apogee) {
       blinker->blinkValue(flightData.apogee, BLINK_SPEED_MS, true);
-      statusView.setInfo(deploymentAltitude, flightState, barometerReady,
-                         mpuReady, altimeter.referenceAltitude());
     }
   }
 }
@@ -181,6 +196,7 @@ void FlightController::buttonLongPress(ButtonInput *button)
   if (button == &resetButton) {
     DataLogger::log("Reset Long Press");
     flightState = kOnGround;
+  } else if (button == &inputButton) {
   }
 }
 

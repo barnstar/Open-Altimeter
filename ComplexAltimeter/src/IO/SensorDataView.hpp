@@ -36,6 +36,8 @@ class SensorDataView : public OledView
   SensorDataView(Display &display) : OledView(display){};
 
   void setData(SensorData &data);
+  void setWaiting();
+
 };
 
 #endif

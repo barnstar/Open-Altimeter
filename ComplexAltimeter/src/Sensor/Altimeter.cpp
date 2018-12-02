@@ -32,7 +32,7 @@
 
 bool Altimeter::start()
 {
-  // scanI2cBus();
+  scanI2cBus();
   bool ready = false;
   if (ready = barometer.begin()) {  // Omit the parameter for adafruit
 #ifdef STATUS_PIN_LEVEL

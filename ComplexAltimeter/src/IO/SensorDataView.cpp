@@ -35,3 +35,10 @@ void SensorDataView::setData(SensorData &data)
     setText(dataStr, 1, false);
     update();
 }
+
+void SensorDataView::setWaiting()
+{
+    setText(String("No telemetry"),0,false);
+    setText(String("Unit in landed mode"),1,false);
+    update();
+}

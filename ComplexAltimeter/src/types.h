@@ -92,7 +92,7 @@ typedef struct {
 
   String toString()
   {
-    return String("R: " + String(roll) + "  " + "P:" + String(pitch) + "  " +
+    return String("R:" + String(roll) + "  " + "P:" + String(pitch) + "  " +
                   "Y:" + String(yaw) + "  ");
   }
 } Heading;
@@ -105,8 +105,8 @@ typedef struct {
 
   String toString()
   {
-    return String("Alt " + String(altitude) +
-                  "    acc: " + String(acceleration));
+    return String("Al:" + String(altitude) +
+                  " Ac: " + String(acceleration));
   }
 } SensorData;
 

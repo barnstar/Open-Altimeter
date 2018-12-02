@@ -41,9 +41,11 @@ class OledView
     void setText(String text, int line, boolean update);
     void clear();
     void update();
-
-  private:
     Display &display;
+
+    bool active = false;
+
+  protected:
     String lines[kMaxLines];
 };
 

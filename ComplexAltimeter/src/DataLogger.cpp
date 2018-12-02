@@ -24,7 +24,6 @@
  * SOFTWARE.
  **********************************************************************************/
 
-
 #include <Arduino.h>
 #include <EEPROM.h>
 
@@ -60,6 +59,13 @@ void DataLogger::resetAll()
   File f = SPIFFS.open("/flights.txt", "w");
   if (f) {
     log("Erasing all flight data");
+    f.print("");
+    f.close();
+  }
+
+  f = SPIFFS.open("/apogeeHistory.txt", "w");
+  if (f) {
+    log("Erasing all flight history");
     f.print("");
     f.close();
   }
@@ -192,6 +198,19 @@ void logLine(const String &s) { DataLogger::log(s); }
 
 void DataLogger::log(const String &msg) { Serial.println(msg); }
 
+String DataLogger::apogeeHistory()
+{
+  File f = SPIFFS.open("/apogeeHistory.txt", "r");
+  String retVal = "Flight History\n";
+  if (f) {
+    while (f.available()) {
+      String line = f.readStringUntil('\n');
+      retVal = retVal + line + String("\n");
+    }
+  }
+  return retVal;
+}
+
 void DataLogger::saveFlight(FlightData &d, int index)
 {
   File f = SPIFFS.open("/flights.txt", "a");
@@ -203,6 +222,17 @@ void DataLogger::saveFlight(FlightData &d, int index)
   f.println(d.toString(index));
   f.close();
   log("Saved Flight");
+
+  f = SPIFFS.open("/apogeeHistory.txt", "a");
+  String entry = String(d.apogee) + String(" | ") + String(d.maxAcceleration);
+  if(!f) {
+    f = SPIFFS.open("/apogeeHistory.txt", "w");
+  }
+  if (f) {
+    f.seek(0, SeekEnd);
+    f.println(entry);
+    f.close();
+  }
 
   f               = SPIFFS.open("/flightCount.txt", "w");
   String indexStr = String(index + 1);

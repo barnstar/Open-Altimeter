@@ -75,6 +75,12 @@ class FlightDataPoint
   }
 };
 
+class DataLoggerOutput
+{
+ public:
+  virtual void outputLine(String line);
+};
+
 class DataLogger
 {
  public:
@@ -103,6 +109,7 @@ class DataLogger
   void readFlightDetails(int index, PrintCallback callback);
 
   void readBufferData(PrintCallback callback);
+  String apogeeHistory();
 
   int nextFlightIndex();
 

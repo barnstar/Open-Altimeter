@@ -35,20 +35,24 @@ DisplayIface &DisplayIface::shared()
 
 void DisplayIface::nextView()
 {
-  int8_t index = activeViewIndex + 1 > viewCount ? 0 : activeViewIndex + 1;
+  int8_t index = activeViewIndex == viewCount - 1 ? 0 : activeViewIndex + 1;
   setActiveView(index);
 }
 
 void DisplayIface::previousView()
 {
-  int8_t index = activeViewIndex - 1 < 0 ? viewCount : activeViewIndex - 1;
+  int8_t index = activeViewIndex == 0 ? viewCount - 1 : activeViewIndex - 1;
   setActiveView(index);
 }
 
 void DisplayIface::setActiveView(int index)
 {
+  OledView *lastView  = views[activeViewIndex];
+  lastView->active = false;
+
   activeViewIndex = index;
   OledView *view  = views[index];
+  view->active = true;
   view->update();
 }
 

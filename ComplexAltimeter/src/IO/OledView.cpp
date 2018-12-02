@@ -25,6 +25,7 @@
  **********************************************************************************/
 
 #include "OledView.hpp"
+#include "../DataLogger.hpp"
 
 void OledView::setText(String text, int line, boolean updateDisplay)
 {
@@ -47,7 +48,12 @@ void OledView::clear()
 
 void OledView::update()
 {
+  if(!active) {
+    return;
+  }
+
   display.clearDisplay();
+  display.setCursor(0, 0);
   for (int i = 0; i < kMaxLines; i++) {
     if (lines[i].length() > 0) {
       display.println(lines[i].c_str());

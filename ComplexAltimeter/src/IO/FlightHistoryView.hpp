@@ -24,63 +24,18 @@
  * SOFTWARE.
  **********************************************************************************/
 
-#ifndef DISPLAYIFACE_H
-#define DISPLAYIFACE_H
+#ifndef FLIGHTHISTORYVIEW_H
+#define FLIGHTHISTORYVIEW_H
 
-#include "lib/Adafruit_GFX.h"
-#include "lib/Adafruit_SSD1306.h"
-#include <Wire.h>
-#include "ButtonInput.h"
-#include "../../config.h"
+#include "../types.h"
+#include "OledView.hpp"
 
-#define kDispWidth 128
-#define kDispHeight 64
-#define kScrollButtonPin 0
-
-class OledView;
-
-typedef Adafruit_SSD1306 Display;
-
-class DisplayIface
+class FlightHistoryView : public OledView
 {
  public:
-  DisplayIface()
-      : display(kDispWidth, kDispHeight, &Wire)
-  {
-    boolean status = display.begin(SSD1306_SWITCHCAPVCC, 0x3C);  // initialize with the I2C
-    
-    display.clearDisplay();
-    display.setTextColor(WHITE);
-    display.setTextSize(1);
-    display.cp437(true);
-    display.display();
-  }
+   FlightHistoryView(Display &display) : OledView(display){};
 
-  ~DisplayIface() {}
-
-  static DisplayIface& shared();
-  DisplayIface(DisplayIface const &) = delete;
-
-  void addView(OledView *view, bool show)
-  {
-    if (viewCount < 7) {
-      views[viewCount] = view;
-      viewCount++;
-    }
-    if (show) {
-      setActiveView(viewCount-1);
-    }
-  }
-
-  void nextView();
-  void previousView();
-  void setActiveView(int index);
-  Display display;
-
- private:
-  OledView *views[8];
-  short activeViewIndex = 0;
-  short viewCount       = 0;
+   void setHistoryInfo(String info);
 };
 
 #endif

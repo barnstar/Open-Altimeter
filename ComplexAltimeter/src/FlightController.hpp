@@ -36,6 +36,7 @@
 #include "IO/DisplayIface.h"
 #include "IO/SensorDataView.hpp"
 #include "IO/StatusView.hpp"
+#include "IO/FlightHistoryView.hpp"
 #include "RecoveryDevice.h"
 #include "Sensor/Altimeter.hpp"
 #include "Sensor/Imu.hpp"
@@ -99,6 +100,7 @@ class FlightController : public ButtonInputDelegate
 
   SensorDataView sensorDataView;
   StatusView statusView;
+  FlightHistoryView historyView;
 
   SensorData fakeData;
   double testApogee = 400;

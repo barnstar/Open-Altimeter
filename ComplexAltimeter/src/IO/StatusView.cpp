@@ -29,11 +29,10 @@
 void StatusView::setInfo(uint8_t deploymentAlt, FlightState status,
                          bool baroReady, bool mpuReady, double padAlt)
 {
-  setText(String("Status"), 0, false);
+  setText(String(":::::: Status ::::::"), 0, false);
   setText(flightStateString(status), 1, false);
   setText(baroReady ? String("Baro OK") : String("Baro Fail"), 2, false);
   setText(mpuReady ? String("IMU OK") : String("IMU Fail"), 3, false);
-  setText(String("Depl:") + String(deploymentAlt), 4, false);
-  setText(String("Pad:") + String(padAlt), 5, false);
+  setText(String("Depl:") + String(deploymentAlt + String("m")), 4, false);
   update();
 }
