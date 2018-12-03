@@ -30,13 +30,22 @@
 #include "../types.h"
 #include "OledView.hpp"
 
+typedef struct {
+    uint8_t deploymentAlt;
+    FlightState status;
+    bool baroReady;
+    bool mpuReady;
+
+    double padAltitude;
+    double lastApogee;
+}StatusData;
+
 class StatusView : public OledView
 {
  public:
    StatusView(Display &display) : OledView(display){};
 
-  void setInfo(uint8_t deploymentAlt, FlightState status, bool baroReady,
-               bool mpuReady, double padAlt);
+  void setInfo(StatusData data);
 };
 
 #endif

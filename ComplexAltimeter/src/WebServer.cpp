@@ -126,9 +126,6 @@ void WebServer::handleFlight()
   pageBuilder.closePageStream();
 }
 
-static String *input;
-void concatenateStrings(const String &s) { *input += s + "<br/>"; }
-
 void WebServer::handleResetAll()
 {
   FlightController::shared().resetAll();

@@ -26,13 +26,15 @@
 
 #include "StatusView.hpp"
 
-void StatusView::setInfo(uint8_t deploymentAlt, FlightState status,
-                         bool baroReady, bool mpuReady, double padAlt)
+void StatusView::setInfo(StatusData data)
 {
-  setText(String(":::::: Status ::::::"), 0, false);
-  setText(flightStateString(status), 1, false);
-  setText(baroReady ? String("Baro OK") : String("Baro Fail"), 2, false);
-  setText(mpuReady ? String("IMU OK") : String("IMU Fail"), 3, false);
-  setText(String("Depl:") + String(deploymentAlt + String("m")), 4, false);
+  setText(F("==:::: Status ::::=="), 0, false);
+  setText(flightStateString(data.status), 1, false);
+  String sensorStatus = (data.baroReady ? String("Baro OK") : String("Baro Fail")) + 
+                        String(":") + 
+                        (data.mpuReady ? String("IMU OK") : String("IMU Fail"));
+  setText(sensorStatus, 2, false);
+  setText((String("Depl:") + String(data.deploymentAlt) + String("m")), 3, false);
+  setText((String("Last:") + String(data.deploymentAlt) + String("m")), 4, false);
   update();
 }

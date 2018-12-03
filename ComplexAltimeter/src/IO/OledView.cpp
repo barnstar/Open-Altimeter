@@ -41,7 +41,7 @@ void OledView::setText(String text, int line, boolean updateDisplay)
 void OledView::clear()
 {
   for (int i = 0; i < kMaxLines; i++) {
-    lines[i] = String("");
+    lines[i] = F("");
   }
   update();
 }

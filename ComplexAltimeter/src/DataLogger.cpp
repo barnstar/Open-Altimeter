@@ -32,17 +32,10 @@
 #include "FlightData.hpp"
 #include "types.h"
 
-static const size_t buffer_size = 1024;
-static const int sample_rate_hz = 20;
 
 DataLogger::DataLogger()
 {
   log("Data Logger Initialized");
-  dataBufferLen = buffer_size / sizeof(FlightDataPoint);
-  log("Buffer Size: " + String(buffer_size / sample_rate_hz));
-
-  // This should give us 204 seconds of data... 2.5 minutes...
-  dataBuffer = new FlightDataPoint[dataBufferLen];
 
   Dir dir = SPIFFS.openDir("/");
   while (dir.next()) {
@@ -84,7 +77,7 @@ void DataLogger::resetAll()
   }
 }
 
-DataLogger::~DataLogger() { free(dataBuffer); }
+DataLogger::~DataLogger() {  }
 
 DataLogger &DataLogger::sharedLogger()
 {
@@ -183,7 +176,7 @@ void DataLogger::printBufferData() { readBufferData(logLine); }
 void DataLogger::readBufferData(PrintCallback callback)
 {
   if (triggerIndex == -1) {
-    callback(String("No Data to Log"));
+    callback(F("No Data to Log"));
     return;
   }
 
@@ -215,13 +208,13 @@ void DataLogger::saveFlight(FlightData &d, int index)
 {
   File f = SPIFFS.open("/flights.txt", "a");
   if (!f) {
-    log("Unalble to save flight. No File");
+    log(F("Unalble to save flight. No File"));
     return;
   }
   f.seek(0, SeekEnd);
   f.println(d.toString(index));
   f.close();
-  log("Saved Flight");
+  log(F("Saved Flight"));
 
   f = SPIFFS.open("/apogeeHistory.txt", "a");
   String entry = String(d.apogee) + String(" | ") + String(d.maxAcceleration);

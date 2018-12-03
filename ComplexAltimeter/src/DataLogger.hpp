@@ -24,7 +24,6 @@
  * SOFTWARE.
  **********************************************************************************/
 
-
 #ifndef datalogger_h
 #define datalogger_h
 
@@ -32,20 +31,6 @@
 #include "FlightData.hpp"
 
 typedef void (*PrintCallback)(const String &line);
-
-class PrintFnc
-{
- public:
-  String operator()(String x)
-  {
-    ret += x;
-    return ret;
-  }
-  String operator()(void) { return ret; }
-
- private:
-  String ret;
-};
 
 void logLine(const String &s);
 
@@ -119,11 +104,11 @@ class DataLogger
   void operator=(DataLogger const &) = delete;
 
  private:
-  FlightDataPoint *dataBuffer;
-  int dataIndex        = 0;
-  int dataBufferLen    = 0;
-  int triggerIndex     = -1;
-  int dataPointsLogged = 0;
+  FlightDataPoint dataBuffer[64];
+  int dataIndex           = 0;
+  const int dataBufferLen = 64;
+  int triggerIndex        = -1;
+  int dataPointsLogged    = 0;
 };
 
 #endif

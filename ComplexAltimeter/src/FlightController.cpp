@@ -101,10 +101,21 @@ void FlightController::initialize()
   // We don't want to sound the buzzer on first boot, only after a flight
   enableBuzzer = false;
 
-  statusView.setInfo(deploymentAltitude, flightState, barometerReady, mpuReady,
-                     altimeter.referenceAltitude());
+  statusView.setInfo(statusData());
   historyView.setHistoryInfo(DataLogger::sharedLogger().apogeeHistory());
   sensorDataView.setWaiting();
+}
+
+StatusData FlightController::statusData()
+{
+  StatusData retVal;
+  retVal.deploymentAlt = deploymentAltitude;
+  retVal.status = flightState;
+  retVal.baroReady = barometerReady;
+  retVal.mpuReady = mpuReady;
+  retVal.padAltitude = altimeter.referenceAltitude();
+  retVal.lastApogee = flightData.apogee;
+  return retVal;
 }
 
 String FlightController::getStatus()
@@ -153,8 +164,7 @@ void FlightController::loop()
   if (flightState == kOnGround && sensorTicker.active()) {
     DataLogger::log("Stopping Ticker");
 
-    statusView.setInfo(deploymentAltitude, flightState, barometerReady,
-                       mpuReady, flightData.apogee);
+    statusView.setInfo(statusData());
 
     sensorDataView.setWaiting();
 
@@ -225,8 +235,8 @@ void FlightController::reset()
   flightState  = kReadyToFly;
   DataLogger::sharedLogger().clearBuffer();
   DataLogger::log("Ready To Fly...");
-  statusView.setInfo(deploymentAltitude, flightState, barometerReady, mpuReady,
-                     altimeter.referenceAltitude());
+  statusView.setInfo(statusData());
+
 }
 
 void FlightController::playReadyTone()
@@ -305,8 +315,7 @@ void FlightController::flightControl()
     digitalWrite(READY_PIN, LOW);
     digitalWrite(MESSAGE_PIN, HIGH);
     DataLogger::sharedLogger().logDataPoint(dp, true);
-    statusView.setInfo(deploymentAltitude, flightState, barometerReady,
-                       mpuReady, altimeter.referenceAltitude());
+    statusView.setInfo(statusData());
   } else if (flightState == kAscending &&
              altitude < (flightData.apogee - DESCENT_THRESHOLD)) {
     // Transition to kDescendining if we've we're DESCENT_THRESHOLD meters below
@@ -316,8 +325,8 @@ void FlightController::flightControl()
     // Deploy our drogue chute
     setDeploymentRelay(ON, drogueChute);
     flightData.drogueEjectionAltitude = altitude;
-    statusView.setInfo(deploymentAltitude, flightState, barometerReady,
-                       mpuReady, altimeter.referenceAltitude());
+    statusView.setInfo(statusData());
+
   } else if (flightState == kDescending &&
              altitude < FLIGHT_END_THRESHOLD_ALT) {
     flightState = kOnGround;
@@ -329,9 +338,7 @@ void FlightController::flightControl()
 
     resetChuteIfRequired(drogueChute);
     resetChuteIfRequired(mainChute);
-    statusView.setInfo(deploymentAltitude, flightState, barometerReady,
-                       mpuReady, altimeter.referenceAltitude());
-
+    statusView.setInfo(statusData());
     enableBuzzer = true;
   }
 

@@ -102,6 +102,8 @@ class FlightController : public ButtonInputDelegate
   StatusView statusView;
   FlightHistoryView historyView;
 
+  StatusData statusData();
+
   SensorData fakeData;
   double testApogee = 400;
   bool isTestAscending;

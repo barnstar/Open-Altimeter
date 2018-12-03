@@ -30,7 +30,7 @@ void SensorDataView::setData(SensorData &data)
 {
     String heading = data.heading.toString();
     String dataStr = data.toString();
-    setText(String("Raw Data"), 0, false);
+    setText(F("Raw Data"), 0, false);
     setText(heading, 2, false);
     setText(dataStr, 1, false);
     update();
@@ -38,7 +38,7 @@ void SensorDataView::setData(SensorData &data)
 
 void SensorDataView::setWaiting()
 {
-    setText(String("No telemetry"),0,false);
-    setText(String("Unit in landed mode"),1,false);
+    setText(F("No telemetry"),0,false);
+    setText(F("Unit in landed mode"),1,false);
     update();
 }

@@ -312,7 +312,7 @@ void flightControl(SensorData *d)
 
   if (flightState == kReadyToFly && altitude >= FLIGHT_START_THRESHOLD_ALT) {
     // Transition to "InFlight" if we've exceeded the threshold altitude.
-    log("Flight Started");
+    log(F("Flight Started");
     flightState               = kAscending;
     flightData.altTriggerTime = millis() - resetTime;
     // For testing - to indicate we're in the ascending mode
@@ -322,7 +322,7 @@ void flightControl(SensorData *d)
              altitude < (flightData.apogee - DESCENT_THRESHOLD)) {
     // Transition to kDescendining if we've we're DESCENT_THRESHOLD meters below
     // our apogee
-    log("Desc");
+    log(F("Desc");
     flightState = kDescending;
 
     // Deploy our drogue chute
@@ -331,7 +331,7 @@ void flightControl(SensorData *d)
   } else if (flightState == kDescending &&
              altitude < FLIGHT_END_THRESHOLD_ALT) {
     flightState = kOnGround;
-    log(String("Land"));
+    log(F("Land"));
 
     logData(flightCount, &flightData);
     recordFlight(flightData);

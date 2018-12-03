@@ -70,13 +70,6 @@ double Altimeter::referenceAltitude() { return refAltitude; }
 
 double Altimeter::getAltitude()
 {
-  //   double pressure = getPressure();
-  //   if(pressure == 0) {
-  //     return 0;
-  //   }
-  //   double relativeAlt = barometer.altitude(pressure, baselinePressure);
-  //   return relativeAlt;
-
   return filter.lastEstimate();
 }
 
@@ -99,7 +92,6 @@ void Altimeter::update()
   lastRefreshTime = time;
 
   filter.step(relativeAlt);
-  // DataLogger::log(String("Pressure:") + String(pressure));
 }
 
 double Altimeter::getPressure()

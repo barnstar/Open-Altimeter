@@ -80,8 +80,8 @@ struct Vector {
 
   String toString()
   {
-    return String("(" + String(XAxis) + "," + String(YAxis) + "," +
-                  String(ZAxis) + ")");
+    return String(String(XAxis) + " " + String(YAxis) + " " +
+                  String(ZAxis));
   }
 };
 
@@ -92,8 +92,8 @@ typedef struct {
 
   String toString()
   {
-    return String("R:" + String(roll) + "  " + "P:" + String(pitch) + "  " +
-                  "Y:" + String(yaw) + "  ");
+    return String(String(roll) + "  " + String(pitch) + "  " +
+                  " " + String(yaw));
   }
 } Heading;
 
@@ -140,5 +140,7 @@ inline String flightStateString(FlightState s)
 }
 
 typedef enum { kNone, kActive, kPassive } PeizoStyle;
+
+
 
 #endif  // types_h
