@@ -29,6 +29,7 @@
 
 #include <Arduino.h>
 #include "FlightData.hpp"
+#include "FS.h"
 
 typedef void (*PrintCallback)(const String &line);
 
@@ -82,9 +83,8 @@ class DataLogger
   static void log(const String &msg);
   static String getFlightList();
 
-  void saveFlight(FlightData &d, int index);
+  void endDataRecording(FlightData &d, int index);
   void logDataPoint(FlightDataPoint &p, bool isTriggerPoint);
-  void writeFlightDataFileWithIndex(FlightData &ddata, int index);
 
   void clearBuffer();
   void printFlightData();
@@ -109,6 +109,11 @@ class DataLogger
   const int dataBufferLen = 64;
   int triggerIndex        = -1;
   int dataPointsLogged    = 0;
+
+  File dataFile;
+
+  void openFlightDataFileWithIndex(FlightData &data, int index);
+  bool closeFlightDataFile();
 };
 
 #endif

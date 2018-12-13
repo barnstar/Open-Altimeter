@@ -27,7 +27,7 @@
 #ifndef altimeter_h
 #define alitmeter_h
 
-#include "../../config.h"
+#include "../../Configuration.h"
 #include "KalmanFilter.h"
 
 #define USE_BMP085 1

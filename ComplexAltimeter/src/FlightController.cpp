@@ -28,7 +28,7 @@
 #include <FS.h>
 #include "DataLogger.hpp"
 
-#include "../config.h"
+#include "../Configuration.h"
 #include "types.h"
 
 #define kMaxBlinks 64
@@ -37,9 +37,9 @@ FlightController::FlightController()
     : resetButton(RESET_PIN, 900),
       inputButton(INPUT_PIN, 1500),
       imu(1000 / SENSOR_READ_DELAY_MS),
-      statusView(DisplayIface::shared().display),
-      sensorDataView(DisplayIface::shared().display),
-      historyView(DisplayIface::shared().display)
+      statusView(display.display),
+      sensorDataView(display.display),
+      historyView(display.display)
 {
   SPIFFS.begin();
   Serial.begin(SERIAL_BAUD_RATE);
@@ -50,9 +50,9 @@ FlightController::FlightController()
   resetButton.setDelegate(this);
   inputButton.setDelegate(this);
 
-  DisplayIface::shared().addView(&sensorDataView, false);
-  DisplayIface::shared().addView(&historyView, true);
-  DisplayIface::shared().addView(&statusView, true);
+  display.addView(&sensorDataView, false);
+  display.addView(&historyView, true);
+  display.addView(&statusView, true);
 
   this->initialize();
   DataLogger::log("Flight Controller Initialized");
@@ -101,21 +101,20 @@ void FlightController::initialize()
   // We don't want to sound the buzzer on first boot, only after a flight
   enableBuzzer = false;
 
-  statusView.setInfo(statusData());
+  statusView.setInfo(getStatusData());
   historyView.setHistoryInfo(DataLogger::sharedLogger().apogeeHistory());
   sensorDataView.setWaiting();
 }
 
-StatusData FlightController::statusData()
+StatusData const &FlightController::getStatusData()
 {
-  StatusData retVal;
-  retVal.deploymentAlt = deploymentAltitude;
-  retVal.status = flightState;
-  retVal.baroReady = barometerReady;
-  retVal.mpuReady = mpuReady;
-  retVal.padAltitude = altimeter.referenceAltitude();
-  retVal.lastApogee = flightData.apogee;
-  return retVal;
+  statusData.deploymentAlt = deploymentAltitude;
+  statusData.status        = flightState;
+  statusData.baroReady     = barometerReady;
+  statusData.mpuReady      = mpuReady;
+  statusData.padAltitude   = altimeter.referenceAltitude();
+  statusData.lastApogee    = flightData.apogee;
+  return statusData;
 }
 
 String FlightController::getStatus()
@@ -164,7 +163,7 @@ void FlightController::loop()
   if (flightState == kOnGround && sensorTicker.active()) {
     DataLogger::log("Stopping Ticker");
 
-    statusView.setInfo(statusData());
+    statusView.setInfo(getStatusData());
 
     sensorDataView.setWaiting();
 
@@ -197,7 +196,7 @@ void FlightController::buttonShortPress(ButtonInput *button)
     DataLogger::log("Reset Short Press");
     reset();
   } else if (button == &inputButton) {
-    DisplayIface::shared().nextView();
+    display.nextView();
   }
 }
 
@@ -233,10 +232,8 @@ void FlightController::reset()
   /// playReadyTone();
   enableBuzzer = false;
   flightState  = kReadyToFly;
-  DataLogger::sharedLogger().clearBuffer();
   DataLogger::log("Ready To Fly...");
-  statusView.setInfo(statusData());
-
+  statusView.setInfo(getStatusData());
 }
 
 void FlightController::playReadyTone()
@@ -267,8 +264,9 @@ void FlightController::readSensorData(SensorData *d)
     d->altitude = altimeter.getAltitude();
   }
   imu.update();
-  d->heading = imu.getHeading();
-  d->acc_vec = imu.getAccelleration();
+  d->heading      = imu.getHeading();
+  d->acc_vec      = imu.getAccelleration();
+  d->acceleration = d->acc_vec.length();
 }
 
 void FlightController::flightControl()
@@ -280,18 +278,21 @@ void FlightController::flightControl()
 
   FlightDataPoint dp = FlightDataPoint(millis(), altitude, acceleration);
 
-  if (logCounter == 0) {
+  // Log every 5 samples when going fast and every 20 when in a slow descent.
+  int sampleDelay = (flightState != kDescending) ? 5 : 20;
+  logCounterUI    = !logCounterUI ? sampleDelay : logCounterUI - 1;
+  if (0 == logCounterUI && flightState != kOnGround) {
     DataLogger::log("Alt:" + String(altitude) + "  " + d.heading.toString() +
                     +"   " + d.acc_vec.toString());
     sensorDataView.setData(d);
-    if (!flightState == kOnGround) {
-      DataLogger::sharedLogger().logDataPoint(dp, false);
-    }
   }
 
-  // Log every 5 samples when going fast and every 20 when in a slow descent.
-  int sampleDelay = (flightState != kDescending) ? 5 : 20;
-  logCounter      = !logCounter ? sampleDelay : logCounter - 1;
+  // Log slightly more to the file system
+  sampleDelay = (flightState != kDescending) ? 3 : 6;
+  logCounterLogger = !logCounterUI ? 3 : logCounterUI - 1;
+  if (0 == logCounterLogger && flightState != kOnGround) {
+    DataLogger::sharedLogger().logDataPoint(dp, false);
+  }
 
   // Keep track or our apogee and our max g load
   flightData.apogee          = MAX(flightData.apogee, altitude);
@@ -314,8 +315,7 @@ void FlightController::flightControl()
     // For testing - to indicate we're in the ascending mode
     digitalWrite(READY_PIN, LOW);
     digitalWrite(MESSAGE_PIN, HIGH);
-    DataLogger::sharedLogger().logDataPoint(dp, true);
-    statusView.setInfo(statusData());
+    statusView.setInfo(getStatusData());
   } else if (flightState == kAscending &&
              altitude < (flightData.apogee - DESCENT_THRESHOLD)) {
     // Transition to kDescendining if we've we're DESCENT_THRESHOLD meters below
@@ -325,7 +325,7 @@ void FlightController::flightControl()
     // Deploy our drogue chute
     setDeploymentRelay(ON, drogueChute);
     flightData.drogueEjectionAltitude = altitude;
-    statusView.setInfo(statusData());
+    statusView.setInfo(getStatusData());
 
   } else if (flightState == kDescending &&
              altitude < FLIGHT_END_THRESHOLD_ALT) {
@@ -333,12 +333,12 @@ void FlightController::flightControl()
     DataLogger::log("Landed");
 
     DataLogger::log(flightData.toString(flightCount));
-    DataLogger::sharedLogger().saveFlight(flightData, flightCount);
+    DataLogger::sharedLogger().endDataRecording(flightData, flightCount);
     server.bindFlight(flightCount);
 
     resetChuteIfRequired(drogueChute);
     resetChuteIfRequired(mainChute);
-    statusView.setInfo(statusData());
+    statusView.setInfo(getStatusData());
     enableBuzzer = true;
   }
 

@@ -25,8 +25,10 @@
  **********************************************************************************/
 
 #include "StatusView.hpp"
+#include <ESP8266WiFi.h>
+#include <WiFiClient.h>
 
-void StatusView::setInfo(StatusData data)
+void StatusView::setInfo(StatusData const &data)
 {
   setText(F("==:::: Status ::::=="), 0, false);
   setText(flightStateString(data.status), 1, false);
@@ -36,5 +38,6 @@ void StatusView::setInfo(StatusData data)
   setText(sensorStatus, 2, false);
   setText((String("Depl:") + String(data.deploymentAlt) + String("m")), 3, false);
   setText((String("Last:") + String(data.deploymentAlt) + String("m")), 4, false);
+  setText(WiFi.localIP().toString(), 5, false);
   update();
 }

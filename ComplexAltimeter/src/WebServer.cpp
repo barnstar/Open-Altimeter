@@ -30,8 +30,15 @@
 #include "DataLogger.hpp"
 #include "FlightController.hpp"
 
+#define RUN_AS_ACCESS_POINT 0
+
+#if RUN_AS_ACCESS_POINT
 const char *ssid     = "Altimeter1";
 const char *password = "password";
+#else
+const char *ssid     = "CSIS Surveillance Van #3";
+const char *password = "978Descanso";
+#endif
 
 const String HtmlHtml =
     "<html><head><meta name=\"viewport\" content=\"width=device-width, "
@@ -57,14 +64,16 @@ void WebServer::handleClient() { server.handleClient(); }
 
 void WebServer::start(const IPAddress &ipAddress)
 {
+  #if RUN_AS_ACCESS_POINT
   Serial.println(String("IP Set to:" + ipAddress.toString()));
   this->ipAddress = ipAddress;
   WiFi.softAP(ssid, password);
-
   IPAddress apip = WiFi.softAPIP();
-
   Serial.print("Actual Server Address: ");
   Serial.println(apip);
+  #else
+  WiFi.begin(ssid, password);  
+  #endif
 
   server.on("/", std::bind(&WebServer::handleRoot, this));
   server.on(resetURL, std::bind(&WebServer::handleReset, this));
@@ -78,6 +87,11 @@ void WebServer::start(const IPAddress &ipAddress)
   bindSavedFlights();
   server.begin();
   Serial.println("HTTP server initialized");
+}
+
+String WebServer::getIPAddress()
+{
+  return WiFi.localIP().toString();
 }
 
 void WebServer::bindFlight(int index)

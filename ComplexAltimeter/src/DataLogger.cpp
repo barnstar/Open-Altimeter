@@ -28,10 +28,8 @@
 #include <EEPROM.h>
 
 #include "DataLogger.hpp"
-#include "FS.h"
 #include "FlightData.hpp"
 #include "types.h"
-
 
 DataLogger::DataLogger()
 {
@@ -44,31 +42,26 @@ DataLogger::DataLogger()
     Serial.println(f.size());
   }
   printFlightData();
+  clearBuffer();
 }
 
 void DataLogger::resetAll()
 {
   log("Erasing all flight data");
   File f = SPIFFS.open("/flights.txt", "w");
-  if (f) {
-    log("Erasing all flight data");
-    f.print("");
-    f.close();
-  }
+  log("Erasing all flight data");
+  f.print("");
+  f.close();
 
   f = SPIFFS.open("/apogeeHistory.txt", "w");
-  if (f) {
-    log("Erasing all flight history");
-    f.print("");
-    f.close();
-  }
+  log("Erasing all flight history");
+  f.print("");
+  f.close();
 
   f = SPIFFS.open("/flightCount.txt", "w");
-  if (f) {
-    log("Setting flight count to zero");
-    f.print("");
-    f.close();
-  }
+  log("Setting flight count to zero");
+  f.print("");
+  f.close();
 
   Dir dir = SPIFFS.openDir(FLIGHTS_DIR);
   while (dir.next()) {
@@ -77,7 +70,7 @@ void DataLogger::resetAll()
   }
 }
 
-DataLogger::~DataLogger() {  }
+DataLogger::~DataLogger() {}
 
 DataLogger &DataLogger::sharedLogger()
 {
@@ -87,21 +80,20 @@ DataLogger &DataLogger::sharedLogger()
 
 void DataLogger::logDataPoint(FlightDataPoint &p, bool isTriggerPoint)
 {
-  if ((dataPointsLogged == dataBufferLen) && triggerIndex != -1) {
-    return;
-  }
-
   if (isTriggerPoint) {
-    triggerIndex = dataIndex - 20;
-    if (dataIndex < 0) dataIndex = dataIndex + dataBufferLen;
-  }
-
-  dataBuffer[dataIndex] = p;
-  dataIndex++;
-  dataPointsLogged++;
-
-  if (dataIndex == dataBufferLen) {
-    dataIndex = 0;
+    triggerIndex = dataIndex;
+    int idx      = dataIndex;
+    int logCount = MIN(dataPointsLogged, dataBufferLen);
+    for (int i = 0; i < logCount; i++) {
+      dataBuffer[idx].toJson();
+      idx = (idx == dataBufferLen) ? 0 : idx + 1;
+    }
+  } else if (triggerIndex != -1) {
+    dataFile.println(p.toJson());
+  } else {
+    dataBuffer[dataIndex] = p;
+    dataIndex = (dataIndex == dataBufferLen - 1) ? 0 : dataIndex + 1;
+    dataPointsLogged++;
   }
 }
 
@@ -118,26 +110,19 @@ void DataLogger::readFlightDetails(int index, PrintCallback callback)
   }
 }
 
-void DataLogger::writeFlightDataFileWithIndex(FlightData &data, int index)
+void DataLogger::openFlightDataFileWithIndex(FlightData &data, int index)
 {
   String path = String(FLIGHTS_DIR) + String("/") + String(index);
-  File f      = SPIFFS.open(path, "w");
-  if (f) {
-    f.print("var flightData = {\"stats\" : ");
-    f.println(data.toString(index) + ", \n\"data\":[");
-    int idx        = triggerIndex;
-    bool firstItem = true;
-    for (int i = 0; i < dataBufferLen; i++) {
-      if (dataBuffer[idx].ltime != 0) {
-        f.println((firstItem ? "" : ",") + dataBuffer[idx].toJson() + "\n");
-        firstItem = false;
-      }
-      idx = (idx == dataBufferLen) ? 0 : idx + 1;
-    }
-    f.println("]}\n\n");
-    log("Saved Flight Details to:" + path);
-    f.close();
-  }
+  dataFile    = SPIFFS.open(path, "w");
+  dataFile.print("var flightData = {\"stats\" : ");
+  dataFile.println(data.toString(index) + ", \n\"data\":[");
+}
+
+bool DataLogger::closeFlightDataFile()
+{
+  dataFile.println("]}\n\n");
+  dataFile.close();
+  clearBuffer();
 }
 
 void DataLogger::clearBuffer()
@@ -159,14 +144,13 @@ void DataLogger::printFlightData() { readFlightData(logLine); }
 void DataLogger::readFlightData(PrintCallback callback)
 {
   File f = SPIFFS.open("/flights.txt", "r");
-  if (!f) {
+  if (!f.available()) {
     callback("file open failed");
-    return;
-  }
-
-  while (f.available()) {
-    String line = f.readStringUntil('\n');
-    callback(line);
+  } else {
+    while (f.available()) {
+      String line = f.readStringUntil('\n');
+      callback(line);
+    }
   }
   f.close();
 }
@@ -193,60 +177,54 @@ void DataLogger::log(const String &msg) { Serial.println(msg); }
 
 String DataLogger::apogeeHistory()
 {
-  File f = SPIFFS.open("/apogeeHistory.txt", "r");
+  File f        = SPIFFS.open("/apogeeHistory.txt", "r");
   String retVal = "Flight History\n";
-  if (f) {
-    while (f.available()) {
-      String line = f.readStringUntil('\n');
-      retVal = retVal + line + String("\n");
-    }
+  while (f.available()) {
+    String line = f.readStringUntil('\n');
+    retVal      = retVal + line + String("\n");
   }
+  f.close();
   return retVal;
 }
 
-void DataLogger::saveFlight(FlightData &d, int index)
+void DataLogger::endDataRecording(FlightData &d, int index)
 {
-  File f = SPIFFS.open("/flights.txt", "a");
-  if (!f) {
-    log(F("Unalble to save flight. No File"));
-    return;
-  }
+  closeFlightDataFile();
+
+  File f;
+
+  f = SPIFFS.open("/flights.txt", "a");
+  log(F("Unable to save flight. No File"));
   f.seek(0, SeekEnd);
   f.println(d.toString(index));
   f.close();
   log(F("Saved Flight"));
 
-  f = SPIFFS.open("/apogeeHistory.txt", "a");
+  f            = SPIFFS.open("/apogeeHistory.txt", "a");
   String entry = String(d.apogee) + String(" | ") + String(d.maxAcceleration);
-  if(!f) {
-    f = SPIFFS.open("/apogeeHistory.txt", "w");
-  }
-  if (f) {
-    f.seek(0, SeekEnd);
-    f.println(entry);
-    f.close();
-  }
+  f.seek(0, SeekEnd);
+  f.println(entry);
+  f.close();
 
   f               = SPIFFS.open("/flightCount.txt", "w");
   String indexStr = String(index + 1);
   f.println(indexStr);
   f.close();
-  log("Updtaed Flight Count: " + indexStr);
-
-  writeFlightDataFileWithIndex(d, index);
+  log("Updated Flight Count: " + indexStr);
 }
 
 int DataLogger::nextFlightIndex()
 {
-  File f = SPIFFS.open("/flightCount.txt", "r");
-  if (!f) {
-    return 0;
+  int index = 0;
+  File f    = SPIFFS.open("/flightCount.txt", "r");
+  if (f.available()) {
+    String line = f.readStringUntil('\n');
+    int index   = line.toInt();
+    log("Flight Count: " + String(index));
+    index++;
   }
-  String line = f.readStringUntil('\n');
-  int index   = line.toInt();
   f.close();
-  log("Flight Count: " + String(index));
-  return index++;
+  return index;
 }
 
 String FlightDataPoint::toJson()

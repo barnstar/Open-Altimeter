@@ -27,7 +27,7 @@
 
 #include "Altimeter.hpp"
 #include <Wire.h>
-#include "../../config.h"
+#include "../../Configuration.h"
 #include "../DataLogger.hpp"
 
 bool Altimeter::start()

@@ -30,10 +30,9 @@
 #include "types.h"
 
 #define LOG_TO_SERIAL 1  // Set to 0 to disable serial logging...
-#define PLOT_ALTITUDE 1  // Set to 1 to watch the altitude on the serial plotter
+#define PLOT_ALTITUDE 0  // Set to 1 to watch the altitude on the serial plotter
 
-#define USE_BMP085 1
-#define USE_BMP280 0
+
 
 static const int kMinServoAngle = 5;
 static const int kMaxServoAngle = 120;
@@ -69,7 +68,7 @@ const int MAX_FIRE_TIME = 5000;
 #define USE_PIN_CONFIG_4 0
 
 #if USE_PIN_CONFIG_1
-// Configuration A: 1 1/2" PCB
+// Configuration A: 1 1/2" PCB - No deployment
 const int SERIAL_BAUD_RATE = 9600;
 const int STATUS_PIN = 4;    // Unit status pin.  On if OK
 const int MESSAGE_PIN = 2;   // Blinks out the altitude
@@ -86,6 +85,9 @@ const DeploymentType DROGUE_TYPE = kPyro;
 const int BARO_I2C_ADDR          = 0x77;
 const PeizoStyle PEIZO_TYPE      = kActive;
 #define ENABLE_MPU 0
+#define USE_BMP085 0
+#define USE_BMP280 1
+
 #elif USE_PIN_CONFIG_2
 // Configuration B: 2" PCB w. Servo Sled
 const int SERIAL_BAUD_RATE = 9600;
@@ -104,6 +106,9 @@ const DeploymentType DROGUE_TYPE = kServo;
 const int BARO_I2C_ADDR          = 0x76;
 const PeizoStyle PEIZO_TYPE      = kPassive;
 #define ENABLE_MPU 0
+#define USE_BMP085 0
+#define USE_BMP280 1
+
 #elif USE_PIN_CONFIG_3
 // Configuration B: Small PCB with servo pinout
 const int SERIAL_BAUD_RATE = 9600;
@@ -123,6 +128,9 @@ const DeploymentType DROGUE_TYPE = kNoEjection;
 #define STATUS_PIN_LEVEL 800
 const PeizoStyle PEIZO_TYPE      = kPassive;
 #define ENABLE_MPU 0
+#define USE_BMP085 0
+#define USE_BMP280 1
+
 #endif
 
 // The barometer can only refresh at about 50Hz.

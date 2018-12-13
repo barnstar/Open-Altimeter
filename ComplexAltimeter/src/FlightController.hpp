@@ -42,7 +42,7 @@
 #include "Sensor/Imu.hpp"
 #include "WebServer.hpp"
 
-#include "config.h"
+#include "Configuration.h"
 #include "types.h"
 
 class FlightController : public ButtonInputDelegate
@@ -93,7 +93,10 @@ class FlightController : public ButtonInputDelegate
 
   Blinker *blinker;
   Ticker sensorTicker;
-  int logCounter;
+  int logCounterUI = 0;
+  int logCounterLogger = 0;
+
+  DisplayIface display;
 
   ButtonInput resetButton;
   ButtonInput inputButton;
@@ -102,7 +105,8 @@ class FlightController : public ButtonInputDelegate
   StatusView statusView;
   FlightHistoryView historyView;
 
-  StatusData statusData();
+  StatusData const& getStatusData();
+  StatusData statusData;
 
   SensorData fakeData;
   double testApogee = 400;

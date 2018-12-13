@@ -33,9 +33,8 @@
 
 #define NO_PIN -1
 
-#define MIN(a,b) (((a)<(b))?(a):(b))
-#define MAX(a,b) (((a)>(b))?(a):(b))
-
+#define MIN(a, b) (((a) < (b)) ? (a) : (b))
+#define MAX(a, b) (((a) > (b)) ? (a) : (b))
 
 typedef enum { kNoEjection, kPyro, kServo } DeploymentType;
 
@@ -80,8 +79,7 @@ struct Vector {
 
   String toString()
   {
-    return String(String(XAxis) + " " + String(YAxis) + " " +
-                  String(ZAxis));
+    return String(String(XAxis) + " " + String(YAxis) + " " + String(ZAxis));
   }
 };
 
@@ -92,8 +90,8 @@ typedef struct {
 
   String toString()
   {
-    return String(String(roll) + "  " + String(pitch) + "  " +
-                  " " + String(yaw));
+    return String(String(roll) + "  " + String(pitch) + "  " + " " +
+                  String(yaw));
   }
 } Heading;
 
@@ -105,8 +103,7 @@ typedef struct {
 
   String toString()
   {
-    return String("Al:" + String(altitude) +
-                  " Ac: " + String(acceleration));
+    return String("Al:" + String(altitude) + " Ac: " + String(acceleration));
   }
 } SensorData;
 
@@ -140,7 +137,5 @@ inline String flightStateString(FlightState s)
 }
 
 typedef enum { kNone, kActive, kPassive } PeizoStyle;
-
-
 
 #endif  // types_h

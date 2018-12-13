@@ -27,7 +27,7 @@
 #ifndef BLINKER_H
 #define BLINKER_H
 
-#include "lib/SimpleTimer.h"
+#include "SimpleTimer.h"
 #include "types.h"
 
 #define kBitMapLen 16

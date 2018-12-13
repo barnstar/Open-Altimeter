@@ -48,7 +48,7 @@ void OledView::clear()
 
 void OledView::update()
 {
-  if(!active) {
+  if (!active) {
     return;
   }
 

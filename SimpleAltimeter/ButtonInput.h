@@ -81,4 +81,3 @@ class ButtonInput
 	button_callback longPressCallback = nullptr;
 }
 
-#endif

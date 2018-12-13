@@ -45,7 +45,7 @@ class StatusView : public OledView
  public:
    StatusView(Display &display) : OledView(display){};
 
-  void setInfo(StatusData data);
+  void setInfo(StatusData const &data);
 };
 
 #endif

@@ -1,3 +1,4 @@
+
 /*********************************************************************************
  * Open Altimeter
  *
@@ -24,8 +25,13 @@
  * SOFTWARE.
  **********************************************************************************/
 
+
 #include "RecoveryDevice.h"
+#ifdef IS_SIMPLE_ALT
 #include "Configuration.h"
+#else
+#include "../Configuration.h"
+#endif
 #include "types.h"
 
 void RecoveryDevice::init(byte id, byte pin, DeploymentType type)
@@ -55,6 +61,7 @@ void RecoveryDevice::enable()
   switch (type) {
     case kPyro:
       digitalWrite(relayPin, HIGH);
+      ;
       break;
     case kServo:
       servo.write(kMinServoAngle);
@@ -62,7 +69,7 @@ void RecoveryDevice::enable()
     case kNoEjection:
       break;
   }
-  log("RD En" + String(id));
+  log("RD En" + String(id) );
 };
 
 void RecoveryDevice::disable()
@@ -80,7 +87,7 @@ void RecoveryDevice::disable()
     case kNoEjection:
       break;
   }
-  log("RD Dis" + String(id));
+  log("RD Dis" + String(id) );
 };
 
 void RecoveryDevice::reset()

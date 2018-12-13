@@ -31,7 +31,7 @@
 #include "lib/Adafruit_SSD1306.h"
 #include <Wire.h>
 #include "ButtonInput.h"
-#include "../../config.h"
+#include "../../Configuration.h"
 
 #define kDispWidth 128
 #define kDispHeight 64
@@ -48,7 +48,7 @@ class DisplayIface
       : display(kDispWidth, kDispHeight, &Wire)
   {
     boolean status = display.begin(SSD1306_SWITCHCAPVCC, 0x3C);  // initialize with the I2C
-    
+
     display.clearDisplay();
     display.setTextColor(WHITE);
     display.setTextSize(1);
@@ -57,9 +57,6 @@ class DisplayIface
   }
 
   ~DisplayIface() {}
-
-  static DisplayIface& shared();
-  DisplayIface(DisplayIface const &) = delete;
 
   void addView(OledView *view, bool show)
   {

@@ -27,12 +27,6 @@
 #include "DisplayIface.h"
 #include "OledView.hpp"
 
-DisplayIface &DisplayIface::shared()
-{
-  static DisplayIface sharedInstance;
-  return sharedInstance;
-}
-
 void DisplayIface::nextView()
 {
   int8_t index = activeViewIndex == viewCount - 1 ? 0 : activeViewIndex + 1;

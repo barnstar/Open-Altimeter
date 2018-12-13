@@ -34,22 +34,19 @@
 
 class OledView
 {
-  public: 
-    OledView(Display &display) : display(display) {};
-    ~OledView() {};
+ public:
+  OledView(Display &display) : display(display){};
+  ~OledView(){};
 
-    void setText(String text, int line, boolean update);
-    void clear();
-    void update();
-    Display &display;
+  void setText(String text, int line, boolean update);
+  void clear();
+  void update();
+  Display &display;
 
-    bool active = false;
+  bool active = false;
 
-  protected:
-    String lines[kMaxLines];
+ protected:
+  String lines[kMaxLines];
 };
-
-
-
 
 #endif

@@ -25,6 +25,7 @@
  **********************************************************************************/
 
 #define VERSION 3
+#define IS_SIMPLE_ALT 1
 
 #include <EEPROM.h>
 #include <Servo.h>
@@ -43,21 +44,16 @@ typedef Adafruit_BMP085 Barometer;
 const double SEA_LEVEL_PRESSURE = 101370;
 #endif
 
-//#include "I2Cdev.h"
-////https://diyhacking.com/arduino-mpu-6050-imu-sensor-tutorial/ #include
-//"MPU6050_6Axis_MotionApps20.h"
-////https://diyhacking.com/arduino-mpu-6050-imu-sensor-tutorial/
-
 #include <Wire.h>
 
 #if ENABLE_MPU
-#include "lib/MPU9250.h"
+#include "MPU9250.h"
+#include "MahonyAHRS.h"
 typedef MPU9250 ImuSensor;
 #endif
 
-#include "lib/KalmanFilter.h"
-#include "lib/MahonyAHRS.h"
-#include "lib/SimpleTimer.h"
+#include "KalmanFilter.h"
+#include "SimpleTimer.h"
 
 #include "Blinker.hpp"
 #include "RecoveryDevice.h"
@@ -80,6 +76,8 @@ void configureEeprom();
 void readSensorData(SensorData *d);
 void flightControl(SensorData *d);
 bool checkResetPin();
+void setDeploymentRelay(RelayState relayState, RecoveryDevice *c);
+void testFlightData(SensorData *d);
 
 /////////////////////////////////////////////////////////////////
 // Global State
@@ -102,7 +100,9 @@ ImuSensor imu(Wire, 0x68);
 #endif
 
 KalmanFilter filter;
+#if ENABLE_MPU
 Mahony sensorFusion;
+#endif
 
 bool barometerReady = false;  // True if the barometer/altimeter is ready
 bool mpuReady       = false;  // True if the barometer/altimeter is ready
@@ -263,15 +263,15 @@ void readSensorData(SensorData *d)
   if (barometerReady) {
     d->altitude = barometer.readAltitude(SEA_LEVEL_PRESSURE) - refAltitude;
   }
+  #if ENABLE_MPU
   if (mpuReady) {
-#if ENABLE_MPU
     imu.readSensor();
     sensorFusion.update(imu.getGyroX_rads(), imu.getGyroY_rads(),
                         imu.getGyroZ_rads(), imu.getAccelX_mss(),
                         imu.getAccelY_mss(), imu.getAccelZ_mss(),
                         imu.getMagX_uT(), imu.getMagY_uT(), imu.getMagZ_uT());
   }
-#endif
+  #endif
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -284,8 +284,10 @@ void flightControl(SensorData *d)
 
   if (PLOT_ALTITUDE) {
     log(String(altitude));
+    #if ENABLE_MPU
     log(String(sensorFusion.getYaw()) + ":" + String(sensorFusion.getPitch()) +
         ":" + String(sensorFusion.getRoll()));
+    #endif
   }
 
   // Failsafe.. Nothing should happen while we're ready but the altitude is
@@ -312,7 +314,7 @@ void flightControl(SensorData *d)
 
   if (flightState == kReadyToFly && altitude >= FLIGHT_START_THRESHOLD_ALT) {
     // Transition to "InFlight" if we've exceeded the threshold altitude.
-    log(F("Flight Started");
+    log("Flight Started");
     flightState               = kAscending;
     flightData.altTriggerTime = millis() - resetTime;
     // For testing - to indicate we're in the ascending mode
@@ -322,7 +324,7 @@ void flightControl(SensorData *d)
              altitude < (flightData.apogee - DESCENT_THRESHOLD)) {
     // Transition to kDescendining if we've we're DESCENT_THRESHOLD meters below
     // our apogee
-    log(F("Desc");
+    log("Desc");
     flightState = kDescending;
 
     // Deploy our drogue chute

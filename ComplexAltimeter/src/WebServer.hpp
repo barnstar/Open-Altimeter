@@ -73,6 +73,7 @@ class WebServer
   void handleClient();
 
   void bindFlight(int index);
+  String getIPAddress();
 
  private:
   IPAddress ipAddress;
