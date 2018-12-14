@@ -42,7 +42,7 @@
 #include "Sensor/Imu.hpp"
 #include "WebServer.hpp"
 
-#include "Configuration.h"
+#include "../Configuration.h"
 #include "types.h"
 
 class FlightController : public ButtonInputDelegate
