@@ -25,59 +25,8 @@
  **********************************************************************************/
 
 #define VERSION 3
-#define IS_SIMPLE_ALT 1
 
-#include <EEPROM.h>
-#include <Servo.h>
-#include "Configuration.h"
-
-// Sensor libraries
-#if USE_BMP280
-#include <Adafruit_BMP280.h>  //https://github.com/adafruit/Adafruit_BMP280_Library/blob/master/Adafruit_BMP280.h
-typedef Adafruit_BMP280 Barometer;
-const double SEA_LEVEL_PRESSURE = 1013.7;
-#endif
-
-#if USE_BMP085
-#include <Adafruit_BMP085.h>  //https://github.com/adafruit/Adafruit_BMP280_Library/blob/master/Adafruit_BMP085.h
-typedef Adafruit_BMP085 Barometer;
-const double SEA_LEVEL_PRESSURE = 101370;
-#endif
-
-#include <Wire.h>
-
-#if ENABLE_MPU
-#include "MPU9250.h"
-#include "MahonyAHRS.h"
-typedef MPU9250 ImuSensor;
-#endif
-
-#include "KalmanFilter.h"
-#include "SimpleTimer.h"
-
-#include "Blinker.hpp"
-#include "RecoveryDevice.h"
-#include "types.h"
-
-void log(String msg)
-{
-#if LOG_TO_SERIAL
-  Serial.println(msg);
-#endif
-}
-
-// Prototypes
-void playReadyTone();
-bool isValid(FlightData *d);
-void reset(FlightData *d);
-void logData(int index, FlightData *d);
-int readDeploymentAltitude();
-void configureEeprom();
-void readSensorData(SensorData *d);
-void flightControl(SensorData *d);
-bool checkResetPin();
-void setDeploymentRelay(RelayState relayState, RecoveryDevice *c);
-void testFlightData(SensorData *d);
+#include "SimpleAltimeter.h"
 
 /////////////////////////////////////////////////////////////////
 // Global State
@@ -92,7 +41,7 @@ double refAltitude = 0;  // The reference altitude (altitude of the launch pad)
 int flightCount    = 0;  // The number of flights recorded in EEPROM
 int resetTime      = 0;  // millis() after starting the current flight
 double deploymentAltitude = 100;  // Deployment altitude in m.
-int testFlightTimeStep = 0;
+int testFlightTimeStep    = 0;
 
 Barometer barometer;
 #if ENABLE_MPU
@@ -108,6 +57,11 @@ bool barometerReady = false;  // True if the barometer/altimeter is ready
 bool mpuReady       = false;  // True if the barometer/altimeter is ready
 SimpleTimer timer;
 Blinker blinker(timer, MESSAGE_PIN, BUZZER_PIN);
+TimerProxy flightControlInterruptProxy(flightControllInterrupt);
+
+static unsigned long lastFireTime = 0;
+int flightControlTimer            = 0;
+SensorData data;
 
 //////////////////////////////////////////////////////////////////
 // main()
@@ -155,6 +109,7 @@ void setup()
   log(mpuReady ? "IMU OK" : "IMU failed");
 #endif
 
+//For MPU6050 
 #if ENABLE_MPU
 //  mpu.initialize();
 //  mpuReady = mpu.testConnection();
@@ -173,9 +128,6 @@ void setup()
   configureEeprom();
 }
 
-static unsigned long lastFireTime = 0;
-int flightControlTimer            = 0;
-SensorData data;
 
 void loop()
 {
@@ -195,6 +147,7 @@ void loop()
   }
 }
 
+
 void flightControllInterrupt()
 {
   if (flightState != kOnGround) {
@@ -203,6 +156,7 @@ void flightControllInterrupt()
     digitalWrite(READY_PIN, HIGH);
   }
 }
+
 
 int readDeploymentAltitude()
 {
@@ -220,7 +174,6 @@ int readDeploymentAltitude()
   return altitudes[val];
 }
 
-TimerProxy flightControlInterruptProxy(flightControllInterrupt);
 
 bool checkResetPin()
 {
@@ -263,7 +216,7 @@ void readSensorData(SensorData *d)
   if (barometerReady) {
     d->altitude = barometer.readAltitude(SEA_LEVEL_PRESSURE) - refAltitude;
   }
-  #if ENABLE_MPU
+#if ENABLE_MPU
   if (mpuReady) {
     imu.readSensor();
     sensorFusion.update(imu.getGyroX_rads(), imu.getGyroY_rads(),
@@ -271,7 +224,7 @@ void readSensorData(SensorData *d)
                         imu.getAccelY_mss(), imu.getAccelZ_mss(),
                         imu.getMagX_uT(), imu.getMagY_uT(), imu.getMagZ_uT());
   }
-  #endif
+#endif
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -284,10 +237,10 @@ void flightControl(SensorData *d)
 
   if (PLOT_ALTITUDE) {
     log(String(altitude));
-    #if ENABLE_MPU
+#if ENABLE_MPU
     log(String(sensorFusion.getYaw()) + ":" + String(sensorFusion.getPitch()) +
         ":" + String(sensorFusion.getRoll()));
-    #endif
+#endif
   }
 
   // Failsafe.. Nothing should happen while we're ready but the altitude is
@@ -322,7 +275,7 @@ void flightControl(SensorData *d)
     digitalWrite(MESSAGE_PIN, HIGH);
   } else if (flightState == kAscending &&
              altitude < (flightData.apogee - DESCENT_THRESHOLD)) {
-    // Transition to kDescendining if we've we're DESCENT_THRESHOLD meters below
+    // Transition to kDescending if we've we're DESCENT_THRESHOLD meters below
     // our apogee
     log("Desc");
     flightState = kDescending;
@@ -497,4 +450,11 @@ void testFlightData(SensorData *d)
 
   d->altitude     = fakeData.altitude;
   d->acceleration = fakeData.acceleration;
+}
+
+void log(String msg)
+{
+#if LOG_TO_SERIAL
+  Serial.println(msg);
+#endif
 }

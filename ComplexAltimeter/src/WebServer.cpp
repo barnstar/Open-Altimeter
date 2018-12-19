@@ -44,7 +44,7 @@ const String HtmlHtml =
     "<html><head><meta name=\"viewport\" content=\"width=device-width, "
     "initial-scale=1\" /></head>";
 const String HtmlHtmlClose = "</html>";
-const String HtmlTitle     = "<h1>Alitmeter 1</h1><br/>\n";
+const String HtmlTitle     = "<h1>Open Altimeter</h1><br/>\n";
 const String doubleLine    = "<br/><br/>";
 
 const char *testURL     = "/test";
@@ -296,7 +296,7 @@ void PageBuilder::closePageStream()
 
 String PageBuilder::makeLink(const String &link, const String &string)
 {
-  return "<a href=\"" + link + "\">" + string + "</a>\n";
+  return "<h1><a href=\"" + link + "\">" + string + "</a></h1>\n";
 }
 
 String PageBuilder::makeDiv(const String &name, const String &contents)

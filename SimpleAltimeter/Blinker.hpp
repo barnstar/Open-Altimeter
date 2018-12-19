@@ -31,9 +31,9 @@
 #include "types.h"
 
 #define kBitMapLen 16
-#define kMaxBits \
-  kBitMapLen *   \
-      8  // This is enough for 62 blinks + padding.  Enough to render 999999.
+
+// This is enough for 62 blinks + padding.  Enough to render 999999.
+#define kMaxBits kBitMapLen * 8
 
 class Blinker : public TimerDelegate
 {

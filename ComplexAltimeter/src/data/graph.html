@@ -4,7 +4,7 @@
 
 <canvas id="graphCanvas" width="500" height="550" style="border:2px solid #000000;">
 Your browser does not support the HTML5 canvas tag.</canvas>
-
+<script src="testdata.js"></script>
 <script>
 var canvas = document.getElementById('graphCanvas');
 var ctx = canvas.getContext("2d");
@@ -13,26 +13,32 @@ canvas.height = window.innerHeight;
 
 function drawCurve(points, tension) {
 
-    var maxima = {y:0, x:0, pmax: {x:0, y:0}, pmax_norm: {x:0, y:0}};
+    var maxima = {y:0, x:0, y2:0, pmax: {x:0, y:0, y2:0}, pmax_norm: {x:0, y:0, y2:0}};
     points.forEach(function(point) {
-        if(point.y > maxima.y) {
-            maxima.y = point.y;
-            maxima.pmax.y = point.y;
-            maxima.pmax.x = point.x;
+        if(point.a > maxima.y) {
+            maxima.y = point.a;
+            maxima.pmax.y = point.a;
+            maxima.pmax.x = point.t;
             maxima.pmax_norm = point;
         }
-        if(point.x > maxima.x) {
-            maxima.x = point.x;
+
+        if(point.g > maxima.y2) {
+            maxima.y2 = point.g;
+            maxima.pmax.y2 = point.g;
+        }
+
+        if(point.t > maxima.x) {
+            maxima.x = point.t;
         }
     });
 
     function normalize(p) {
         var maxX = canvas.width;
         var maxY = canvas.height;
-        p.x = p.x * (maxX / maxima.x);
-        p.y = maxY - p.y * (maxY / maxima.y) + 50;
+        p.x = p.t * (maxX / maxima.x);
+        p.y = maxY - p.a * (maxY / maxima.y) + 50;
+        p.y2 = (maxY*.5 - 0.75 * p.g * (maxY*.5 / maxima.y2))
     }
-
 
     points.forEach(normalize);
     normalize(maxima);
@@ -58,12 +64,31 @@ function drawCurve(points, tension) {
     ctx.lineWidth = 3;
     ctx.stroke();
 
+    ctx.beginPath();
+    ctx.moveTo(points[0].x, points[0].y2);
+    for (var i = 0; i < points.length - 1; i++) {
+        var p0 = (i > 0) ? points[i - 1] : points[0];
+        var p1 = points[i];
+        var p2 = points[i + 1];
+        var p3 = (i != points.length - 2) ? points[i + 2] : p2;
+
+        var cp1x = p1.x + (p2.x - p0.x) / 6 * t;
+        var cp1y = p1.y2 + (p2.y2 - p0.y2) / 6 * t;
+
+        var cp2x = p2.x - (p3.x - p1.x) / 6 * t;
+        var cp2y = p2.y2 - (p3.y2 - p1.y2) / 6 * t;
+
+        ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, p2.x, p2.y2);
+    }
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = "#FF0000";
+    ctx.stroke();
+
     var altText = "Apogee: " + maxima.pmax.y+"m";
     ctx.fillText(altText,maxima.pmax_norm.x, maxima.pmax_norm.y-10);
 }
 
 ctx.beginPath();
-var flightData = { othercrap: {}, data: [{x:0,y:0}, {x:20,y:100}, {x:30,y:300}, {x:40,y:300}, {x:120,y:200}, {x:200,y:100}, {x:240,y:50}, {x:280,y:20}, {x:300,y:0}]};
 drawCurve(flightData.data, 0.1);
 
 </script> 
