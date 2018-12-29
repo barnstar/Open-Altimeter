@@ -36,7 +36,7 @@
 
 void RecoveryDevice::init(byte id, byte pin, DeploymentType type)
 {
-  //log(String("Init RD ") + String(id) + " p:" + String(pin));
+  //log("Init RD " + String(id) + " p:" + String(pin));
   this->relayPin = pin;
   this->id       = id;
   this->type     = type;
@@ -64,12 +64,12 @@ void RecoveryDevice::enable()
       ;
       break;
     case kServo:
-      servo.write(kMinServoAngle);
+      servo.write(kChuteReleaseTriggeredAngle);
       break;
     case kNoEjection:
       break;
   }
-  //log(String("RD En:") + String(id) );
+  //log("RD En" + String(id) );
 };
 
 void RecoveryDevice::disable()
@@ -82,12 +82,12 @@ void RecoveryDevice::disable()
       ;
       break;
     case kServo:
-      servo.write(kMaxServoAngle);
+      servo.write(kChuteReleaseArmedAngle);
       break;
     case kNoEjection:
       break;
   }
-  //log(String("RD Dis:") + String(id) );
+  //log("RD Dis" + String(id) );
 };
 
 void RecoveryDevice::reset()

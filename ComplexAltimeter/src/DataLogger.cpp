@@ -110,12 +110,11 @@ void DataLogger::readFlightDetails(int index, PrintCallback callback)
   }
 }
 
-void DataLogger::openFlightDataFileWithIndex(FlightData &data, int index)
+void DataLogger::openFlightDataFileWithIndex(int index)
 {
   String path = String(FLIGHTS_DIR) + String("/") + String(index);
   dataFile    = SPIFFS.open(path, "w");
-  dataFile.print("var flightData = {\"stats\" : ");
-  dataFile.println(data.toString(index) + ", \n\"data\":[");
+  dataFile.print("var flightData = { data\":[");
 }
 
 bool DataLogger::closeFlightDataFile()
@@ -194,7 +193,6 @@ void DataLogger::endDataRecording(FlightData &d, int index)
   File f;
 
   f = SPIFFS.open("/flights.txt", "a");
-  log(F("Unable to save flight. No File"));
   f.seek(0, SeekEnd);
   f.println(d.toString(index));
   f.close();
@@ -219,7 +217,7 @@ int DataLogger::nextFlightIndex()
   File f    = SPIFFS.open("/flightCount.txt", "r");
   if (f.available()) {
     String line = f.readStringUntil('\n');
-    int index   = line.toInt();
+    index  = line.toInt();
     log("Flight Count: " + String(index));
     index++;
   }

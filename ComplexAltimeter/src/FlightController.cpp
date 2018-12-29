@@ -50,6 +50,7 @@ FlightController::FlightController()
   resetButton.setDelegate(this);
   inputButton.setDelegate(this);
 
+  display.start();
   display.addView(&sensorDataView, false);
   display.addView(&historyView, true);
   display.addView(&statusView, true);
@@ -155,6 +156,8 @@ void FlightController::loop()
   if (flightState == kReadyToFly && altimeter.isReady() &&
       !sensorTicker.active()) {
     DataLogger::log("Starting Ticker");
+    blinker->cancelSequence();
+    DataLogger::sharedLogger().openFlightDataFileWithIndex(flightCount);
     sensorTicker.attach_ms(1000 / SENSOR_READ_DELAY_MS, readSensors, this);
     digitalWrite(READY_PIN, HIGH);
   }
@@ -162,17 +165,16 @@ void FlightController::loop()
   // Blink out the last recorded apogee on the message pin
   if (flightState == kOnGround && sensorTicker.active()) {
     DataLogger::log("Stopping Ticker");
-
     statusView.setInfo(getStatusData());
-
     sensorDataView.setWaiting();
-
     historyView.setHistoryInfo(DataLogger::sharedLogger().apogeeHistory());
-
     sensorTicker.detach();
     digitalWrite(READY_PIN, LOW);
-    if (!blinker->isBlinking() && flightData.apogee) {
-      blinker->blinkValue(flightData.apogee, BLINK_SPEED_MS, true);
+    if (lastApogee) {
+      blinker->cancelSequence();
+      DataLogger::log(String("Starting Blinker: ") + String(lastApogee));
+      blinker->blinkValue(lastApogee, BLINK_SPEED_MS, true);
+      lastApogee = 0;
     }
   }
 }
@@ -229,7 +231,7 @@ void FlightController::reset()
   testFlightTimeStep = 0;
   blinker->cancelSequence();
   enableBuzzer = true;
-  /// playReadyTone();
+  ///playReadyTone();
   enableBuzzer = false;
   flightState  = kReadyToFly;
   DataLogger::log("Ready To Fly...");
@@ -238,8 +240,7 @@ void FlightController::reset()
 
 void FlightController::playReadyTone()
 {
-  static Blink sequence[3] = {{100, 100}, {100, 100}, {100, 100}};
-  blinker->blinkSequence(sequence, 3, false);
+  blinker->blinkValue(3, 400, false);
 }
 
 Vector FlightController::getacceleration() { return Vector(0, 0, 0); }
@@ -331,19 +332,23 @@ void FlightController::flightControl()
              altitude < FLIGHT_END_THRESHOLD_ALT) {
     flightState = kOnGround;
     DataLogger::log("Landed");
+    lastApogee = flightData.apogee;
 
     DataLogger::log(flightData.toString(flightCount));
     DataLogger::sharedLogger().endDataRecording(flightData, flightCount);
     server.bindFlight(flightCount);
 
+    DataLogger::log("Resetting Relays");
     resetChuteIfRequired(drogueChute);
     resetChuteIfRequired(mainChute);
+    DataLogger::log("Relays Reset");
+
     statusView.setInfo(getStatusData());
     enableBuzzer = true;
   }
 
   // Main chute deployment at kDeployment Altitude
-  if ((flightState == kDescending || flightState == kOnGround) &&
+  if ((flightState == kDescending) &&
       !mainChute.deployed && altitude < deploymentAltitude) {
     // If we're descening and we're below our deployment altitude, deploy the
     // chute!

@@ -27,81 +27,86 @@
 
 #include "Blinker.hpp"
 
-#define kMaxBlinks 64
-
 void Blinker::blinkValue(long value, int speed, bool repeat)
 {
   if (isBlinking()) {
+    cancelSequence();
+  }
+
+  if (value > 999999) {
     return;
   }
 
-  static Blink sequence[kMaxBlinks];
-  int tempVal = value;
-  if (tempVal < 30) {
-    return;
-  }
+  position = 0;
+  memset(bitMap, 0, kBitMapLen);
+
+  long tempValue  = value;
   bool foundDigit = false;  // Don't blink leading 0s
-  int n           = 0;
-  for (int m = 100000; m > 0; m = m / 10) {
-    int digit = tempVal / m;
+
+  // If we make it past 999km then this failing is probably not a big deal
+  // Bitmask should be 10101000 10101010 0010100011 <- For 342... For example
+  for (long m = 1000000; m > 0; m = m / 10) {
+    int digit = tempValue / m;
     if (digit || foundDigit) {
       foundDigit = true;
-      tempVal    = tempVal - digit * m;
-      if (digit == 0) digit = 10;
+      tempValue  = tempValue - digit * m;
+      if (digit == 0) {
+        digit = 10;
+      }  // Blink "0" as 10
       for (int i = 0; i < digit; i++) {
-        sequence[n].onTime  = speed;
-        sequence[n].offTime = speed;
-        if (n < kMaxBlinks) n++;
+        byte byteNumber    = position / 8;
+        byte bitNumber     = position % 8;
+        bitMap[byteNumber] = bitMap[byteNumber] | 0b10000000 >> bitNumber;
+        position += 2;
       }
     }
     if (foundDigit) {
-      sequence[n - 1].offTime = speed * 2;
+      position += 2;
     }
   }
-  sequence[n].onTime  = speed * 2;
-  sequence[n].offTime = speed * 2;
-  blinkSequence(sequence, n + 1, repeat);
-}
+  if (repeat) {
+    byte byteNumber    = position / 8;
+    byte bitNumber     = position % 8;
+    bitMap[byteNumber] = bitMap[byteNumber] | 0b11000000 >> bitNumber;
+    position += 4;  // 2 for the 11 and 2 for a 00 pause
+  }
+  sequenceLen = position;
 
-void Blinker::blinkSequence(Blink *sequence, size_t len, bool repeat)
-{
-  cancelSequence();
-  this->sequence = new Blink[len];
-  memcpy(this->sequence, sequence, len * sizeof(Blink));
   state        = OFF;
   position     = 0;
-  sequenceLen  = len;
   isRunning    = true;
   this->repeat = repeat;
-  handleTimeout();
+  this->speed  = speed;
+  timerFired();
 }
 
 void Blinker::cancelSequence()
 {
+  position = 0;
+  memset(bitMap, 0, kBitMapLen);
   ticker.detach();
+  timerNumber = -1;
   setHardwareState(OFF);
-  if (sequence != nullptr) {
-    delete sequence;
-    sequence  = nullptr;
-    isRunning = false;
-  }
+  isRunning = false;
 }
 
-void interrupt(Blinker *blinker) { blinker->handleTimeout(); }
+void interrupt(Blinker *blinker) { blinker->timerFired(); }
 
-void Blinker::handleTimeout()
+void Blinker::timerFired()
 {
-  int duration = 0;
-  Blink b      = sequence[position];
-  if (state == OFF) {
+  byte byteNumber = position / 8;
+  byte bitNumber  = position % 8;
+  byte mask       = 0b10000000 >> bitNumber;
+
+  byte enable = bitMap[byteNumber] & mask;
+
+  if (enable) {
     setHardwareState(ON);
-    duration = b.onTime;
-  } else if (state == ON) {
+  } else {
     setHardwareState(OFF);
-    duration = b.offTime;
-    position++;
   }
 
+  position++;
   if (position == sequenceLen) {
     if (repeat) {
       position = 0;
@@ -110,13 +115,14 @@ void Blinker::handleTimeout()
       return;
     }
   }
-  ticker.once_ms(duration, interrupt, this);
+  ticker.once_ms(speed, interrupt, this);
 }
 
 bool Blinker::isBlinking() { return isRunning; }
 
 void Blinker::setHardwareState(BlinkerState hwState)
 {
+  // TODO - use tone(), noTone() for passive piezos.
   if (hwState == ON) {
     if (ledPin != NO_PIN) {
       digitalWrite(ledPin, HIGH);

@@ -30,35 +30,37 @@
 #include <Ticker.h>
 #include "../types.h"
 
-typedef struct {
-  int onTime;
-  int offTime;
-} Blink;
+#define kBitMapLen 16
 
 class Blinker
 {
  public:
-  Blinker(int ledPin, int piezoPin) : ledPin(ledPin), piezoPin(piezoPin) {}
+  Blinker(int ledPin, int piezoPin) : ledPin(ledPin), piezoPin(piezoPin)
+  {
+    memset(bitMap, 0, kBitMapLen);
+  }
 
   ~Blinker() { cancelSequence(); };
 
   void blinkValue(long value, int speed, bool repeat);
-  void blinkSequence(Blink *sequence, size_t len, bool repeat);
   void cancelSequence();
   bool isBlinking();
-  void handleTimeout();
+  void timerFired();
 
  private:
+  byte timerNumber = 0;
+  byte bitMap[kBitMapLen];
+
   BlinkerState state;
   void setHardwareState(BlinkerState hwState);
 
   int ledPin   = NO_PIN;
   int piezoPin = NO_PIN;
 
-  Blink *sequence    = nullptr;
-  size_t sequenceLen = 0;
-  int position       = 0;
-  bool repeat        = 0;
+  byte sequenceLen = 0;
+  byte position    = 0;
+  bool repeat      = 0;
+  int speed        = 0;
 
   Ticker ticker;
   bool isRunning;

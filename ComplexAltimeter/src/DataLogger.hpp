@@ -102,6 +102,7 @@ class DataLogger
 
   DataLogger(DataLogger const &) = delete;
   void operator=(DataLogger const &) = delete;
+  void openFlightDataFileWithIndex(int index);
 
  private:
   FlightDataPoint dataBuffer[64];
@@ -112,7 +113,6 @@ class DataLogger
 
   File dataFile;
 
-  void openFlightDataFileWithIndex(FlightData &data, int index);
   bool closeFlightDataFile();
 };
 

@@ -1,4 +1,4 @@
-
+ 
 /*********************************************************************************
  * Open Altimeter
  *
@@ -38,7 +38,7 @@ const double SEA_LEVEL_PRESSURE = 101307;
 //ground at FLIGHT_END_THRESHOLD_ALT m.
 //In theory, these could be lower, but we want to account for landing in a tree,
 //on a hill, etc.  30m should be sufficient for most launch sites.
-const double FLIGHT_START_THRESHOLD_ALT = 30;
+const double FLIGHT_START_THRESHOLD_ALT = 10;
 const double FLIGHT_END_THRESHOLD_ALT   = 30;
 const double FLIGHT_START_THRESHOLD_ACC = 0.1;  //in G's
 
@@ -49,25 +49,25 @@ const double DESCENT_THRESHOLD = 15;
 //The deployment relay will be deactivated after this time.
 const int MAX_FIRE_TIME = 5000;
 
-//When grounded the reset pin will cancel the last apogee display and
-//prepare the alitmiter for the next flight.  If it is grounded on boot
-//the eeprom will be erased.
+//ESP8266 12E specific
+#define SD2 9
+#define SD3 10
 
-
+//D1 & D2 are used for i2c 
 const int SERIAL_BAUD_RATE       = 57600;
 const byte STATUS_PIN            = NO_PIN;   //Unit status pin.  On if OK
-const byte OLED_RESET            = D7;   
-const byte MESSAGE_PIN           = NO_PIN;   //Blinks out the altitude 
-const byte READY_PIN             = NO_PIN;   //Inicates the unit is ready for flight
-const byte BUZZER_PIN            = D5;   //Audible buzzer on landing
-const byte RESET_PIN             = 9;    //SD2
-const byte INPUT_PIN             = 10;   //SD3
-const byte MAIN_DEPL_RELAY_PIN   = D3;  //parachute deployment pin
-const int DROGUE_DEPL_RELAY_PIN = NO_PIN;  //parachute deployment pin
-const DeploymentType MAIN_TYPE    = kServo;
-const DeploymentType DROGUE_TYPE  = kNoEjection; 
-const int BARO_I2C_ADDR         = 0x76;
-#define STATUS_PIN_LEVEL 800
+const byte MESSAGE_PIN           = D6;   //Blinks out the altitude 
+const byte READY_PIN             = D5;   //Inicates the unit is ready for flight
+const byte BUZZER_PIN            = D0;   //Audible buzzer on landing
+const byte RESET_PIN             = SD2;  //SD2 - pin "9"
+const byte INPUT_PIN             = SD3;  //SD3 - pin "10"
+const byte MAIN_DEPL_RELAY_PIN   = D3;   //parachute deployment pin
+const byte DROGUE_DEPL_RELAY_PIN = D4;   //parachute deployment pin
+const byte SERVO_CTL_1           = D7;   //servo control pin 1
+const byte SERVO_CTL_2           = D8;   //servo control pin 2
+const DeploymentType MAIN_TYPE   = kServo;
+const DeploymentType DROGUE_TYPE = kServo; 
+const int BARO_I2C_ADDR          = 0x76;
 const PeizoStyle PEIZO_TYPE     = kActive;
 
 //The barometer can only refresh at about 50Hz. 
@@ -76,8 +76,9 @@ const int SENSOR_READ_DELAY_MS = 20;
 //Delay between digit blinks.  Any faster is too quick to keep up with
 const int BLINK_SPEED_MS       = 250;
 
-const int kMaxServoAngle = 180;
-const int kMinServoAngle = 0;
+//Servo angles for servo chute release
+const int kChuteReleaseArmedAngle = 180;
+const int kChuteReleaseTriggeredAngle = 0;
 
 #endif //config_h
 

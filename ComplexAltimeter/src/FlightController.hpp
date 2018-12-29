@@ -79,6 +79,7 @@ class FlightController : public ButtonInputDelegate
 
   FlightData flightData;
   FlightState flightState = kOnGround;  // The flight state
+  int lastApogee          = 0;
 
   RecoveryDevice mainChute;
   RecoveryDevice drogueChute;

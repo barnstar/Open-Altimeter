@@ -47,16 +47,20 @@ class DisplayIface
   DisplayIface()
       : display(kDispWidth, kDispHeight, &Wire)
   {
-    boolean status = display.begin(SSD1306_SWITCHCAPVCC, 0x3C);  // initialize with the I2C
 
+  }
+
+  ~DisplayIface() {}
+
+  void start() 
+  {
+    boolean status = display.begin(SSD1306_SWITCHCAPVCC, 0x3C);  // initialize with the I2C
     display.clearDisplay();
     display.setTextColor(WHITE);
     display.setTextSize(1);
     display.cp437(true);
     display.display();
   }
-
-  ~DisplayIface() {}
 
   void addView(OledView *view, bool show)
   {
