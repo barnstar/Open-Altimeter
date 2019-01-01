@@ -43,7 +43,7 @@ TUBE_ID = 2.558 *25.4;
 LENGTH = 80;             //Overall length
 TIP_LEN=40;               //Length of the removable tip 
 TIP_RAD=4;                //Tip radiums
-SHOULDER_LENGTH = 100;     //Length of the insert 
+SHOULDER_LENGTH = 170;     //Length of the insert 
 
  //The radii and lengths here have to be customized for each length/od
  //Deriving the raduis at a given z position is left as an exercise for
@@ -63,7 +63,7 @@ ELLIPTICAL=4;
 STYLE = ELLIPTICAL;
 
 //Build the components - Uncomment the ones you need
-shelled_cone();
+//shelled_cone();
 //translate([0,0,0])
 //cone_bottom();
 //translate([TUBE_OD/2 + 20,0,0])
@@ -72,9 +72,8 @@ shelled_cone();
 //translate([0,0,3.5])
 //avbay_insert();
 //bulkhead();
-//  simple_insert();
-//avbay_retainer();
-
+//simple_insert();
+avbay_retainer();
 
 // Components
 module bulkhead()
@@ -133,22 +132,31 @@ module avbay_insert()
 
 module avbay_retainer()
 {
-  or = TUBE_ID / 2 - WALL_THICKNESS;
-  ir = or * .55;
+  or = TUBE_ID / 2 - WALL_THICKNESS - .75;
+  ir = or * .45;
 
   difference() {
     union() {
-        translate([0,0,4.5]) {
-          cube([or*1.9,5,8], center = true);
+        translate([0,0,10]) {
+          cube([or*1.9,9,20], center = true);
       }
       cylinder(h=3, r=or, center=false);
+      
+    }
+    rotate([0,0,90])translate([TUBE_ID/2-WALL_THICKNESS-12,-5.5,-1]) {
+        cube([12.8,11,24]);
+    }
+    rotate([0,0,90])translate([-TUBE_ID/2+WALL_THICKNESS-1,-5.5,-1]) {
+         cube([12.8,11,24]);
     }
     translate([0,0,-1]) {
-      cylinder(h=50, r=ir, center=true);
-      //cube(size = [ir*2 + 4, 6, RET_THK+8], center=true);
+      //cylinder(h=50, r=ir, center=true);
+      cube(size = [20,20,40], center=true);
     }
-    translate([0,0,6])
-     cube([or*2,2,6], center = true);
+    translate([0,0,17])
+     cube([51,2.2,25], center = true);
+    translate([0,0,23]) 
+       cube([46,40,28], center = true);
   }   
 }
 

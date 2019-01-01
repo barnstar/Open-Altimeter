@@ -27,11 +27,22 @@
 #ifndef DISPLAYIFACE_H
 #define DISPLAYIFACE_H
 
-#include "lib/Adafruit_GFX.h"
-#include "lib/Adafruit_SSD1306.h"
-#include <Wire.h>
-#include "ButtonInput.h"
 #include "../../Configuration.h"
+#include "lib/Adafruit_GFX.h"
+
+#ifdef USE_SSD1306
+#include "lib/Adafruit_SSD1306.h"
+typedef Adafruit_SSD1306 Display;
+#endif
+
+#ifdef USE_SH1106
+#include "lib/Adafruit_SH1106.h"
+typedef Adafruit_SH1106 Display;
+#endif
+
+//#include <Wire.h>
+#include "ButtonInput.h"
+
 
 #define kDispWidth 128
 #define kDispHeight 64
@@ -39,13 +50,13 @@
 
 class OledView;
 
-typedef Adafruit_SSD1306 Display;
 
 class DisplayIface
 {
  public:
   DisplayIface()
-      : display(kDispWidth, kDispHeight, &Wire)
+      : display(0) //No reset pin
+      //: display(kDispWidth, kDispHeight, &Wire)
   {
 
   }
@@ -54,7 +65,14 @@ class DisplayIface
 
   void start() 
   {
-    boolean status = display.begin(SSD1306_SWITCHCAPVCC, 0x3C);  // initialize with the I2C
+    #ifdef USE_SSD1306
+    boolean status = display.begin(SSD1306_SWITCHCAPVCC, DISPLAY_I2C_ADDR); 
+    #endif
+
+    #ifdef USE_SH1106
+    display.begin(SH1106_SWITCHCAPVCC, DISPLAY_I2C_ADDR, false);
+    #endif
+
     display.clearDisplay();
     display.setTextColor(WHITE);
     display.setTextSize(1);

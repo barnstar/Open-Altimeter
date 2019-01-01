@@ -32,8 +32,6 @@
 #define LOG_TO_SERIAL 1  // Set to 0 to disable serial logging...
 #define PLOT_ALTITUDE 0  // Set to 1 to watch the altitude on the serial plotter
 
-
-
 static const int kChuteReleaseTriggeredAngle = 5;
 static const int kChuteReleaseArmedAngle = 120;
 

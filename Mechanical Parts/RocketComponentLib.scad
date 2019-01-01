@@ -112,9 +112,6 @@ module cutting_jig()
 
 module centering_ring()
 {
-  //or = 24.5;
-  //or = 1.23*24.5/2 ;
-  //or = MOTOR_OD/2 + WALL_THK ;
   ir = 1.233*24.5/2 ;
   length = MOTOR_LEN + RET_THK;
   difference() {

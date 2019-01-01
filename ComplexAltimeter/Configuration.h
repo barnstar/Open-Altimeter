@@ -31,6 +31,11 @@
 #include <Arduino.h>
 #include "src/types.h"
 
+//There are two cheap types of OLED displays.  Choose the one that doesn't
+//output gargabe.  I2C ony supported here.  #define the one you're using.
+#define USE_SH1106
+//#define USE_SDD1306
+
 //Today's pressure at sea level...
 const double SEA_LEVEL_PRESSURE = 101307;
 
@@ -68,6 +73,7 @@ const byte SERVO_CTL_2           = D8;   //servo control pin 2
 const DeploymentType MAIN_TYPE   = kServo;
 const DeploymentType DROGUE_TYPE = kServo; 
 const int BARO_I2C_ADDR          = 0x76;
+const int DISPLAY_I2C_ADDR       = 0x3C;
 const PeizoStyle PEIZO_TYPE     = kActive;
 
 //The barometer can only refresh at about 50Hz. 

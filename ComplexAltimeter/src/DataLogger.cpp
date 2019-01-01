@@ -178,9 +178,20 @@ String DataLogger::apogeeHistory()
 {
   File f        = SPIFFS.open("/apogeeHistory.txt", "r");
   String retVal = "Flight History\n";
+  int lineCount = 0;
+  while (f.available()) {
+    f.readStringUntil('\n');
+    lineCount++;
+  }
+
+  f.seek(0);
+  const byte maxLines = 7;
   while (f.available()) {
     String line = f.readStringUntil('\n');
-    retVal      = retVal + line + String("\n");
+    if (lineCount <= maxLines) {
+      retVal = retVal + line + String("\n");
+    }
+    lineCount--;
   }
   f.close();
   return retVal;
@@ -217,7 +228,7 @@ int DataLogger::nextFlightIndex()
   File f    = SPIFFS.open("/flightCount.txt", "r");
   if (f.available()) {
     String line = f.readStringUntil('\n');
-    index  = line.toInt();
+    index       = line.toInt();
     log("Flight Count: " + String(index));
     index++;
   }
