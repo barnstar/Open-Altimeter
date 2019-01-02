@@ -32,7 +32,6 @@
 #include "FlightData.hpp"
 
 #define NO_PIN -1
-#define IS_SIMPLE_ALT 0
 
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
 #define MAX(a, b) (((a) > (b)) ? (a) : (b))
