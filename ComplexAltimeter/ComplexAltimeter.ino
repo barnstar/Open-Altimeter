@@ -27,9 +27,13 @@
 #define VERSION 1
 
 #include "src/FlightController.hpp"
+#include "src/Sensor/I2CUtil.h"
 
 void setup()
 {
+  //Scan the i2c bus for debugging
+  scanI2cBus();
+  
   //Initialize the shared flightController
   FlightController::shared();
 }

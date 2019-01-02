@@ -24,17 +24,14 @@
  * SOFTWARE.
  **********************************************************************************/
 
-
 #include "Altimeter.hpp"
-#include <Wire.h>
 #include "../../Configuration.h"
 #include "../DataLogger.hpp"
 
 bool Altimeter::start()
 {
-  scanI2cBus();
   bool ready = false;
-  if (ready = barometer.begin()) {  // Omit the parameter for adafruit
+  if (ready = barometer.begin()) {  
 #ifdef STATUS_PIN_LEVEL
     analogWrite(STATUS_PIN, STATUS_PIN_LEVEL);
 #else
@@ -55,29 +52,26 @@ bool Altimeter::start()
 void Altimeter::reset()
 {
   filter.reset(1, 1, 0.001);
-  velocityFilter.reset(1, 1, 0.001);
+  velocityFilter.reset(1, 1, 0.01);
   for (int i = 0; i < 4; i++) {
     filter.step(0);
     velocityFilter.step(0);
   }
 
-  baselinePressure = getPressure();
+  baselinePressure = pressure();
   lastRefreshTime  = 0;
   DataLogger::log(String("Barometer reset: ") + String(baselinePressure));
 }
 
 double Altimeter::referenceAltitude() { return refAltitude; }
 
-double Altimeter::getAltitude()
-{
-  return filter.lastEstimate();
-}
+double Altimeter::altitude() { return filter.lastEstimate(); }
 
 double Altimeter::verticalVelocity() { velocityFilter.lastEstimate(); }
 
 void Altimeter::update()
 {
-  double pressure = getPressure();
+  double pressure = pressure();
   if (pressure == 0) {
     return;
   }
@@ -94,7 +88,7 @@ void Altimeter::update()
   filter.step(relativeAlt);
 }
 
-double Altimeter::getPressure()
+double Altimeter::pressure()
 {
   char status;
   double T, P, p0, a;
@@ -106,7 +100,7 @@ double Altimeter::getPressure()
       status = barometer.startPressure(3);
       if (status != 0) {
         delay(status);
-        status = barometer.getPressure(P, T);
+        status = barometer.pressure(P, T);
         if (status != 0) {
           return (P);
         }
@@ -118,35 +112,4 @@ double Altimeter::getPressure()
 
 bool Altimeter::isReady() { return barometerReady; }
 
-void Altimeter::scanI2cBus()
-{
-  byte error, address;
-  int nDevices = 0;
 
-  Serial.println("Scanning...");
-
-  for (address = 1; address < 127; address++) {
-    // The i2c_scanner uses the return value of
-    // the Write.endTransmisstion to see if
-    // a device did acknowledge to the address.
-    Wire.beginTransmission(address);
-    error = Wire.endTransmission();
-
-    if (error == 0) {
-      Serial.print("I2C device found at address 0x");
-      if (address < 16) Serial.print("0");
-      Serial.print(address, HEX);
-      Serial.println("  !");
-
-      nDevices++;
-    } else if (error == 4) {
-      Serial.print("Unknown error at address 0x");
-      if (address < 16) Serial.print("0");
-      Serial.println(address, HEX);
-    }
-  }
-  if (nDevices == 0)
-    Serial.println("No I2C devices found\n");
-  else
-    Serial.println("done\n");
-}

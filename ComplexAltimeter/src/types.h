@@ -32,6 +32,7 @@
 #include "FlightData.hpp"
 
 #define NO_PIN -1
+#define IS_SIMPLE_ALT 0
 
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
 #define MAX(a, b) (((a) > (b)) ? (a) : (b))
@@ -79,7 +80,7 @@ struct Vector {
 
   String toString()
   {
-    return String(String(XAxis) + " " + String(YAxis) + " " + String(ZAxis));
+    return String(String(XAxis) + ":" + String(YAxis) + ":" + String(ZAxis));
   }
 };
 
@@ -90,20 +91,23 @@ typedef struct {
 
   String toString()
   {
-    return String(String(roll) + "  " + String(pitch) + "  " + " " +
+    return String(String(roll) + ":" + String(pitch) + ":" +
                   String(yaw));
   }
 } Heading;
 
 typedef struct {
-  double altitude     = 0;
-  double acceleration = 0;
+  double altitude         = 0;
+  double acceleration     = 0;
+  double verticalVelocity = 0;
   Vector acc_vec;
+  Vector gyro_vec;
   Heading heading;
 
   String toString()
   {
-    return String("Al:" + String(altitude) + " Ac: " + String(acceleration));
+    return String("A:" + String(altitude) + " C:" + String(acceleration) +
+                  " V:" + String(verticalVelocity));
   }
 } SensorData;
 

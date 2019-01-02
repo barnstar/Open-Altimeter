@@ -54,15 +54,21 @@ public:
   void reset();
   void update();
 
+  //Heading - roll, pitch, yaw
   Heading getHeading() { return heading; }
 
-  Vector const &getAccelleration() { return accelleration; }
+  //Linear accelleration 
+  Vector const &getAcceleration() { return acceleration; }
+
+  //Rotational acceleration
+  Vector const &getGyro() { return gyro; }
 
 private:
   bool mpuReady;
   int frequency;
   Heading heading;
   Vector accelleration;
+  Vector gyro;
 
   ImuSensor imuSensor;
   Mahony sensorFusion;

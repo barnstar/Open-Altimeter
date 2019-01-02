@@ -30,7 +30,6 @@
 #include <Arduino.h>
 
 #define NO_PIN 0
-#define IS_SIMPLE_ALT 1
 
 void log(String msg);
 

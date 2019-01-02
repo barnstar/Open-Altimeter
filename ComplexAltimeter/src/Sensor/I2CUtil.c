@@ -24,69 +24,39 @@
  * SOFTWARE.
  **********************************************************************************/
 
-#ifndef blinksequence_h
-#define blinksequence_h
 
-#ifdef IS_SIMPLE_ALT
-#include "SimpleTimer.h"
-#include "types.h"
-#else
-#include <Ticker.h>
-#include "../types.h"
-class TimerDelegate
+#include <Arduino.h>
+#include <Wire.h>
+
+void scanI2cBus()
 {
-};
-#endif
+  byte error, address;
+  int nDevices = 0;
 
-// 128 bits will represent 64 on-off events.
-// the number 1000 would require ~34 so this should
-// be sufficient.
-#define kBitMapLen 16
+  Serial.println("Scanning I2C Bus");
 
-class Blinker : public TimerDelegate
-{
- public:
-#ifdef IS_SIMPLE_ALT
-  Blinker(SimpleTimer &timer, byte ledPin, byte piezoPin)
-      : timer(timer), ledPin(ledPin), piezoPin(piezoPin)
-  {
+  for (address = 1; address < 127; address++) {
+    // The i2c_scanner uses the return value of
+    // the Write.endTransmisstion to see if
+    // a device did acknowledge to the address.
+    Wire.beginTransmission(address);
+    error = Wire.endTransmission();
+
+    if (error == 0) {
+      Serial.print("I2C device found at address 0x");
+      if (address < 16) Serial.print("0");
+      Serial.print(address, HEX);
+      Serial.println("  ");
+
+      nDevices++;
+    } else if (error == 4) {
+      Serial.print("Unknown error at address 0x");
+      if (address < 16) Serial.print("0");
+      Serial.println(address, HEX);
+    }
   }
-#else
-  Blinker(int ledPin, int piezoPin) : ledPin(ledPin), piezoPin(piezoPin) {}
-#endif
-
-  ~Blinker() { cancelSequence(); };
-
-  void blinkValue(long value, int speed, bool repeat);
-  void cancelSequence();
-  bool isBlinking();
-
-#ifdef IS_SIMPLE_ALT
-  void timerFired(int timerNumber) override;
-#else
-  void timerFired(int timerNumber);
-#endif
-
- private:
-  byte timerNumber = 0;
-  byte bitMap[kBitMapLen];
-
-  void setHardwareState(BlinkerState hwState);
-
-  int ledPin   = NO_PIN;
-  int piezoPin = NO_PIN;
-
-  byte sequenceLen = 0;
-  byte position    = 0;
-  bool repeat      = 0;
-  int speed        = 0;
-
-#ifdef IS_SIMPLE_ALT
-  SimpleTimer &timer;
-#else
-  Ticker ticker;
-#endif
-  bool isRunning;
-};
-
-#endif
+  if (nDevices == 0)
+    Serial.println("No I2C devices found\n");
+  else
+    Serial.println("I2C scan done\n");
+}

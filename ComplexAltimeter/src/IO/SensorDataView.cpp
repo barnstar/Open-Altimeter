@@ -30,9 +30,13 @@ void SensorDataView::setData(SensorData &data)
 {
     String heading = data.heading.toString();
     String dataStr = data.toString();
-    setText(F("Raw Data"), 0, false);
-    setText(heading, 2, false);
-    setText(dataStr, 1, false);
+    String accStr  = data.acc_vec.toString();
+    String gyroStr = data.gyro.toString();
+    setText(gyroStr, 3, false);
+    setText(dataStr, 0, false);
+    setText(heading, 1, false);
+    setText(accStr, 2, false);
+    setText(gyroStr, 3, false);
     update();
 }
 
@@ -40,5 +44,8 @@ void SensorDataView::setWaiting()
 {
     setText(F("No telemetry"),0,false);
     setText(F("Unit in landed mode"),1,false);
+    setText(F(""),2,false);
+    setText(F(""),3,false);
+    setText(F(""),4,false);
     update();
 }

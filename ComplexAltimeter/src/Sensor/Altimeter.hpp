@@ -34,14 +34,14 @@
 
 // Sensor libraries
 #if USE_BMP280
-#include "lib/Adafruit_BMP280.h"  //https://github.com/adafruit/Adafruit_BMP280_Library/blob/master/Adafruit_BMP280.h
+#include "lib/Adafruit_BMP280.h"  
 typedef Adafruit_BMP280 Barometer;
 #define SEA_LEVEL_PRESSURE 1013.7
 #endif
 
 #if USE_BMP085
-#include "lib/SFE_BMP180.h"  //https://github.com/adafruit/Adafruit_BMP280_Library/blob/master/Adafruit_BMP085.h
-typedef SFE_BMP180 Barometer;
+#include "lib/SFE_BMP180.h"  
+typedef SFE_BMP180 Barometer;  //180 and 085 use the same interface
 #define SEA_LEVEL_PRESSURE 101370
 #endif
 
@@ -56,10 +56,10 @@ class Altimeter
   void update();
   void reset();
 
-  double getAltitude();
-  double referenceAltitude();
-  double verticalVelocity();
-  double getPressure();
+  double altitude();            //meters above the reference altitude
+  double referenceAltitude();   //Altitude when start() was called
+  double verticalVelocity();    //in meters per second based on rate of barometric pressure change
+  double pressure();
 
   void scanI2cBus();
 

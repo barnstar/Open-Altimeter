@@ -27,31 +27,50 @@
 #ifndef blinksequence_h
 #define blinksequence_h
 
+#ifdef IS_SIMPLE_ALT
+#include "SimpleTimer.h"
+#include "types.h"
+#else
 #include <Ticker.h>
 #include "../types.h"
+class TimerDelegate
+{
+};
+#endif
 
+// 128 bits will represent 64 on-off events.
+// the number 1000 would require ~34 so this should
+// be sufficient.
 #define kBitMapLen 16
 
-class Blinker
+class Blinker : public TimerDelegate
 {
  public:
-  Blinker(int ledPin, int piezoPin) : ledPin(ledPin), piezoPin(piezoPin)
+#ifdef IS_SIMPLE_ALT
+  Blinker(SimpleTimer &timer, byte ledPin, byte piezoPin)
+      : timer(timer), ledPin(ledPin), piezoPin(piezoPin)
   {
-    memset(bitMap, 0, kBitMapLen);
   }
+#else
+  Blinker(int ledPin, int piezoPin) : ledPin(ledPin), piezoPin(piezoPin) {}
+#endif
 
   ~Blinker() { cancelSequence(); };
 
   void blinkValue(long value, int speed, bool repeat);
   void cancelSequence();
   bool isBlinking();
-  void timerFired();
+
+#ifdef IS_SIMPLE_ALT
+  void timerFired(int timerNumber) override;
+#else
+  void timerFired(int timerNumber);
+#endif
 
  private:
   byte timerNumber = 0;
   byte bitMap[kBitMapLen];
 
-  BlinkerState state;
   void setHardwareState(BlinkerState hwState);
 
   int ledPin   = NO_PIN;
@@ -62,7 +81,11 @@ class Blinker
   bool repeat      = 0;
   int speed        = 0;
 
+#ifdef IS_SIMPLE_ALT
+  SimpleTimer &timer;
+#else
   Ticker ticker;
+#endif
   bool isRunning;
 };
 

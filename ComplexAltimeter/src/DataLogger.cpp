@@ -25,7 +25,6 @@
  **********************************************************************************/
 
 #include <Arduino.h>
-#include <EEPROM.h>
 
 #include "DataLogger.hpp"
 #include "FlightData.hpp"
@@ -33,7 +32,7 @@
 
 DataLogger::DataLogger()
 {
-  log("Data Logger Initialized");
+  log(":: Data Logger Initialized ::");
 
   Dir dir = SPIFFS.openDir("/");
   while (dir.next()) {
@@ -112,6 +111,7 @@ void DataLogger::readFlightDetails(int index, PrintCallback callback)
 
 void DataLogger::openFlightDataFileWithIndex(int index)
 {
+  DataLogger::log("Opening flight data file..");
   String path = String(FLIGHTS_DIR) + String("/") + String(index);
   dataFile    = SPIFFS.open(path, "w");
   dataFile.print("var flightData = { data\":[");
@@ -119,6 +119,7 @@ void DataLogger::openFlightDataFileWithIndex(int index)
 
 bool DataLogger::closeFlightDataFile()
 {
+  DataLogger::log("Closing flight data file..");
   dataFile.println("]}\n\n");
   dataFile.close();
   clearBuffer();

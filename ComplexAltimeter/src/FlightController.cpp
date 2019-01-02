@@ -45,6 +45,7 @@ FlightController::FlightController()
   Serial.begin(SERIAL_BAUD_RATE);
   DataLogger::sharedLogger();
 
+
   DataLogger::log("Creating Flight Controller");
   blinker = new Blinker(MESSAGE_PIN, BUZZER_PIN);
   resetButton.setDelegate(this);
@@ -262,11 +263,13 @@ void FlightController::readSensorData(SensorData *d)
   // Our relative altitude... Relative to wherever we last reset the altimeter.
   if (altimeter.isReady()) {
     altimeter.update();
-    d->altitude = altimeter.getAltitude();
+    d->altitude = altimeter.altitude();
+    d->verticalVelocity = altimeter.verticalVelocity();
   }
   imu.update();
   d->heading      = imu.getHeading();
-  d->acc_vec      = imu.getAccelleration();
+  d->acc_vec      = imu.getAcelleration();
+  d->gyro         = inu.getGyro();
   d->acceleration = d->acc_vec.length();
 }
 
