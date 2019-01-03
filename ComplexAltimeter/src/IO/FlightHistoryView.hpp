@@ -28,14 +28,17 @@
 #define FLIGHTHISTORYVIEW_H
 
 #include "../types.h"
-#include "OledView.hpp"
+#include "View.hpp"
 
-class FlightHistoryView : public OledView
+class FlightHistoryView : public View
 {
  public:
-   FlightHistoryView(Display &display) : OledView(display){};
+   FlightHistoryView(Display &display) : View(display){};
 
    void setHistoryInfo(String info);
+
+  private:
+    bool needsRefresh = true;
 };
 
 #endif

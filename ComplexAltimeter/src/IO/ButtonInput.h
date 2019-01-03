@@ -24,7 +24,6 @@
  * SOFTWARE.
  **********************************************************************************/
 
-
 #ifndef BUTTONINPUT_H
 #define BUTTONINPUT_H
 
@@ -41,12 +40,14 @@ class ButtonInputDelegate
 class ButtonInput
 {
  public:
-
-  ButtonInput(short pin, int longPressInterval = 1000)
+  ButtonInput(int buttonId, short pin, int longPressInterval = 1000)
       : pin(pin), longPressInterval(longPressInterval)
   {
     pinMode(pin, INPUT_PULLUP);
+    this->buttonId = buttonId;
   }
+
+  int buttonId;
 
   // call in loop();
   void update()

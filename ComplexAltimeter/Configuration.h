@@ -1,4 +1,4 @@
- 
+
 /*********************************************************************************
  * Open Altimeter
  *
@@ -31,60 +31,66 @@
 #include <Arduino.h>
 #include "src/types.h"
 
-//There are two cheap types of OLED displays.  Choose the one that doesn't
-//output gargabe.  I2C ony supported here.  #define the one you're using.
+// There are two cheap types of OLED displays.  Choose the one that doesn't
+// output gargabe.  I2C ony supported here.  #define the one you're using.
 #define USE_SH1106
 //#define USE_SDD1306
 
-//Today's pressure at sea level...
+// Set this to 0 to disable the display while in fligh
+#define RUN_DISPLAY_WHILE_FLYING 1
+
+// Today's pressure at sea level...
 const double SEA_LEVEL_PRESSURE = 101307;
 
-//Recording will start at FLIGHT_START_THRESHOLD_ALT m and we'll assume we're on the 
-//ground at FLIGHT_END_THRESHOLD_ALT m.
-//In theory, these could be lower, but we want to account for landing in a tree,
-//on a hill, etc.  30m should be sufficient for most launch sites.
-const double FLIGHT_START_THRESHOLD_ALT = 10;
-const double FLIGHT_END_THRESHOLD_ALT   = 30;
-const double FLIGHT_START_THRESHOLD_ACC = 0.1;  //in G's
+// Recording will start at FLIGHT_START_THRESHOLD_ALT m and we'll assume we're
+// on the ground at FLIGHT_END_THRESHOLD_ALT m. In theory, these could be lower,
+// but we want to account for landing in a tree, on a hill, etc.  30m should be
+// sufficient for most launch sites.
+const double FLIGHT_START_THRESHOLD_ALT      = 10;
+const double FLIGHT_END_THRESHOLD_ALT        = 30;
+const double FLIGHT_START_THRESHOLD_ACC      = 0.1;  // in G's
+const double FLIGHT_START_THRESHOLD_VELOCITY = 0.5;  // m/s
+const double FLIGHT_END_THRESHOLD_VELOCITY   = 0.0;  // m/s
 
-//When the altitude is DESCENT_THRESHOLD meters less than the apogee, we'll assume we're 
-//descending.  Hopefully, your rocket has a generally upwards trajectory....
+// When the altitude is DESCENT_THRESHOLD meters less than the apogee, we'll
+// assume we're descending.  Hopefully, your rocket has a generally upwards
+// trajectory....
 const double DESCENT_THRESHOLD = 15;
 
-//The deployment relay will be deactivated after this time.
+// The deployment relay will be deactivated after this time.
 const int MAX_FIRE_TIME = 5000;
 
-//ESP8266 12E specific
+// ESP8266 12E specific
 #define SD2 9
 #define SD3 10
 
-//D1 & D2 are used for i2c 
-const int SERIAL_BAUD_RATE       = 57600;
-const byte STATUS_PIN            = NO_PIN;   //Unit status pin.  On if OK
-const byte MESSAGE_PIN           = D6;   //Blinks out the altitude 
-const byte READY_PIN             = D5;   //Inicates the unit is ready for flight
-const byte BUZZER_PIN            = D0;   //Audible buzzer on landing
-const byte RESET_PIN             = SD2;  //SD2 - pin "9"
-const byte INPUT_PIN             = SD3;  //SD3 - pin "10"
-const byte MAIN_DEPL_RELAY_PIN   = D3;   //parachute deployment pin
-const byte DROGUE_DEPL_RELAY_PIN = D4;   //parachute deployment pin
-const byte SERVO_CTL_1           = D7;   //servo control pin 1
-const byte SERVO_CTL_2           = D8;   //servo control pin 2
-const DeploymentType MAIN_TYPE   = kServo;
-const DeploymentType DROGUE_TYPE = kServo; 
-const int BARO_I2C_ADDR          = 0x76;
+// D1 & D2 are used for i2c
+const int SERIAL_BAUD_RATE = 57600;
+const byte STATUS_PIN = NO_PIN;        // Unit status pin.  On if OK
+const byte MESSAGE_PIN = D6;           // Blinks out the altitude
+const byte READY_PIN   = D5;           // Indicates the unit is ready for flight
+const byte BUZZER_PIN = D0;            // Audible buzzer on landing
+const byte RESET_PIN           = SD2;  // SD2 - pin "9"
+const byte INPUT_PIN           = SD3;  // SD3 - pin "10"
+const byte MAIN_DEPL_RELAY_PIN = D3;   // parachute deployment pin
+const byte DROGUE_DEPL_RELAY_PIN = D4;  // parachute deployment pin
+const byte SERVO_CTL_1         = D7;    // servo control pin 1
+const byte SERVO_CTL_2         = D8;    // servo control pin 2
+const DeploymentType MAIN_TYPE = kServo;
+const DeploymentType DROGUE_TYPE = kServo;
+const int BARO_I2C_ADDR          = 0x76;  // 0x77 or 0x76 depending on the barometer used
 const int DISPLAY_I2C_ADDR       = 0x3C;
-const PeizoStyle PEIZO_TYPE     = kActive;
+const int IMU_I2C_ADDR           = 0x68;
+const PeizoStyle PEIZO_TYPE      = kActive;
 
-//The barometer can only refresh at about 50Hz. 
+// The barometer can only refresh at about 50Hz.
 const int SENSOR_READ_DELAY_MS = 20;
 
-//Delay between digit blinks.  Any faster is too quick to keep up with
-const int BLINK_SPEED_MS       = 250;
+// Delay between digit blinks.  Any faster is too quick to keep up with
+const int BLINK_SPEED_MS = 250;
 
-//Servo angles for servo chute release
-const int kChuteReleaseArmedAngle = 180;
+// Servo angles for servo chute release
+const int kChuteReleaseArmedAngle     = 180;
 const int kChuteReleaseTriggeredAngle = 0;
 
-#endif //config_h
-
+#endif  // config_h

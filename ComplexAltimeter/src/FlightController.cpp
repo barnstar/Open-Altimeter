@@ -34,27 +34,16 @@
 #define kMaxBlinks 64
 
 FlightController::FlightController()
-    : resetButton(RESET_PIN, 900),
-      inputButton(INPUT_PIN, 1500),
-      imu(1000 / SENSOR_READ_DELAY_MS),
-      statusView(display.display),
-      sensorDataView(display.display),
-      historyView(display.display)
+    : imu(1000 / SENSOR_READ_DELAY_MS)
 {
   SPIFFS.begin();
   Serial.begin(SERIAL_BAUD_RATE);
   DataLogger::sharedLogger();
 
-
   DataLogger::log("Creating Flight Controller");
   blinker = new Blinker(MESSAGE_PIN, BUZZER_PIN);
-  resetButton.setDelegate(this);
-  inputButton.setDelegate(this);
 
-  display.start();
-  display.addView(&sensorDataView, false);
-  display.addView(&historyView, true);
-  display.addView(&statusView, true);
+  userInterface.start();
 
   this->initialize();
   DataLogger::log("Flight Controller Initialized");
@@ -102,10 +91,6 @@ void FlightController::initialize()
 
   // We don't want to sound the buzzer on first boot, only after a flight
   enableBuzzer = false;
-
-  statusView.setInfo(getStatusData());
-  historyView.setHistoryInfo(DataLogger::sharedLogger().apogeeHistory());
-  sensorDataView.setWaiting();
 }
 
 StatusData const &FlightController::getStatusData()
@@ -141,13 +126,12 @@ void readSensors(FlightController *f)
   }
 }
 
-void FlightController::fly() { flightControl(); }
-
 void FlightController::loop()
 {
-  server.handleClient();
-  resetButton.update();
-  inputButton.update();
+  //Ignore the wifis when we're flying.
+  if(flightState == kReadyToFly || flightState == kOnGround) {
+    server.handleClient();
+  }
 
   if (sampleOnNextLoop) {
     flightControl();
@@ -159,16 +143,14 @@ void FlightController::loop()
     DataLogger::log("Starting Ticker");
     blinker->cancelSequence();
     DataLogger::sharedLogger().openFlightDataFileWithIndex(flightCount);
-    sensorTicker.attach_ms(1000 / SENSOR_READ_DELAY_MS, readSensors, this);
+    sensorTicker.attach_ms(SENSOR_READ_DELAY_MS, readSensors, this);
     digitalWrite(READY_PIN, HIGH);
   }
 
   // Blink out the last recorded apogee on the message pin
   if (flightState == kOnGround && sensorTicker.active()) {
     DataLogger::log("Stopping Ticker");
-    statusView.setInfo(getStatusData());
-    sensorDataView.setWaiting();
-    historyView.setHistoryInfo(DataLogger::sharedLogger().apogeeHistory());
+    refreshInterface = true;
     sensorTicker.detach();
     digitalWrite(READY_PIN, LOW);
     if (lastApogee) {
@@ -178,12 +160,19 @@ void FlightController::loop()
       lastApogee = 0;
     }
   }
+
+  //
+  if(RUN_DISPLAY_WHILE_FLYING || flightState == kReadyToFly || flightState == kOnGround) {
+    userInterface.eventLoop(refreshInterface);
+  }
+  refreshInterface = false;
 }
 
 void FlightController::setDeploymentAltitude(int altitude)
 {
   DataLogger::log("Deployment Altitude Set to " + String(altitude));
   deploymentAltitude = altitude;
+  refreshInterface = true;
 }
 
 void FlightController::resetAll()
@@ -193,23 +182,9 @@ void FlightController::resetAll()
   reset();
 }
 
-void FlightController::buttonShortPress(ButtonInput *button)
+void FlightController::stop()
 {
-  if (button == &resetButton) {
-    DataLogger::log("Reset Short Press");
-    reset();
-  } else if (button == &inputButton) {
-    display.nextView();
-  }
-}
-
-void FlightController::buttonLongPress(ButtonInput *button)
-{
-  if (button == &resetButton) {
-    DataLogger::log("Reset Long Press");
     flightState = kOnGround;
-  } else if (button == &inputButton) {
-  }
 }
 
 void FlightController::reset()
@@ -236,7 +211,7 @@ void FlightController::reset()
   enableBuzzer = false;
   flightState  = kReadyToFly;
   DataLogger::log("Ready To Fly...");
-  statusView.setInfo(getStatusData());
+  refreshInterface = true;
 }
 
 void FlightController::playReadyTone()
@@ -275,10 +250,9 @@ void FlightController::readSensorData(SensorData *d)
 
 void FlightController::flightControl()
 {
-  SensorData d;
-  readSensorData(&d);
-  double acceleration = d.acceleration;
-  double altitude     = d.altitude;
+  readSensorData(&sensorData);
+  double acceleration = sensorData.acceleration;
+  double altitude     = sensorData.altitude;
 
   FlightDataPoint dp = FlightDataPoint(millis(), altitude, acceleration);
 
@@ -286,9 +260,9 @@ void FlightController::flightControl()
   int sampleDelay = (flightState != kDescending) ? 5 : 20;
   logCounterUI    = !logCounterUI ? sampleDelay : logCounterUI - 1;
   if (0 == logCounterUI && flightState != kOnGround) {
-    DataLogger::log("Alt:" + String(altitude) + "  " + d.heading.toString() +
-                    +"   " + d.acc_vec.toString());
-    sensorDataView.setData(d);
+    DataLogger::log("Alt:" + String(altitude) + "  " + sensorData.heading.toString() +
+                    +"   " + sensorData.acc_vec.toString());
+    refreshInterface = true;
   }
 
   // Log slightly more to the file system
@@ -319,7 +293,7 @@ void FlightController::flightControl()
     // For testing - to indicate we're in the ascending mode
     digitalWrite(READY_PIN, LOW);
     digitalWrite(MESSAGE_PIN, HIGH);
-    statusView.setInfo(getStatusData());
+    refreshInterface = true;
   } else if (flightState == kAscending &&
              altitude < (flightData.apogee - DESCENT_THRESHOLD)) {
     // Transition to kDescendining if we've we're DESCENT_THRESHOLD meters below
@@ -329,8 +303,7 @@ void FlightController::flightControl()
     // Deploy our drogue chute
     setDeploymentRelay(ON, drogueChute);
     flightData.drogueEjectionAltitude = altitude;
-    statusView.setInfo(getStatusData());
-
+    refreshInterface = true;
   } else if (flightState == kDescending &&
              altitude < FLIGHT_END_THRESHOLD_ALT) {
     flightState = kOnGround;
@@ -345,8 +318,7 @@ void FlightController::flightControl()
     resetChuteIfRequired(drogueChute);
     resetChuteIfRequired(mainChute);
     DataLogger::log("Relays Reset");
-
-    statusView.setInfo(getStatusData());
+    refreshInterface = true;
     enableBuzzer = true;
   }
 

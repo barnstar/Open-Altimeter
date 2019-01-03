@@ -24,40 +24,13 @@
  * SOFTWARE.
  **********************************************************************************/
 
-#include "OledView.hpp"
-#include "../DataLogger.hpp"
+#include "SettingsView.hpp"
+#include "FlightController.hpp"
 
-void OledView::setText(String text, int line, boolean updateDisplay)
+void SettingsView::refresh()
 {
-  if (line >= kMaxLines) {
-    return;
-  }
-  lines[line] = text;
-  if (updateDisplay) {
-    this->update();
-  }
-}
-
-void OledView::clear()
-{
-  for (int i = 0; i < kMaxLines; i++) {
-    lines[i] = F("");
-  }
-  update();
-}
-
-void OledView::update()
-{
-  if (!active) {
-    return;
-  }
-
-  display.clearDisplay();
-  display.setCursor(0, 0);
-  for (int i = 0; i < kMaxLines; i++) {
-    if (lines[i].length() > 0) {
-      display.println(lines[i].c_str());
-    }
-  }
-  display.display();
+    String deplAlt = String("Main:" + String(FlightController::shared().deploymentAlt));
+      setText(F("==::: Settings :::=="), 0, false);
+      setText(deplAlt,1,false);
+      update();
 }

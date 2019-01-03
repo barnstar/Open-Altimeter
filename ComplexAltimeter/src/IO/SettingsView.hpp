@@ -24,82 +24,37 @@
  * SOFTWARE.
  **********************************************************************************/
 
-#ifndef DISPLAYIFACE_H
-#define DISPLAYIFACE_H
+#ifndef SETTINGSVIEW_H
+#define SETTINGSVIEW_H
 
-#include "../../Configuration.h"
-#include "lib/Adafruit_GFX.h"
+#include "../types.h"
+#include "FlightController.hpp"
+#include "View.hpp"
 
-#ifdef USE_SSD1306
-#include "lib/Adafruit_SSD1306.h"
-typedef Adafruit_SSD1306 Display;
-#endif
-
-#ifdef USE_SH1106
-#include "lib/Adafruit_SH1106.h"
-typedef Adafruit_SH1106 Display;
-#endif
-
-//#include <Wire.h>
-#include "ButtonInput.h"
-
-
-#define kDispWidth 128
-#define kDispHeight 64
-#define kScrollButtonPin 0
-
-class OledView;
-
-
-class DisplayIface
+class SettingsView : public View
 {
  public:
-  DisplayIface()
-      : display(0) //No reset pin
-      //: display(kDispWidth, kDispHeight, &Wire)
+  SettingsView(Display &display) : View(display){};
+
+  void shortPressAction()
   {
-
-  }
-
-  ~DisplayIface() {}
-
-  void start() 
-  {
-    #ifdef USE_SSD1306
-    boolean status = display.begin(SSD1306_SWITCHCAPVCC, DISPLAY_I2C_ADDR); 
-    #endif
-
-    #ifdef USE_SH1106
-    display.begin(SH1106_SWITCHCAPVCC, DISPLAY_I2C_ADDR, false);
-    #endif
-
-    display.clearDisplay();
-    display.setTextColor(WHITE);
-    display.setTextSize(1);
-    display.cp437(true);
-    display.display();
-  }
-
-  void addView(OledView *view, bool show)
-  {
-    if (viewCount < 7) {
-      views[viewCount] = view;
-      viewCount++;
+    altIndex++;
+        if (altIndex == 6) {
+      altIndex = 0;
     }
-    if (show) {
-      setActiveView(viewCount-1);
-    }
+    FlightController::shared().setDeploymentAltitude(altitudes[altIndex]);
   }
 
-  void nextView();
-  void previousView();
-  void setActiveView(int index);
-  Display display;
+  void longPressAction()
+  { 
+      //This might not be wise
+      //FlightController::shared().resetAll(); 
+  }
 
  private:
-  OledView *views[8];
-  short activeViewIndex = 0;
-  short viewCount       = 0;
+  int altIndex      = -1;
+  int altitudes[6]  = {75, 100, 125, 150, 175, 200};
+  bool needsRefresh = true;
 };
 
 #endif

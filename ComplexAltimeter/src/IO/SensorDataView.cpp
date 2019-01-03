@@ -25,27 +25,34 @@
  **********************************************************************************/
 
 #include "SensorDataView.hpp"
+#include "FlightController.hpp"
+
+void SensorDataView::refresh()
+{
+  if (FlightController::shared().flightState == kOnGround && needsRefresh) {
+    setWaiting();
+    //If we're in the waiting mode, then the image is static.
+    needsRefresh = false;
+  } else {  //flying or ready to fly
+    needsRefresh = true;
+    setData(FlightController::shared().flightData);
+  }
+}
 
 void SensorDataView::setData(SensorData &data)
 {
-    String heading = data.heading.toString();
-    String dataStr = data.toString();
-    String accStr  = data.acc_vec.toString();
-    String gyroStr = data.gyro_vec.toString();
-    setText(gyroStr, 3, false);
-    setText(dataStr, 0, false);
-    setText(heading, 1, false);
-    setText(accStr, 2, false);
-    setText(gyroStr, 3, false);
-    update();
+  setText(data.toString(), 0,  false);           // acceleration, vertical velocity and altitude
+  setText(data.heading.toString(), 1, false);    // roll pitch yaw
+  setText(data.acc_vec.toString(, 2, false);     // raw accelerometer values
+  setText(data.gyro_vec.toString(), 3, false);   // raw gyro values 
+  update();
 }
 
 void SensorDataView::setWaiting()
 {
-    setText(F("No telemetry"),0,false);
-    setText(F("Unit in landed mode"),1,false);
-    setText(F(""),2,false);
-    setText(F(""),3,false);
-    setText(F(""),4,false);
-    update();
+  setText(F("No telemetry"), 0, false);
+  setText(F("Unit in landed mode"), 1, false);
+  setText(F(""), 2, false);
+  setText(F(""), 3, false);
+  update();
 }

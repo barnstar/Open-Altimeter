@@ -141,4 +141,14 @@ inline String flightStateString(FlightState s)
 
 typedef enum { kNone, kActive, kPassive } PeizoStyle;
 
+typedef struct {
+  uint8_t deploymentAlt;
+  FlightState status;
+  bool baroReady;
+  bool mpuReady;
+
+  double padAltitude;
+  double lastApogee;
+} StatusData;
+
 #endif  // types_h

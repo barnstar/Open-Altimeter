@@ -27,17 +27,33 @@
 #include "StatusView.hpp"
 #include <ESP8266WiFi.h>
 #include <WiFiClient.h>
+#include "FlightController.hpp"
+
+void StatusView::refresh()
+{
+  // This will only change after a complete flight.  Do it once... If we're on
+  // the ground
+  if (FlightController::shared().flightState == kOnGround && needsRefresh) {
+    setInfo(FlightController::shared().getStatusData());
+    needsRefresh = false;
+  } else {
+    // Update once we're on the ground
+    needsRefresh = true;
+  }
+}
 
 void StatusView::setInfo(StatusData const &data)
 {
   setText(F("==:::: Status ::::=="), 0, false);
   setText(flightStateString(data.status), 1, false);
-  String sensorStatus = (data.baroReady ? String("Baro OK") : String("Baro Fail")) + 
-                        String(":") + 
-                        (data.mpuReady ? String("IMU OK") : String("IMU Fail"));
+  String sensorStatus =
+      (data.baroReady ? String("Baro OK") : String("Baro Fail")) + String(":") +
+      (data.mpuReady ? String("IMU OK") : String("IMU Fail"));
   setText(sensorStatus, 2, false);
-  setText((String("Depl:") + String(data.deploymentAlt) + String("m")), 3, false);
-  setText((String("Last:") + String(data.deploymentAlt) + String("m")), 4, false);
+  setText((String("Depl:") + String(data.deploymentAlt) + String("m")), 3,
+          false);
+  setText((String("Last:") + String(data.deploymentAlt) + String("m")), 4,
+          false);
   setText(WiFi.localIP().toString(), 5, false);
   update();
 }

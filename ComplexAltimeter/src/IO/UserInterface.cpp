@@ -24,23 +24,76 @@
  * SOFTWARE.
  **********************************************************************************/
 
-#ifndef SENSORDATAVIEW
-#define SENSORDATAVIEW
-
-#include "../types.h"
+#include "UserInterface.h"
 #include "View.hpp"
 
-class SensorDataView : public View
+void UserInterface::eventLoop(bool dispDirty);
 {
- public:
-  SensorDataView(Display &display) : View(display){};
+  primaryButton.update();
+  secondaryButton.update();
+  if (dispDirty) {
+    View *view = views[activeViewIndex];
+    view->refresh();
+  }
+}
 
-  void setData(SensorData &data);
-  void setWaiting();
+void UserInterface::addView(View *view, bool show)
+{
+  if (viewCount < 7) {
+    views[viewCount] = view;
+    viewCount++;
+  }
+  if (show) {
+    setActiveView(viewCount - 1);
+  }
+}
 
-private:
-  bool needsRefresh = true;
+void UserInterface::nextView()
+{
+  int8_t index = activeViewIndex == viewCount - 1 ? 0 : activeViewIndex + 1;
+  setActiveView(index);
+}
 
-};
+void UserInterface::previousView()
+{
+  int8_t index = activeViewIndex == 0 ? viewCount - 1 : activeViewIndex - 1;
+  setActiveView(index);
+}
 
-#endif
+void UserInterface::setActiveView(int index)
+{
+  View *lastView = views[activeViewIndex];
+  lastView->active   = false;
+
+  activeViewIndex = index;
+  View *view  = views[index];
+  view->active    = true;
+  view->refresh();
+  view->update();
+}
+
+
+//Button Delegate
+
+void UserInterface::buttonLongPress(ButtonInput *b)
+{
+  int bid = b->buttonId;
+  if (bid == Primary) {
+    // No action
+  } else if (bid == Secondary) {
+    View *view = views[activeViewIndex];
+    view->longPressAction();
+  }
+}
+
+void UserInterface::buttonShortPress(ButtonInput *b)
+{
+  int bid = b->buttonId;
+  if (bid == Primary) {
+    nextView();
+  } else if (bid == Secondary) {
+    View *view = views[activeViewIndex];
+    view->shortPressAction();
+  }
+}
+

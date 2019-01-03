@@ -40,7 +40,7 @@ typedef Mahony SensorFusion;
 class Imu
 {
 public:
-  Imu(int frequency) : imuSensor(Wire, 0x68), frequency(frequency * 0.5) {}
+  Imu(int frequency) : imuSensor(Wire, IMU_I2C_ADDR), frequency(frequency) {}
 
   ~Imu() {}
 

@@ -32,11 +32,7 @@
 
 #include <Ticker.h>
 #include "IO/Blinker.hpp"
-#include "IO/ButtonInput.h"
-#include "IO/DisplayIface.h"
-#include "IO/SensorDataView.hpp"
-#include "IO/StatusView.hpp"
-#include "IO/FlightHistoryView.hpp"
+#include "IO/UserInterface.h"
 #include "RecoveryDevice.h"
 #include "Sensor/Altimeter.hpp"
 #include "Sensor/Imu.hpp"
@@ -45,7 +41,7 @@
 #include "../Configuration.h"
 #include "types.h"
 
-class FlightController : public ButtonInputDelegate
+class FlightController 
 {
  public:
   static FlightController &shared();
@@ -58,28 +54,38 @@ class FlightController : public ButtonInputDelegate
   void loop();
 
   void setDeploymentAltitude(int altitude);
+  int deploymentAltitude = 100;  // Deployment altitude in m
+
   String checkMPUSettings();
 
   WebServer server;
-  Altimeter altimeter;
-  Imu imu;
 
-  void fly();
   String getStatus();
+  StatusData const &getStatusData()
+
+  SensorData sensorData;
+  FlightState flightState = kOnGround;  // The flight state
 
   void reset();
+  void stop();
+
   void runTest();
   void resetAll();
 
-  void readSensorData(SensorData *d);
-  bool sampleOnNextLoop = false;
 
  private:
   void initialize();
 
+
+  void readSensorData(SensorData *d);
+  bool sampleOnNextLoop = false;
+
+  Altimeter altimeter;
+  Imu imu;
+
   FlightData flightData;
-  FlightState flightState = kOnGround;  // The flight state
   int lastApogee          = 0;
+  bool refreshInterface   = false;
 
   RecoveryDevice mainChute;
   RecoveryDevice drogueChute;
@@ -90,31 +96,20 @@ class FlightController : public ButtonInputDelegate
   int testFlightTimeStep = 0;
   bool mpuReady          = false;   // True if the barometer/altimeter is ready
   bool barometerReady    = false;   // True if the barometer/altimeter is ready
-  double deploymentAltitude = 100;  // Deployment altitude in ft.
 
   Blinker *blinker;
   Ticker sensorTicker;
   int logCounterUI = 0;
   int logCounterLogger = 0;
 
-  DisplayIface display;
+  UserInterface userInterface;
 
-  ButtonInput resetButton;
-  ButtonInput inputButton;
 
-  SensorDataView sensorDataView;
-  StatusView statusView;
-  FlightHistoryView historyView;
-
-  StatusData const& getStatusData();
   StatusData statusData;
 
   SensorData fakeData;
   double testApogee = 400;
   bool isTestAscending;
-
-  void buttonShortPress(ButtonInput *button) override;
-  void buttonLongPress(ButtonInput *button) override;
 
   bool checkResetPin();
   void blinkLastAltitude();

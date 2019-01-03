@@ -26,6 +26,20 @@
 
 #include "FlightHistoryView.hpp"
 #include "../DataLogger.hpp"
+#include "FlightController.hpp"
+
+void FlightHistoryView::refresh()
+{
+  // This will only change after a complete flight.  Do it once... If we're on
+  // the ground
+  if (FlightController::shared().flightState == kOnGround && needsRefresh) {
+    setHistoryInfo(DataLogger::sharedLogger().apogeeHistory());
+    needsRefresh = false;
+  } else {
+    // Update once we're on the ground
+    needsRefresh = true;
+  }
+}
 
 void FlightHistoryView::setHistoryInfo(String info)
 {

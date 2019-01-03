@@ -28,24 +28,21 @@
 #define STATUSVIEW_H
 
 #include "../types.h"
-#include "OledView.hpp"
+#include "FlightController.hpp"
+#include "View.hpp"
 
-typedef struct {
-    uint8_t deploymentAlt;
-    FlightState status;
-    bool baroReady;
-    bool mpuReady;
-
-    double padAltitude;
-    double lastApogee;
-}StatusData;
-
-class StatusView : public OledView
+class StatusView : public View
 {
  public:
-   StatusView(Display &display) : OledView(display){};
+  StatusView(Display &display) : View(display){};
 
   void setInfo(StatusData const &data);
+
+  void shortPressAction() { FlightController::shared().reset(); }
+  void longPressAction() { FlightController::shared().stop(); }
+
+ private:
+  bool needsRefresh = true;
 };
 
 #endif

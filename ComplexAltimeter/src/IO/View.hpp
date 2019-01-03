@@ -24,29 +24,34 @@
  * SOFTWARE.
  **********************************************************************************/
 
-#include "DisplayIface.h"
-#include "OledView.hpp"
+#ifndef OLEDVIEW_H
+#define OLEDVIEW_H
 
-void DisplayIface::nextView()
+#define kMaxLines 6
+
+#include <Arduino.h>
+#include "UserInterface.h"
+
+class View
 {
-  int8_t index = activeViewIndex == viewCount - 1 ? 0 : activeViewIndex + 1;
-  setActiveView(index);
-}
+ public:
+  View(Display &display) : display(display){};
+  ~View(){};
 
-void DisplayIface::previousView()
-{
-  int8_t index = activeViewIndex == 0 ? viewCount - 1 : activeViewIndex - 1;
-  setActiveView(index);
-}
+  void setText(String text, int line, boolean update);
+  void clear();
+  void update();
+  virtual void refresh(){};
 
-void DisplayIface::setActiveView(int index)
-{
-  OledView *lastView  = views[activeViewIndex];
-  lastView->active = false;
+  virtual void longPressAction(){};
+  virtual void shortPressAction(){};
 
-  activeViewIndex = index;
-  OledView *view  = views[index];
-  view->active = true;
-  view->update();
-}
+  Display &display;
 
+  bool active = false;
+
+ protected:
+  String lines[kMaxLines];
+};
+
+#endif

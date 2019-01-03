@@ -24,29 +24,40 @@
  * SOFTWARE.
  **********************************************************************************/
 
-#ifndef OLEDVIEW_H
-#define OLEDVIEW_H
+#include "View.hpp"
+#include "../DataLogger.hpp"
 
-#define kMaxLines 6
-
-#include <Arduino.h>
-#include "DisplayIFace.h"
-
-class OledView
+void View::setText(String text, int line, boolean updateDisplay)
 {
- public:
-  OledView(Display &display) : display(display){};
-  ~OledView(){};
+  if (line >= kMaxLines) {
+    return;
+  }
+  lines[line] = text;
+  if (updateDisplay) {
+    this->update();
+  }
+}
 
-  void setText(String text, int line, boolean update);
-  void clear();
-  void update();
-  Display &display;
+void View::clear()
+{
+  for (int i = 0; i < kMaxLines; i++) {
+    lines[i] = F("");
+  }
+  update();
+}
 
-  bool active = false;
+void View::update()
+{
+  if (!active) {
+    return;
+  }
 
- protected:
-  String lines[kMaxLines];
-};
-
-#endif
+  display.clearDisplay();
+  display.setCursor(0, 0);
+  for (int i = 0; i < kMaxLines; i++) {
+    if (lines[i].length() > 0) {
+      display.println(lines[i].c_str());
+    }
+  }
+  display.display();
+}
