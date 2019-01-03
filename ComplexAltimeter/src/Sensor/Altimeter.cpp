@@ -71,11 +71,11 @@ double Altimeter::verticalVelocity() { velocityFilter.lastEstimate(); }
 
 void Altimeter::update()
 {
-  double pressure = pressure();
-  if (pressure == 0) {
+  double p = pressure();
+  if (p == 0) {
     return;
   }
-  double relativeAlt = barometer.altitude(pressure, baselinePressure);
+  double relativeAlt = barometer.altitude(p, baselinePressure);
 
   long time = millis();
   if (lastRefreshTime) {
@@ -91,18 +91,18 @@ void Altimeter::update()
 double Altimeter::pressure()
 {
   char status;
-  double T, P, p0, a;
+  double t, p, p0, a;
   status = barometer.startTemperature();
   if (status != 0) {
     delay(status);
-    status = barometer.getTemperature(T);
+    status = barometer.getTemperature(t);
     if (status != 0) {
       status = barometer.startPressure(3);
       if (status != 0) {
         delay(status);
-        status = barometer.pressure(P, T);
+        status = barometer.getPressure(p, t);
         if (status != 0) {
-          return (P);
+          return (p);
         }
       }
     }

@@ -27,6 +27,8 @@
 #ifndef blinksequence_h
 #define blinksequence_h
 
+#include "types.h"
+
 #ifdef IS_SIMPLE_ALT
 #include "SimpleTimer.h"
 #include "types.h"

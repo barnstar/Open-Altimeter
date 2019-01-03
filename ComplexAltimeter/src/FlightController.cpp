@@ -268,8 +268,8 @@ void FlightController::readSensorData(SensorData *d)
   }
   imu.update();
   d->heading      = imu.getHeading();
-  d->acc_vec      = imu.getAcelleration();
-  d->gyro         = inu.getGyro();
+  d->acc_vec      = imu.getAcceleration();
+  d->gyro_vec     = imu.getGyro();
   d->acceleration = d->acc_vec.length();
 }
 

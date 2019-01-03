@@ -31,7 +31,7 @@ void SensorDataView::setData(SensorData &data)
     String heading = data.heading.toString();
     String dataStr = data.toString();
     String accStr  = data.acc_vec.toString();
-    String gyroStr = data.gyro.toString();
+    String gyroStr = data.gyro_vec.toString();
     setText(gyroStr, 3, false);
     setText(dataStr, 0, false);
     setText(heading, 1, false);

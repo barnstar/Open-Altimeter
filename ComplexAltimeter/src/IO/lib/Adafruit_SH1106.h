@@ -23,6 +23,7 @@ SH1106 driver similar to SSD1306 so, just change the display() method.
 
 However, SH1106 driver don't provide several functions such as scroll commands.
 
+JN: Modified slightly to compile for the ESP8266
 
 *********************************************************************/
 
@@ -33,7 +34,6 @@ However, SH1106 driver don't provide several functions such as scroll commands.
 #include <Wire.h>
 
 //#define WIRE_WRITE Wire.write
-//#define WIRE_WRITE Wire.send
 typedef volatile uint8_t PortReg;
 typedef uint8_t PortMask;
 

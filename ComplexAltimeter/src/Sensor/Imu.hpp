@@ -67,7 +67,7 @@ private:
   bool mpuReady;
   int frequency;
   Heading heading;
-  Vector accelleration;
+  Vector acceleration;
   Vector gyro;
 
   ImuSensor imuSensor;

@@ -24,6 +24,7 @@ SH1106 driver similar to SSD1306 so, just change the display() method.
 
 However, SH1106 driver don't provide several functions such as scroll commands.
 
+JN: Modified slightly to compile for the ESP8266
 
 *********************************************************************/
 
