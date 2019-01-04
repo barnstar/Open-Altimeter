@@ -25,6 +25,7 @@
  **********************************************************************************/
 
 #include "Filters.hpp"
+#include <Math.h>
 
 //////////  Averaging /////////////
 
@@ -55,13 +56,13 @@ void AveragingFilter::reset(double startingValue)
 //////////  LowPass /////////////
 
 
-double LowPassFilter : step(double nextValue)
+double LowPassFilter::step(double nextValue)
 {
   currentValue = currentValue * bias + nextValue * (1 - bias);
   return currentValue;
 }
 
-double LowPassFilter::reset(double startingValue) {
+void LowPassFilter::reset(double startingValue) {
   currentValue = startingValue;
 }
 
@@ -81,7 +82,7 @@ double KalmanFilter::step(double measurement)
 };
 
 void KalmanFilter::reset(double startingValue) {
-   reset(1, 1, 0.001);
+   configure(1, 1, 0.001);
    this->last_estimate = startingValue;
    for (int i = 0; i < 4; i++) {
     step(startingValue);
