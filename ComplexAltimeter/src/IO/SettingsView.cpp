@@ -25,12 +25,27 @@
  **********************************************************************************/
 
 #include "SettingsView.hpp"
-#include "FlightController.hpp"
+#include "../FlightController.hpp"
 
 void SettingsView::refresh()
 {
-    String deplAlt = String("Main:" + String(FlightController::shared().deploymentAlt));
+    String deplAlt = String("Main:" + String(FlightController::shared().deploymentAltitude));
       setText(F("==::: Settings :::=="), 0, false);
       setText(deplAlt,1,false);
       update();
 }
+
+  void SettingsView::shortPressAction()
+  {
+    altIndex++;
+        if (altIndex == 6) {
+      altIndex = 0;
+    }
+    FlightController::shared().setDeploymentAltitude(altitudes[altIndex]);
+  }
+
+  void SettingsView::longPressAction()
+  { 
+      //This might not be wise
+      //FlightController::shared().resetAll(); 
+  }

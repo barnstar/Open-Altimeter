@@ -52,7 +52,7 @@ bool Altimeter::start()
 void Altimeter::reset()
 {
   filter.reset(1, 1, 0.001);
-  velocityFilter.reset(1, 1, 0.01);
+  velocityFilter.reset(1, 1, 0.001);
   for (int i = 0; i < 4; i++) {
     filter.step(0);
     velocityFilter.step(0);

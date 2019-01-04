@@ -32,7 +32,6 @@
 
 #include <Ticker.h>
 #include "IO/Blinker.hpp"
-#include "IO/UserInterface.h"
 #include "RecoveryDevice.h"
 #include "Sensor/Altimeter.hpp"
 #include "Sensor/Imu.hpp"
@@ -40,6 +39,7 @@
 
 #include "../Configuration.h"
 #include "types.h"
+#include "IO/UserInterface.h"
 
 class FlightController 
 {
@@ -56,15 +56,16 @@ class FlightController
   void setDeploymentAltitude(int altitude);
   int deploymentAltitude = 100;  // Deployment altitude in m
 
-  String checkMPUSettings();
-
   WebServer server;
 
   String getStatus();
-  StatusData const &getStatusData()
+  StatusData const &getStatusData();
 
   SensorData sensorData;
+  void readSensorData(SensorData *d);
+
   FlightState flightState = kOnGround;  // The flight state
+  FlightData flightData;
 
   void reset();
   void stop();
@@ -72,18 +73,14 @@ class FlightController
   void runTest();
   void resetAll();
 
+  bool sampleOnNextLoop = false;
 
  private:
   void initialize();
 
-
-  void readSensorData(SensorData *d);
-  bool sampleOnNextLoop = false;
-
   Altimeter altimeter;
   Imu imu;
 
-  FlightData flightData;
   int lastApogee          = 0;
   bool refreshInterface   = false;
 
@@ -103,7 +100,7 @@ class FlightController
   int logCounterLogger = 0;
 
   UserInterface userInterface;
-
+  boolean interfaceStarted = false;
 
   StatusData statusData;
 

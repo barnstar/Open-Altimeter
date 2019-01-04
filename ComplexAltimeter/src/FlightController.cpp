@@ -33,8 +33,7 @@
 
 #define kMaxBlinks 64
 
-FlightController::FlightController()
-    : imu(1000 / SENSOR_READ_DELAY_MS)
+FlightController::FlightController() : imu(1000 / SENSOR_READ_DELAY_MS)
 {
   SPIFFS.begin();
   Serial.begin(SERIAL_BAUD_RATE);
@@ -42,8 +41,7 @@ FlightController::FlightController()
 
   DataLogger::log("Creating Flight Controller");
   blinker = new Blinker(MESSAGE_PIN, BUZZER_PIN);
-
-  userInterface.start();
+  DataLogger::log("Creating Flight Controller --");
 
   this->initialize();
   DataLogger::log("Flight Controller Initialized");
@@ -87,8 +85,6 @@ void FlightController::initialize()
 
   DataLogger::log("Deployment Altitude: " + String(deploymentAltitude));
   DataLogger::log("Pad Altitude:" + String(altimeter.referenceAltitude()));
-  DataLogger::log(checkMPUSettings());
-
   // We don't want to sound the buzzer on first boot, only after a flight
   enableBuzzer = false;
 }
@@ -128,8 +124,12 @@ void readSensors(FlightController *f)
 
 void FlightController::loop()
 {
-  //Ignore the wifis when we're flying.
-  if(flightState == kReadyToFly || flightState == kOnGround) {
+   if(!interfaceStarted) {
+    interfaceStarted = true;
+    userInterface.start();
+   }
+  // Ignore the wifis when we're flying.
+  if (flightState == kReadyToFly || flightState == kOnGround) {
     server.handleClient();
   }
 
@@ -162,7 +162,8 @@ void FlightController::loop()
   }
 
   //
-  if(RUN_DISPLAY_WHILE_FLYING || flightState == kReadyToFly || flightState == kOnGround) {
+  if (RUN_DISPLAY_WHILE_FLYING || flightState == kReadyToFly ||
+      flightState == kOnGround) {
     userInterface.eventLoop(refreshInterface);
   }
   refreshInterface = false;
@@ -172,7 +173,7 @@ void FlightController::setDeploymentAltitude(int altitude)
 {
   DataLogger::log("Deployment Altitude Set to " + String(altitude));
   deploymentAltitude = altitude;
-  refreshInterface = true;
+  refreshInterface   = true;
 }
 
 void FlightController::resetAll()
@@ -182,10 +183,7 @@ void FlightController::resetAll()
   reset();
 }
 
-void FlightController::stop()
-{
-    flightState = kOnGround;
-}
+void FlightController::stop() { flightState = kOnGround; }
 
 void FlightController::reset()
 {
@@ -207,17 +205,14 @@ void FlightController::reset()
   testFlightTimeStep = 0;
   blinker->cancelSequence();
   enableBuzzer = true;
-  ///playReadyTone();
+  /// playReadyTone();
   enableBuzzer = false;
   flightState  = kReadyToFly;
   DataLogger::log("Ready To Fly...");
   refreshInterface = true;
 }
 
-void FlightController::playReadyTone()
-{
-  blinker->blinkValue(3, 400, false);
-}
+void FlightController::playReadyTone() { blinker->blinkValue(3, 400, false); }
 
 Vector FlightController::getacceleration() { return Vector(0, 0, 0); }
 
@@ -238,7 +233,7 @@ void FlightController::readSensorData(SensorData *d)
   // Our relative altitude... Relative to wherever we last reset the altimeter.
   if (altimeter.isReady()) {
     altimeter.update();
-    d->altitude = altimeter.altitude();
+    d->altitude         = altimeter.altitude();
     d->verticalVelocity = altimeter.verticalVelocity();
   }
   imu.update();
@@ -260,13 +255,14 @@ void FlightController::flightControl()
   int sampleDelay = (flightState != kDescending) ? 5 : 20;
   logCounterUI    = !logCounterUI ? sampleDelay : logCounterUI - 1;
   if (0 == logCounterUI && flightState != kOnGround) {
-    DataLogger::log("Alt:" + String(altitude) + "  " + sensorData.heading.toString() +
-                    +"   " + sensorData.acc_vec.toString());
+    DataLogger::log("Alt:" + String(altitude) + "  " +
+                    sensorData.heading.toString() + +"   " +
+                    sensorData.acc_vec.toString());
     refreshInterface = true;
   }
 
   // Log slightly more to the file system
-  sampleDelay = (flightState != kDescending) ? 3 : 6;
+  sampleDelay      = (flightState != kDescending) ? 3 : 6;
   logCounterLogger = !logCounterUI ? 3 : logCounterUI - 1;
   if (0 == logCounterLogger && flightState != kOnGround) {
     DataLogger::sharedLogger().logDataPoint(dp, false);
@@ -303,7 +299,7 @@ void FlightController::flightControl()
     // Deploy our drogue chute
     setDeploymentRelay(ON, drogueChute);
     flightData.drogueEjectionAltitude = altitude;
-    refreshInterface = true;
+    refreshInterface                  = true;
   } else if (flightState == kDescending &&
              altitude < FLIGHT_END_THRESHOLD_ALT) {
     flightState = kOnGround;
@@ -319,12 +315,12 @@ void FlightController::flightControl()
     resetChuteIfRequired(mainChute);
     DataLogger::log("Relays Reset");
     refreshInterface = true;
-    enableBuzzer = true;
+    enableBuzzer     = true;
   }
 
   // Main chute deployment at kDeployment Altitude
-  if ((flightState == kDescending) &&
-      !mainChute.deployed && altitude < deploymentAltitude) {
+  if ((flightState == kDescending) && !mainChute.deployed &&
+      altitude < deploymentAltitude) {
     // If we're descening and we're below our deployment altitude, deploy the
     // chute!
     flightData.ejectionAltitude = altitude;
@@ -399,49 +395,3 @@ void FlightController::testFlightData(SensorData *d)
   d->acceleration = fakeData.acceleration;
 }
 
-String FlightController::checkMPUSettings()
-{
-  //   if(!mpuReady) {
-  //     return String("IMU is not ready");
-  //   }
-  //
-  //   String settings;
-  //
-  //   settings += " * Sleep Mode: ";
-  //   settings += mpu.getSleepEnabled() ? "Enabled" : "Disabled";
-  //
-  //   settings +=  " *<br>\n  Clock Source: ";
-  //   switch(mpu.getClockSource())
-  //   {
-  //     case MPU6050_CLOCK_KEEP_RESET:     settings +="Stops the clock and
-  //     keeps the timing generator in reset"; break; case
-  //     MPU6050_CLOCK_EXTERNAL_19MHZ: settings +="PLL with external 19.2MHz
-  //     reference"; break; case MPU6050_CLOCK_EXTERNAL_32KHZ: settings +="PLL
-  //     with external 32.768kHz reference"; break; case
-  //     MPU6050_CLOCK_PLL_ZGYRO:      settings +="PLL with Z axis gyroscope
-  //     reference"; break; case MPU6050_CLOCK_PLL_YGYRO:      settings +="PLL
-  //     with Y axis gyroscope reference"; break; case MPU6050_CLOCK_PLL_XGYRO:
-  //     settings +="PLL with X axis gyroscope reference"; break; case
-  //     MPU6050_CLOCK_INTERNAL_8MHZ:  settings +="Internal 8MHz oscillator";
-  //     break;
-  //   }
-  //
-  //   Serial.print("<br>\n * Accelerometer:         ");
-  //   switch(mpu.getRange())
-  //   {
-  //     case MPU6050_RANGE_16G:            settings +="+/- 16 g"; break;
-  //     case MPU6050_RANGE_8G:             settings +="+/- 8 g"; break;
-  //     case MPU6050_RANGE_4G:             settings +="+/- 4 g"; break;
-  //     case MPU6050_RANGE_2G:             settings +="+/- 2 g"; break;
-  //   }
-  //
-  //   settings +="<br>\n  * Accelerometer offsets: ";
-  //   settings +=String(mpu.getAccelOffsetX());
-  //   settings +=" / ";
-  //   settings +=String(mpu.getAccelOffsetY());
-  //   settings +=" / ";
-  //   settings +=String(mpu.getAccelOffsetZ());
-  //
-  //   settings += "<br>\n";
-  //   return settings;
-}

@@ -47,14 +47,12 @@ typedef Adafruit_SH1106 Display;
 #include "SensorDataView.hpp"
 #include "SettingsView.hpp"
 #include "StatusView.hpp"
+#include "View.hpp"
 
 #define kDispWidth 128
 #define kDispHeight 64
 #define kScrollButtonPin 0
 
-class View;
-
-typedef enum { PrimaryButton = 1, SecondaryButton = 2 } ButtonId;
 
 class UserInterface : public ButtonInputDelegate
 {
@@ -68,7 +66,7 @@ class UserInterface : public ButtonInputDelegate
         sensorDataView(display)
   {
     primaryButton.setDelegate(this);
-    seconaryButton.setDelegate(this);
+    secondaryButton.setDelegate(this);
   }
 
   ~UserInterface() {}

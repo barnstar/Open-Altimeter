@@ -28,28 +28,16 @@
 #define SETTINGSVIEW_H
 
 #include "../types.h"
-#include "FlightController.hpp"
 #include "View.hpp"
 
 class SettingsView : public View
 {
  public:
-  SettingsView(Display &display) : View(display){};
+  SettingsView(Display &displayRef) : View(displayRef){};
 
-  void shortPressAction()
-  {
-    altIndex++;
-        if (altIndex == 6) {
-      altIndex = 0;
-    }
-    FlightController::shared().setDeploymentAltitude(altitudes[altIndex]);
-  }
-
-  void longPressAction()
-  { 
-      //This might not be wise
-      //FlightController::shared().resetAll(); 
-  }
+  void shortPressAction();
+  void longPressAction();
+  void refresh();
 
  private:
   int altIndex      = -1;

@@ -210,7 +210,6 @@ void WebServer::handleRoot()
           PageBuilder::makeLink(String(resetAllURL), "Full Reset") + doubleLine;
   body += "STATUS : <br>";
   body += FlightController::shared().getStatus();
-  body += FlightController::shared().checkMPUSettings();
   body += doubleLine;
 
   pageBuilder.sendBodyChunk(body, false, false);

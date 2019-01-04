@@ -151,4 +151,6 @@ typedef struct {
   double lastApogee;
 } StatusData;
 
+typedef enum { PrimaryButton = 1, SecondaryButton = 2 } ButtonId;
+
 #endif  // types_h

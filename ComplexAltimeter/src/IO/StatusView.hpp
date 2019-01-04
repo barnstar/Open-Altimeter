@@ -28,18 +28,18 @@
 #define STATUSVIEW_H
 
 #include "../types.h"
-#include "FlightController.hpp"
 #include "View.hpp"
 
 class StatusView : public View
 {
  public:
-  StatusView(Display &display) : View(display){};
+  StatusView(Display &displayRef) : View(displayRef){};
 
   void setInfo(StatusData const &data);
 
-  void shortPressAction() { FlightController::shared().reset(); }
-  void longPressAction() { FlightController::shared().stop(); }
+  void shortPressAction();
+  void longPressAction();
+  void refresh();
 
  private:
   bool needsRefresh = true;

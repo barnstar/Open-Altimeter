@@ -30,21 +30,32 @@
 #define kMaxLines 6
 
 #include <Arduino.h>
-#include "UserInterface.h"
+#include "../../Configuration.h"
+
+#ifdef USE_SSD1306
+#include "lib/Adafruit_SSD1306.h"
+typedef Adafruit_SSD1306 Display;
+#endif
+
+#ifdef USE_SH1106
+#include "lib/Adafruit_SH1106.h"
+typedef Adafruit_SH1106 Display;
+#endif
+
 
 class View
 {
  public:
-  View(Display &display) : display(display){};
+  View(Display &displayRef) : display(displayRef){};
   ~View(){};
 
   void setText(String text, int line, boolean update);
   void clear();
   void update();
-  virtual void refresh(){};
 
-  virtual void longPressAction(){};
-  virtual void shortPressAction(){};
+  virtual void refresh() = 0;
+  virtual void longPressAction() = 0;
+  virtual void shortPressAction() = 0;
 
   Display &display;
 

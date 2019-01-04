@@ -27,7 +27,7 @@
 #include "StatusView.hpp"
 #include <ESP8266WiFi.h>
 #include <WiFiClient.h>
-#include "FlightController.hpp"
+#include "../FlightController.hpp"
 
 void StatusView::refresh()
 {
@@ -35,10 +35,8 @@ void StatusView::refresh()
   // the ground
   if (FlightController::shared().flightState == kOnGround && needsRefresh) {
     setInfo(FlightController::shared().getStatusData());
-    needsRefresh = false;
   } else {
     // Update once we're on the ground
-    needsRefresh = true;
   }
 }
 
@@ -57,3 +55,7 @@ void StatusView::setInfo(StatusData const &data)
   setText(WiFi.localIP().toString(), 5, false);
   update();
 }
+
+void StatusView::shortPressAction() { FlightController::shared().reset(); }
+
+void StatusView::longPressAction() { FlightController::shared().stop(); }

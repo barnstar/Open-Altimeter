@@ -26,7 +26,7 @@
 
 #include "FlightHistoryView.hpp"
 #include "../DataLogger.hpp"
-#include "FlightController.hpp"
+#include "../FlightController.hpp"
 
 void FlightHistoryView::refresh()
 {

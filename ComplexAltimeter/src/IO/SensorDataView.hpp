@@ -33,14 +33,17 @@
 class SensorDataView : public View
 {
  public:
-  SensorDataView(Display &display) : View(display){};
+  SensorDataView(Display &displayRef) : View(displayRef){};
 
   void setData(SensorData &data);
   void setWaiting();
+  
+  void shortPressAction() {};
+  void longPressAction() {};
+  void refresh();
 
-private:
+ private:
   bool needsRefresh = true;
-
 };
 
 #endif

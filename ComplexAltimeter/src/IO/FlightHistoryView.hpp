@@ -33,12 +33,16 @@
 class FlightHistoryView : public View
 {
  public:
-   FlightHistoryView(Display &display) : View(display){};
+  FlightHistoryView(Display &displayRef) : View(displayRef){};
 
-   void setHistoryInfo(String info);
+  void setHistoryInfo(String info);
 
-  private:
-    bool needsRefresh = true;
+  void refresh();
+  void shortPressAction(){};
+  void longPressAction(){};
+
+ private:
+  bool needsRefresh = true;
 };
 
 #endif

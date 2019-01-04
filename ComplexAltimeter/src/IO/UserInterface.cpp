@@ -27,7 +27,7 @@
 #include "UserInterface.h"
 #include "View.hpp"
 
-void UserInterface::eventLoop(bool dispDirty);
+void UserInterface::eventLoop(bool dispDirty)
 {
   primaryButton.update();
   secondaryButton.update();
@@ -78,9 +78,9 @@ void UserInterface::setActiveView(int index)
 void UserInterface::buttonLongPress(ButtonInput *b)
 {
   int bid = b->buttonId;
-  if (bid == Primary) {
+  if (bid == PrimaryButton) {
     // No action
-  } else if (bid == Secondary) {
+  } else if (bid == SecondaryButton) {
     View *view = views[activeViewIndex];
     view->longPressAction();
   }
@@ -89,9 +89,9 @@ void UserInterface::buttonLongPress(ButtonInput *b)
 void UserInterface::buttonShortPress(ButtonInput *b)
 {
   int bid = b->buttonId;
-  if (bid == Primary) {
+  if (bid == PrimaryButton) {
     nextView();
-  } else if (bid == Secondary) {
+  } else if (bid == SecondaryButton) {
     View *view = views[activeViewIndex];
     view->shortPressAction();
   }

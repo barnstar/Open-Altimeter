@@ -30,6 +30,7 @@
 
 #include "../DataLogger.hpp"
 #include "../types.h"
+#include "../../Configuration.h"
 #include "lib/MPU9250.h"
 #include "lib/MahonyAHRS.h"
 #include <Wire.h>
