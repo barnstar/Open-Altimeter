@@ -40,9 +40,10 @@ class StatusView : public View
   void shortPressAction();
   void longPressAction();
   void refresh();
+  void dismiss();
 
  private:
-  bool needsRefresh = true;
+  StatusData lastStatus;
 };
 
 #endif

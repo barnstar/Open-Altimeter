@@ -28,7 +28,7 @@
 #define alitmeter_h
 
 #include "../../Configuration.h"
-#include "KalmanFilter.h"
+#include "Filters.hpp"
 
 #define USE_BMP085 1
 
@@ -48,7 +48,11 @@ typedef SFE_BMP180 Barometer;  //180 and 085 use the same interface
 class Altimeter
 {
  public:
-  Altimeter(){};
+  Altimeter() : velocityFilter(0,0.5) {
+    altitudeFilter.reset(0);
+    velocityFilter.reset(0);
+  };
+
   ~Altimeter(){};
 
   bool start();
@@ -61,14 +65,14 @@ class Altimeter
   double verticalVelocity();    //in meters per second based on rate of barometric pressure change
   double pressure();
 
-  void scanI2cBus();
-
  private:
   Barometer barometer;
   bool barometerReady = false;
   double refAltitude  = 0;
-  KalmanFilter filter;
-  KalmanFilter velocityFilter;
+
+  KalmanFilter altitudeFilter;
+  LowPassFilter velocityFilter;
+  
   double baselinePressure = 0;
 
   long lastRefreshTime        = 0;

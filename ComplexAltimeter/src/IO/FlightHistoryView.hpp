@@ -38,11 +38,10 @@ class FlightHistoryView : public View
   void setHistoryInfo(String info);
 
   void refresh();
-  void shortPressAction(){};
+  void dismiss();
+  void shortPressAction(){ needsRefresh = true; };
   void longPressAction(){};
 
- private:
-  bool needsRefresh = true;
 };
 
 #endif

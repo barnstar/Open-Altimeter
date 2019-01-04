@@ -29,19 +29,24 @@
 #include <WiFiClient.h>
 #include "../FlightController.hpp"
 
+void StatusView::dismiss() {
+  //Ugly.. But it will force a refresh
+  needsRefresh = true;
+}
+
 void StatusView::refresh()
 {
-  // This will only change after a complete flight.  Do it once... If we're on
-  // the ground
-  if (FlightController::shared().flightState == kOnGround && needsRefresh) {
-    setInfo(FlightController::shared().getStatusData());
-  } else {
-    // Update once we're on the ground
-  }
+  setInfo(FlightController::shared().getStatusData());
+  needsRefresh = false;
 }
 
 void StatusView::setInfo(StatusData const &data)
 {
+  if(statusData.isEqual(data) && !needsRefresh) {
+    return;
+  }
+  statusData = data;
+
   setText(F("==:::: Status ::::=="), 0, false);
   setText(flightStateString(data.status), 1, false);
   String sensorStatus =

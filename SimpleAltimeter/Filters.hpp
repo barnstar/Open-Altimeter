@@ -24,30 +24,68 @@
  * SOFTWARE.
  **********************************************************************************/
 
-
-#ifndef FILTER_H
-#define FILTER_H
-
-class KalmanFilter
+class Filter
 {
-private:
-  float err_measured = 0;
-  float err_estimated = 0;
-  float q = 0;
-  float last_estimate = 0;
+  public:
+  virtual double step(double value)        = 0;
+  virtual void reset(double startingValue) = 0;
 
-public:
-  KalmanFilter()
-  {
-    this->reset(1, 1, 0.001);
-  }
+  double getCurrentValue() { return currentValue; }
 
-  ~KalmanFilter(){};
-
-  double step(double measurement);
-  double lastEstimate();
-
-  void reset(double measuredError, double estimatedError, double gain);
+ protected:
+  double currentValue;
 };
 
-#endif
+// Returns the unweighted moving average of an input for n steps
+class AveragingFilter : public Filter
+{
+  AveragingFilter(int numSteps, double startingValue)
+  {
+    steps  = numSteps;
+    values = new double[steps];
+    reset(startingValue);
+  }
+
+  ~AveragingFilter() { delete values; }
+
+public:
+  double step(double nextValue);
+  void reset(double startingValue);
+
+private:
+  int steps;
+  double *values;
+  int valueIndex;
+};
+
+// Simple low pass filter
+class LowPassFilter : public Filter
+{
+  LowPassFilter(double bias, double startingValue) { this->bias = bias; }
+
+public:
+  double step(double value);
+  void reset(double startingValue);
+
+ private:
+  double bias;
+  double currentValue;
+};
+
+//Simple KalmanFilter
+class KalmanFilter : public Filter
+{
+ private:
+  float err_measured  = 0;
+  float err_estimated = 0;
+  float q             = 0;
+  float last_estimate = 0;
+
+ public:
+  KalmanFilter(double startingValue) { reset(startingValue); }
+
+  double step(double measurement);
+  void reset(double startingValue);
+
+  void configure(double measuredError, double estimatedError, double gain);
+};

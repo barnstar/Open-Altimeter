@@ -31,7 +31,7 @@
 bool Altimeter::start()
 {
   bool ready = false;
-  if (ready = barometer.begin()) {  
+  if (ready = barometer.begin()) {
 #ifdef STATUS_PIN_LEVEL
     analogWrite(STATUS_PIN, STATUS_PIN_LEVEL);
 #else
@@ -51,12 +51,8 @@ bool Altimeter::start()
 
 void Altimeter::reset()
 {
-  filter.reset(1, 1, 0.001);
-  velocityFilter.reset(1, 1, 0.001);
-  for (int i = 0; i < 4; i++) {
-    filter.step(0);
-    velocityFilter.step(0);
-  }
+  altitudeFilter.reset(0);
+  velocityFilter.reset(0);
 
   baselinePressure = pressure();
   lastRefreshTime  = 0;
@@ -65,9 +61,12 @@ void Altimeter::reset()
 
 double Altimeter::referenceAltitude() { return refAltitude; }
 
-double Altimeter::altitude() { return filter.lastEstimate(); }
+double Altimeter::altitude() { return altitudeFilter.currentValue(); }
 
-double Altimeter::verticalVelocity() { velocityFilter.lastEstimate(); }
+double Altimeter::verticalVelocity()
+{
+  return velocityFilter.getCurrentValue();
+}
 
 void Altimeter::update()
 {
@@ -77,15 +76,16 @@ void Altimeter::update()
   }
   double relativeAlt = barometer.altitude(p, baselinePressure);
 
-  long time = millis();
+  double lastAlt = altitudeFilter.currentValue();
+  altitudeFilter.step(relativeAlt);
+
+  long t = micros();
   if (lastRefreshTime) {
-    long delta      = time - lastRefreshTime;
-    double velocity = (relativeAlt - filter.lastEstimate()) / delta * 1000;
+    long dt      = t - lastRefreshTime;
+    double velocity = ((relativeAlt - lastAlt) / dt) * 1000000;
     velocityFilter.step(velocity);
   }
-  lastRefreshTime = time;
-
-  filter.step(relativeAlt);
+  lastRefreshTime = t;
 }
 
 double Altimeter::pressure()
@@ -111,5 +111,3 @@ double Altimeter::pressure()
 }
 
 bool Altimeter::isReady() { return barometerReady; }
-
-

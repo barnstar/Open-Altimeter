@@ -36,11 +36,12 @@
 #define USE_SH1106
 //#define USE_SDD1306
 
-// Set this to 0 to disable the display while in fligh
-#define RUN_DISPLAY_WHILE_FLYING 1
+//Display width and height for the SDD1306 constructor
+#define kDispWidth 128
+#define kDispHeight 64
 
-// Today's pressure at sea level...
-const double SEA_LEVEL_PRESSURE = 101307;
+// Set this to 0 to disable the display while in flight
+#define RUN_DISPLAY_WHILE_FLYING 1
 
 // Recording will start at FLIGHT_START_THRESHOLD_ALT m and we'll assume we're
 // on the ground at FLIGHT_END_THRESHOLD_ALT m. In theory, these could be lower,

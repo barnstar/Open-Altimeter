@@ -24,9 +24,49 @@
  * SOFTWARE.
  **********************************************************************************/
 
+#include "Filters.hpp"
 
-#include "KalmanFilter.h"
-#include <math.h>
+//////////  Averaging /////////////
+
+double AveragingFilter::step(double nextValue)
+{
+  values[valueIndex] = nextValue;
+  valueIndex++;
+  if (valueIndex >= steps) {
+    valueIndex = 0;
+  }
+
+  double sum = 0;
+  for (int i = 0; i < steps; i++) {
+    sum += values[i];
+  }
+  currentValue = sum / steps;
+
+  return currentValue;
+}
+
+void AveragingFilter::reset(double startingValue)
+{
+  for (int i = 0; i < steps; i++) values[i] = startingValue;
+  currentValue = startingValue;
+  valueIndex   = 0;
+}
+
+//////////  LowPass /////////////
+
+
+double LowPassFilter : step(double nextValue)
+{
+  currentValue = currentValue * bias + nextValue * (1 - bias);
+  return currentValue;
+}
+
+double LowPassFilter::reset(double startingValue) {
+  currentValue = startingValue;
+}
+
+//////////  Kalman /////////////
+
 
 double KalmanFilter::step(double measurement)
 {
@@ -36,18 +76,21 @@ double KalmanFilter::step(double measurement)
     err_estimated = (1.0 - kalman_gain) * err_estimated + fabs(last_estimate - current_estimate) * q;
     last_estimate = current_estimate;
 
+    currentValue = current_estimate;
     return current_estimate;
 };
 
-double KalmanFilter::lastEstimate()
-{
-    return last_estimate;
+void KalmanFilter::reset(double startingValue) {
+   reset(1, 1, 0.001);
+   this->last_estimate = startingValue;
+   for (int i = 0; i < 4; i++) {
+    step(startingValue);
+  }
 }
 
-void KalmanFilter::reset(double measuredError, double estimatedError, double gain)
+void KalmanFilter::configure(double measuredError, double estimatedError, double gain)
 {
     this->err_measured = measuredError;
     this->err_estimated = estimatedError;
     this->q = gain;
-    this->last_estimate = 0;
 }

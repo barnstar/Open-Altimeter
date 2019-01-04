@@ -27,25 +27,43 @@
 #include "SettingsView.hpp"
 #include "../FlightController.hpp"
 
-void SettingsView::refresh()
+void FlightHistoryView::dismiss()
 {
-    String deplAlt = String("Main:" + String(FlightController::shared().deploymentAltitude));
-      setText(F("==::: Settings :::=="), 0, false);
-      setText(deplAlt,1,false);
-      update();
+  resetOnNextLongPress = false;
+  needsRefresh         = true;
 }
 
-  void SettingsView::shortPressAction()
-  {
-    altIndex++;
-        if (altIndex == 6) {
-      altIndex = 0;
-    }
-    FlightController::shared().setDeploymentAltitude(altitudes[altIndex]);
+void SettingsView::refresh()
+{
+  if (needsRefresh) {
+    String deplAlt =
+        String("Main:" + String(FlightController::shared().deploymentAltitude));
+    setText(F("==::: Settings :::=="), 0, false);
+    setText(deplAlt, 1, false);
+    String resetText =
+        resetOnNextLongPress ? "Press Again To Reset" : "Hold To Reset";
+    setText(resetText, 2, false);
+    update();
+    needsRefresh = false;
   }
+}
 
-  void SettingsView::longPressAction()
-  { 
-      //This might not be wise
-      //FlightController::shared().resetAll(); 
+void SettingsView::shortPressAction()
+{
+  altIndex++;
+  if (altIndex == 6) {
+    altIndex = 0;
   }
+  FlightController::shared().setDeploymentAltitude(altitudes[altIndex]);
+  needsRefresh = true;
+}
+
+void SettingsView::longPressAction()
+{
+  if (resetOnNextLongPress) {
+    FlightController::shared().resetAll();
+    resetOnNextLongPress = false;
+  }
+  resetOnNextLongPress = true;
+  needsRefresh         = true;
+}

@@ -39,7 +39,7 @@ void UserInterface::eventLoop(bool dispDirty)
 
 void UserInterface::addView(View *view, bool show)
 {
-  if (viewCount < 7) {
+  if (viewCount < kMaxViews) {
     views[viewCount] = view;
     viewCount++;
   }

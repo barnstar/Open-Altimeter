@@ -27,6 +27,10 @@
 #include "SensorDataView.hpp"
 #include "../FlightController.hpp"
 
+void FlightHistoryView::dismiss() {
+  needsRefresh = true;
+}
+
 void SensorDataView::refresh()
 {
   if (FlightController::shared().flightState == kOnGround && needsRefresh) {

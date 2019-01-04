@@ -149,6 +149,15 @@ typedef struct {
 
   double padAltitude;
   double lastApogee;
+
+  boolean isEqual(StatusData &data) {
+    return status == data.status &&
+           deploymentAlt == data.deploymentAlt &&
+           lastApogee == data.lastApogee &&
+           baroReady == data.baroReady &&
+           mpuReady == data.mpuReady;
+  }
+  
 } StatusData;
 
 typedef enum { PrimaryButton = 1, SecondaryButton = 2 } ButtonId;

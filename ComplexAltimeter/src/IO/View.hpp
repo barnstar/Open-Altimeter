@@ -54,6 +54,7 @@ class View
   void update();
 
   virtual void refresh() = 0;
+  virtual void dismiss() = 0;
   virtual void longPressAction() = 0;
   virtual void shortPressAction() = 0;
 
@@ -63,6 +64,7 @@ class View
 
  protected:
   String lines[kMaxLines];
+  bool needsRefresh = true;
 };
 
 #endif
