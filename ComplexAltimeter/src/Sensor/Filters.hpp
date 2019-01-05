@@ -26,7 +26,7 @@
 
 class Filter
 {
-  public:
+ public:
   virtual double step(double value)        = 0;
   virtual void reset(double startingValue) = 0;
 
@@ -39,6 +39,7 @@ class Filter
 // Returns the unweighted moving average of an input for n steps
 class AveragingFilter : public Filter
 {
+ public:
   AveragingFilter(int numSteps, double startingValue)
   {
     steps  = numSteps;
@@ -48,11 +49,10 @@ class AveragingFilter : public Filter
 
   ~AveragingFilter() { delete values; }
 
-public:
   double step(double nextValue);
   void reset(double startingValue);
 
-private:
+ private:
   int steps;
   double *values;
   int valueIndex;
@@ -61,9 +61,9 @@ private:
 // Simple low pass filter
 class LowPassFilter : public Filter
 {
+ public:
   LowPassFilter(double bias, double startingValue) { this->bias = bias; }
 
-public:
   double step(double value);
   void reset(double startingValue);
 
@@ -72,20 +72,19 @@ public:
   double currentValue;
 };
 
-//Simple KalmanFilter
+// Simple KalmanFilter
 class KalmanFilter : public Filter
 {
- private:
-  float err_measured  = 0;
-  float err_estimated = 0;
-  float q             = 0;
-  float last_estimate = 0;
-
  public:
   KalmanFilter(double startingValue) { reset(startingValue); }
 
   double step(double measurement);
   void reset(double startingValue);
-
   void configure(double measuredError, double estimatedError, double gain);
+
+ private:
+  float err_measured  = 0;
+  float err_estimated = 0;
+  float q             = 0;
+  float last_estimate = 0;
 };

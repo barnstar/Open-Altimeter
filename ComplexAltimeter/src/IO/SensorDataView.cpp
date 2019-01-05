@@ -27,7 +27,7 @@
 #include "SensorDataView.hpp"
 #include "../FlightController.hpp"
 
-void FlightHistoryView::dismiss() {
+void SensorDataView::dismiss() {
   needsRefresh = true;
 }
 
@@ -37,7 +37,7 @@ void SensorDataView::refresh()
     setWaiting();
     //If we're in the waiting mode, then the image is static.
     needsRefresh = false;
-  } else {  //flying or ready to fly
+  } else if(FlightController::shared().flightState != kOnGround)  {  //flying or ready to fly
     needsRefresh = true;
     setData(FlightController::shared().sensorData);
   }

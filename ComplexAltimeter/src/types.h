@@ -141,7 +141,8 @@ inline String flightStateString(FlightState s)
 
 typedef enum { kNone, kActive, kPassive } PeizoStyle;
 
-typedef struct {
+struct StatusData
+{
   uint8_t deploymentAlt;
   FlightState status;
   bool baroReady;
@@ -150,7 +151,7 @@ typedef struct {
   double padAltitude;
   double lastApogee;
 
-  boolean isEqual(StatusData &data) {
+  boolean isEqual(const StatusData &data) {
     return status == data.status &&
            deploymentAlt == data.deploymentAlt &&
            lastApogee == data.lastApogee &&
@@ -158,7 +159,7 @@ typedef struct {
            mpuReady == data.mpuReady;
   }
   
-} StatusData;
+};
 
 typedef enum { PrimaryButton = 1, SecondaryButton = 2 } ButtonId;
 

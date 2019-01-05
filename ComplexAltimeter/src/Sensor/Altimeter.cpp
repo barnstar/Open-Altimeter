@@ -61,7 +61,7 @@ void Altimeter::reset()
 
 double Altimeter::referenceAltitude() { return refAltitude; }
 
-double Altimeter::altitude() { return altitudeFilter.currentValue(); }
+double Altimeter::altitude() { return altitudeFilter.getCurrentValue(); }
 
 double Altimeter::verticalVelocity()
 {
@@ -76,7 +76,7 @@ void Altimeter::update()
   }
   double relativeAlt = barometer.altitude(p, baselinePressure);
 
-  double lastAlt = altitudeFilter.currentValue();
+  double lastAlt = altitudeFilter.getCurrentValue();
   altitudeFilter.step(relativeAlt);
 
   long t = micros();

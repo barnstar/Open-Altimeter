@@ -34,21 +34,22 @@
 
 // Sensor libraries
 #if USE_BMP280
-#include "lib/Adafruit_BMP280.h"  
+#include "lib/Adafruit_BMP280.h"
 typedef Adafruit_BMP280 Barometer;
 #define SEA_LEVEL_PRESSURE 1013.7
 #endif
 
 #if USE_BMP085
-#include "lib/SFE_BMP180.h"  
-typedef SFE_BMP180 Barometer;  //180 and 085 use the same interface
+#include "lib/SFE_BMP180.h"
+typedef SFE_BMP180 Barometer;  // 180 and 085 use the same interface
 #define SEA_LEVEL_PRESSURE 101370
 #endif
 
 class Altimeter
 {
  public:
-  Altimeter() : velocityFilter(0,0.5) {
+  Altimeter() : velocityFilter(0.5, 0), altitudeFilter(0)
+  {
     altitudeFilter.reset(0);
     velocityFilter.reset(0);
   };
@@ -60,9 +61,10 @@ class Altimeter
   void update();
   void reset();
 
-  double altitude();            //meters above the reference altitude
-  double referenceAltitude();   //Altitude when start() was called
-  double verticalVelocity();    //in meters per second based on rate of barometric pressure change
+  double altitude();           // meters above the reference altitude
+  double referenceAltitude();  // Altitude when start() was called
+  double verticalVelocity();   // in meters per second based on rate of
+                               // barometric pressure change
   double pressure();
 
  private:
@@ -72,7 +74,7 @@ class Altimeter
 
   KalmanFilter altitudeFilter;
   LowPassFilter velocityFilter;
-  
+
   double baselinePressure = 0;
 
   long lastRefreshTime        = 0;

@@ -150,7 +150,6 @@ void FlightController::loop()
   // Blink out the last recorded apogee on the message pin
   if (flightState == kOnGround && sensorTicker.active()) {
     DataLogger::log("Stopping Ticker");
-    refreshInterface = true;
     sensorTicker.detach();
     digitalWrite(READY_PIN, LOW);
     if (lastApogee) {
@@ -162,18 +161,13 @@ void FlightController::loop()
   }
 
   //
-  if (RUN_DISPLAY_WHILE_FLYING || flightState == kReadyToFly ||
-      flightState == kOnGround) {
-    userInterface.eventLoop(refreshInterface);
-  }
-  refreshInterface = false;
+  userInterface.eventLoop(true);
 }
 
 void FlightController::setDeploymentAltitude(int altitude)
 {
   DataLogger::log("Deployment Altitude Set to " + String(altitude));
   deploymentAltitude = altitude;
-  refreshInterface   = true;
 }
 
 void FlightController::resetAll()
@@ -209,7 +203,6 @@ void FlightController::reset()
   enableBuzzer = false;
   flightState  = kReadyToFly;
   DataLogger::log("Ready To Fly...");
-  refreshInterface = true;
 }
 
 void FlightController::playReadyTone() { blinker->blinkValue(3, 400, false); }
@@ -258,7 +251,6 @@ void FlightController::flightControl()
     DataLogger::log("Alt:" + String(altitude) + "  " +
                     sensorData.heading.toString() + +"   " +
                     sensorData.acc_vec.toString());
-    refreshInterface = true;
   }
 
   // Log slightly more to the file system
@@ -289,7 +281,6 @@ void FlightController::flightControl()
     // For testing - to indicate we're in the ascending mode
     digitalWrite(READY_PIN, LOW);
     digitalWrite(MESSAGE_PIN, HIGH);
-    refreshInterface = true;
   } else if (flightState == kAscending &&
              altitude < (flightData.apogee - DESCENT_THRESHOLD)) {
     // Transition to kDescendining if we've we're DESCENT_THRESHOLD meters below
@@ -299,7 +290,6 @@ void FlightController::flightControl()
     // Deploy our drogue chute
     setDeploymentRelay(ON, drogueChute);
     flightData.drogueEjectionAltitude = altitude;
-    refreshInterface                  = true;
   } else if (flightState == kDescending &&
              altitude < FLIGHT_END_THRESHOLD_ALT) {
     flightState = kOnGround;
@@ -314,7 +304,6 @@ void FlightController::flightControl()
     resetChuteIfRequired(drogueChute);
     resetChuteIfRequired(mainChute);
     DataLogger::log("Relays Reset");
-    refreshInterface = true;
     enableBuzzer     = true;
   }
 

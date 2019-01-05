@@ -27,7 +27,7 @@
 #include "SettingsView.hpp"
 #include "../FlightController.hpp"
 
-void FlightHistoryView::dismiss()
+void SettingsView::dismiss()
 {
   resetOnNextLongPress = false;
   needsRefresh         = true;
@@ -40,8 +40,7 @@ void SettingsView::refresh()
         String("Main:" + String(FlightController::shared().deploymentAltitude));
     setText(F("==::: Settings :::=="), 0, false);
     setText(deplAlt, 1, false);
-    String resetText =
-        resetOnNextLongPress ? "Press Again To Reset" : "Hold To Reset";
+    String resetText = resetOnNextLongPress ? "Press Again To Reset" : "Hold To Reset";
     setText(resetText, 2, false);
     update();
     needsRefresh = false;

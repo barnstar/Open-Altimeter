@@ -64,12 +64,12 @@ void UserInterface::setActiveView(int index)
 {
   View *lastView = views[activeViewIndex];
   lastView->active   = false;
-
   activeViewIndex = index;
   View *view  = views[index];
   view->active    = true;
   view->refresh();
   view->update();
+  lastView->dismiss();
 }
 
 

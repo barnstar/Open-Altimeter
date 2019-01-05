@@ -37,28 +37,27 @@ void StatusView::dismiss() {
 void StatusView::refresh()
 {
   setInfo(FlightController::shared().getStatusData());
-  needsRefresh = false;
 }
 
 void StatusView::setInfo(StatusData const &data)
 {
-  if(statusData.isEqual(data) && !needsRefresh) {
-    return;
-  }
-  statusData = data;
+  if(!lastStatus.isEqual(data) || needsRefresh) {
+    lastStatus = data;
 
-  setText(F("==:::: Status ::::=="), 0, false);
-  setText(flightStateString(data.status), 1, false);
-  String sensorStatus =
-      (data.baroReady ? String("Baro OK") : String("Baro Fail")) + String(":") +
-      (data.mpuReady ? String("IMU OK") : String("IMU Fail"));
-  setText(sensorStatus, 2, false);
-  setText((String("Depl:") + String(data.deploymentAlt) + String("m")), 3,
-          false);
-  setText((String("Last:") + String(data.deploymentAlt) + String("m")), 4,
-          false);
-  setText(WiFi.localIP().toString(), 5, false);
-  update();
+    setText(F("==:::: Status ::::=="), 0, false);
+    setText(flightStateString(data.status), 1, false);
+    String sensorStatus =
+        (data.baroReady ? String("Baro OK") : String("Baro Fail")) + String(":") +
+        (data.mpuReady ? String("IMU OK") : String("IMU Fail"));
+    setText(sensorStatus, 2, false);
+    setText((String("Depl:") + String(data.deploymentAlt) + String("m")), 3,
+            false);
+    setText((String("Last:") + String(data.lastApogee) + String("m")), 4,
+            false);
+    setText(WiFi.localIP().toString(), 5, false);
+    update();
+    needsRefresh = false;
+  }
 }
 
 void StatusView::shortPressAction() { FlightController::shared().reset(); }

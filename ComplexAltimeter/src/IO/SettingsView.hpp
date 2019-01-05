@@ -43,7 +43,7 @@ class SettingsView : public View
  private:
   int altIndex      = -1;
   int altitudes[6]  = {75, 100, 125, 150, 175, 200};
-  boolean resetOnNextLongPress = false;
+  bool resetOnNextLongPress = false;
 };
 
 #endif
