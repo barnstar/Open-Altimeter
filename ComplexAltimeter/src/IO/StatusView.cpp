@@ -52,7 +52,7 @@ void StatusView::setInfo(StatusData const &data)
     setText(sensorStatus, 2, false);
     setText((String("Depl:") + String(data.deploymentAlt) + String("m")), 3,
             false);
-    setText((String("Last:") + String(data.lastApogee) + String("m")), 4,
+    setText((String("Pressure:") + String(data.referencePressure) + String("m")), 4,
             false);
     setText(WiFi.localIP().toString(), 5, false);
     update();

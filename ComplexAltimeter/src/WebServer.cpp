@@ -134,9 +134,12 @@ void WebServer::handleFlight()
 
   pageBuilder.startPageStream(&server, "Flight :" + path + "<br>\n");
   pageBuilder.sendHeaders();
-  pageBuilder.sendBodyChunk("", true, false);
-  pageBuilder.sendFilePretty(path);
-  pageBuilder.sendBodyChunk("", false, true);
+  //Send the flight data as a JSON object
+  pageBuilder.sendRawText, "<script>");
+  pageBuilder.sendFilePretty, path);
+  pageBuilder.sendRawText, "</script>");
+  //Send the graphing fragment
+  pageBuilder.sendFilePretty("/graph.html");
   pageBuilder.closePageStream();
 }
 
@@ -161,7 +164,7 @@ void WebServer::handleTest()
 
 void WebServer::handleStatus()
 {
-  pageBuilder.startPageStream(&server, "Altimeter 1: Status");
+  pageBuilder.startPageStream(&server, "Open Altimeter Status");
   pageBuilder.sendHeaders();
 
   String body = FlightController::shared().getStatus();
@@ -189,13 +192,30 @@ void WebServer::handleConfigSetting(String &arg, String &val)
   if (arg == String("deplAlt")) {
     int deplAlt = val.toInt();
     FlightController::shared().setDeploymentAltitude(deplAlt);
+  }else if(arg == String("testChannel")) {
+    uint channel = val.toInt();
+    if(channel >= ControlChannelCount) {
+      DataLogger.log(F("Invalid channel number"));
+      return;
+    };
+    RecoveryDevice &d = FlightController.shared().devices[channel];
+    if(d.enabled()) {
+      d.disable();
+    }else{
+      d.enable();
+    }
+  }else if(arg == String("onAngle")) {
+    uint angle = val.toInt();
+    RecoveryDevice::setOnAngle(angle);
+  }else if(arg == String("offAngle")) {
+    uint angle = val.toInt();
+    RecoveryDevice::setOffAngle(angle);
   }
-  // Add other form elements here....
 }
 
 void WebServer::handleRoot()
 {
-  pageBuilder.startPageStream(&server, "Altimeter 1");
+  pageBuilder.startPageStream(&server, "Altimeter 0");
   pageBuilder.sendHeaders();
   pageBuilder.sendBodyChunk("", true, false);
 
@@ -295,7 +315,7 @@ void PageBuilder::closePageStream()
 
 String PageBuilder::makeLink(const String &link, const String &string)
 {
-  return "<h1><a href=\"" + link + "\">" + string + "</a></h1>\n";
+  return "<h2><a href=\"" + link + "\">" + string + "</a></h2>\n";
 }
 
 String PageBuilder::makeDiv(const String &name, const String &contents)

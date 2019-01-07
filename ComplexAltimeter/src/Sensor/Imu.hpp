@@ -27,20 +27,19 @@
  * SOFTWARE.
  **********************************************************************************/
 
-
+#include <Wire.h>
+#include "../../Configuration.h"
 #include "../DataLogger.hpp"
 #include "../types.h"
-#include "../../Configuration.h"
 #include "lib/MPU9250.h"
 #include "lib/MahonyAHRS.h"
-#include <Wire.h>
 
 typedef MPU9250 ImuSensor;
 typedef Mahony SensorFusion;
 
 class Imu
 {
-public:
+ public:
   Imu(int frequency) : imuSensor(Wire, IMU_I2C_ADDR), frequency(frequency) {}
 
   ~Imu() {}
@@ -55,24 +54,33 @@ public:
   void reset();
   void update();
 
-  //Heading - roll, pitch, yaw
-  Heading getHeading() { return heading; }
+  // Heading - roll, pitch, yaw
+  Heading const &getHeading() { return heading; }
 
-  //Linear accelleration 
+  // Linear accelleration
   Vector const &getAcceleration() { return acceleration; }
 
-  //Rotational acceleration
+  // Rotational acceleration
   Vector const &getGyro() { return gyro; }
 
-private:
+  // Reference heading on startup
+  Heading const &getReferenceHeading() { return referenceHeading; }
+
+  // Euler angles relative to our reference heading
+  Heading getRelativeHeading();
+
+ private:
   bool mpuReady;
   int frequency;
   Heading heading;
   Vector acceleration;
   Vector gyro;
+  Heading referenceHeading;
 
   ImuSensor imuSensor;
   Mahony sensorFusion;
+
+  void calibrate();
 };
 
 #endif

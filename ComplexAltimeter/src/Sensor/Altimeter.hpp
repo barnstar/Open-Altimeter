@@ -66,6 +66,7 @@ class Altimeter
   double verticalVelocity();   // in meters per second based on rate of
                                // barometric pressure change
   double pressure();
+  double getRefPressure() { return baselinePressure };
 
  private:
   Barometer barometer;

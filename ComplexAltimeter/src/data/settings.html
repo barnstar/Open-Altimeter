@@ -1,17 +1,61 @@
 <html>
+
 <head>
-<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />
+  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />
 </head>
 
+<script>
+  function testDepl(channel) {
+    fetch('http://192.4.0.1/config?testChannel=' + channel)
+      .then(
+        function (response) {
+          if (response.status !== 200) {
+            console.log('Looks like there was a problem. Status Code: ' +
+              response.status);
+            return;
+          }
+        }
+      )
+      .catch(function (err) {
+        console.log('Fetch Error :-S', err);
+      });
+  }
+
+</script>
+
 <body>
-<h1>Altimeter Settings</h1>
-<div>
-<form action="/config">
-  Deployment Altitude:<br>
-  <input type="text" name="deplAlt" value="100"><br>
-  <input type="submit" value="Set Altitude">
-</form>
-</div>
+  <h1>Settings</h1>
+  <div>
+    <form action="/config">
+      Deployment Altitude:<br>
+      <h2></h2><input type="text" name="deplAlt" value="100"><br>
+      <input type="submit" value="Set Altitude">
+    </form>
+    <form action="/config">
+      Deployment Altitude:<br>
+      <h2></h2><input type="text" name="onAngle" value="0"><br>
+      <input type="submit" value="Set Servo On Angle">
+    </form>
+    <form action="/config">
+      Deployment Altitude:<br>
+      <h2></h2><input type="text" name="offAngle" value="180"><br>
+      <input type="submit" value="Set Servo Of Angle">
+    </form>
+    <h2>
+      </form>
+  </div>
+  <div>
+    <button onclick="testDepl(0)">Toggle Channel 1</button>
+  </div>
+  <div>
+    <button onclick="testDepl(1)">Toggle Channel 2</button>
+  </div>
+  <div>
+    <button onclick="testDepl(2)">Toggle Channel 3</button>
+  </div>
+  <div>
+    <button onclick="testDepl(3)">Toggle Channel 4</button>
+  </div>
 </body>
 
 </html>

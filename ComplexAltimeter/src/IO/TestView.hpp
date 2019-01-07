@@ -1,4 +1,3 @@
-
 /*********************************************************************************
  * Open Altimeter
  *
@@ -25,77 +24,30 @@
  * SOFTWARE.
  **********************************************************************************/
 
-#include "RecoveryDevice.h"
-#ifdef IS_SIMPLE_ALT
-#include "Configuration.h"
-#else
-#include "../Configuration.h"
+#ifndef TESTVIEW_H
+#define TESTVIEW_H
+
+#include "../types.h"
+#include "View.hpp"
+
+
+
+
+class TestView : public View
+{
+ public:
+  TestView(Display &displayRef) : View(displayRef){
+      initRecoveryDevices();
+  };
+
+  void shortPressAction();
+  void longPressAction();
+  void refresh();
+  void dismiss();
+
+ private:
+   RecoveryDevice *testDevice;
+   ControlChannel activeOption = ControlChannel1;
+};
+
 #endif
-#include "types.h"
-
-void RecoveryDevice::init(byte id, byte pin, DeploymentType type)
-{
-  // log("Init RD " + String(id) + " p:" + String(pin));
-  this->relayPin = pin;
-  this->id       = id;
-  this->type     = type;
-  switch (type) {
-    case kPyro:
-      pinMode(pin, OUTPUT);
-      break;
-    case kServo:
-      servo.attach(pin);
-      break;
-    case kNoEjection:
-      break;
-  }
-  reset();
-};
-
-void RecoveryDevice::setServoAngle(int angle) { 
-  if(type == kServo) {
-    servo.write(angle);
-  }
-}
-
-void RecoveryDevice::enable()
-{
-  deployed       = true;
-  deploymentTime = millis();
-  relayState     = ON;
-  switch (type) {
-    case kPyro:
-      digitalWrite(relayPin, HIGH);
-      break;
-    case kServo:
-      setServoAngle(kChuteReleaseTriggeredAngle);
-      break;
-    case kNoEjection:
-      break;
-  }
-  // log("RD En" + String(id) );
-};
-
-void RecoveryDevice::disable()
-{
-  deployed   = false;
-  relayState = OFF;
-  switch (type) {
-    case kPyro:
-      digitalWrite(relayPin, LOW);
-      break;
-    case kServo:
-      setServoAngle(kChuteReleaseArmedAngle);
-      break;
-    case kNoEjection:
-      break;
-  }
-  // log("RD Dis" + String(id) );
-};
-
-void RecoveryDevice::reset()
-{
-  disable();
-  deploymentTime = 0;
-  timedReset     = false;
-};

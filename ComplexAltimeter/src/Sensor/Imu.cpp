@@ -26,32 +26,33 @@
 
 #include "Imu.hpp"
 
-void Imu::reset() { sensorFusion.begin(frequency); }
+void Imu::reset() { 
+  sensorFusion.begin(frequency); 
+  calibrate();
+}
 
 void Imu::update()
 {
   // Offsets applied to raw x/y/z values
-  float mag_offsets[3] = {-0.20F, -5.53F, -35.34F};
+  float mag_offsets[3] = {0.0F, 0.0F, 0.0F};
 
   // Soft iron error compensation matrix
   float mag_softiron_matrix[3][3] = {
-      {0.934, 0.005, 0.013}, {0.005, 0.948, 0.012}, {0.013, 0.012, 1.129}};
+      {1, 0, 0}, {0, 1, 0}, {0, 0, 1}};
 
   if (mpuReady) {
     int status = imuSensor.readSensor();
     if (status == -1) {
       return;
     }
-    acceleration = Vector(imuSensor.getAccelX_mss(), 
-                           imuSensor.getAccelY_mss(),
-                           imuSensor.getAccelZ_mss());
+    acceleration = Vector(imuSensor.getAccelX_mss(), imuSensor.getAccelY_mss(),
+                          imuSensor.getAccelZ_mss());
 
-    gyro = Vector(imuSensor.getGyroX_rads(), 
-                  imuSensor.getGyroY_rads(),
+    gyro = Vector(imuSensor.getGyroX_rads(), imuSensor.getGyroY_rads(),
                   imuSensor.getGyroZ_rads());
 
     float x = imuSensor.getMagX_uT() + mag_offsets[0];
-    float y = imuSensor.getMagX_uT() + mag_offsets[1];
+    float y = imuSensor.getMagY_uT() + mag_offsets[1];
     float z = imuSensor.getMagZ_uT() + mag_offsets[2];
 
     // Apply mag soft iron error compensation
@@ -62,13 +63,8 @@ void Imu::update()
     float mz = x * mag_softiron_matrix[2][0] + y * mag_softiron_matrix[2][1] +
                z * mag_softiron_matrix[2][2];
 
-    sensorFusion.update(gyro.XAxis, 
-                        gyro.YAxis,
-                        gyro.ZAxis, 
-                        acceleration.XAxis,
-                        acceleration.YAxis, 
-                        acceleration.ZAxis, 
-                        mx, my, mz);
+    sensorFusion.update(gyro.XAxis, gyro.YAxis, gyro.ZAxis, acceleration.XAxis,
+                        acceleration.YAxis, acceleration.ZAxis, mx, my, mz);
 
     heading.roll  = sensorFusion.getRoll();
     heading.pitch = sensorFusion.getPitch();
@@ -76,6 +72,17 @@ void Imu::update()
   }
 }
 
-double getAbsoluteAcceleration() { return 0; }
+Heading Imu::getRelativeHeading()
+{
+  return heading - referenceHeading;
+}
 
-double getEstimatedVelocity() { return 0; }
+
+void Imu::calibrate() 
+{
+  for(int i=0;i<20;i++) {
+    udpate();
+    delay(20);
+  }
+  referenceHeading = heading;
+}

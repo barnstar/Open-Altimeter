@@ -36,7 +36,7 @@
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
 #define MAX(a, b) (((a) > (b)) ? (a) : (b))
 
-typedef enum { kNoEjection, kPyro, kServo } DeploymentType;
+typedef enum { kNoEjection, kPyro, kServo, kServoChannel } DeploymentType;
 
 typedef enum { OFF = 0, ON = 1 } OnOffState;
 
@@ -84,14 +84,27 @@ struct Vector {
 };
 
 typedef struct {
-  double roll;
-  double pitch;
-  double yaw;
+  Heading() {}
+
+  Vector(float r, float p, float y)
+  {
+    roll  = r;
+    pitch = p;
+    yaw   = y;
+  }
+
+  double roll  = 0;
+  double pitch = 0;
+  double yaw   = 0;
+
+  Heading operator-(Heading rhs)
+  {
+    return Heading(roll - rhs.roll, pitch - rhs.pitch, yaw - rhs.yaw);
+  }
 
   String toString()
   {
-    return String(String(roll) + ":" + String(pitch) + ":" +
-                  String(yaw));
+    return String(String(roll) + ":" + String(pitch) + ":" + String(yaw));
   }
 } Heading;
 
@@ -141,8 +154,7 @@ inline String flightStateString(FlightState s)
 
 typedef enum { kNone, kActive, kPassive } PeizoStyle;
 
-struct StatusData
-{
+struct StatusData {
   uint8_t deploymentAlt;
   FlightState status;
   bool baroReady;
@@ -150,17 +162,24 @@ struct StatusData
 
   double padAltitude;
   double lastApogee;
+  double referencePressure;
 
-  boolean isEqual(const StatusData &data) {
-    return status == data.status &&
-           deploymentAlt == data.deploymentAlt &&
-           lastApogee == data.lastApogee &&
-           baroReady == data.baroReady &&
+  boolean isEqual(const StatusData &data)
+  {
+    return status == data.status && deploymentAlt == data.deploymentAlt &&
+           lastApogee == data.lastApogee && baroReady == data.baroReady &&
            mpuReady == data.mpuReady;
   }
-  
 };
 
 typedef enum { PrimaryButton = 1, SecondaryButton = 2 } ButtonId;
+
+typedef enum {
+  ControlChannel1 = 0,
+  ControlChannel2,
+  ControlChannel3,
+  ControlChannel4,
+  ControlChannelCount
+} ControlChannel;
 
 #endif  // types_h

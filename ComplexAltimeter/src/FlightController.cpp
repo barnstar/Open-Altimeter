@@ -75,8 +75,7 @@ void FlightController::initialize()
   digitalWrite(STATUS_PIN, LOW);
   digitalWrite(MESSAGE_PIN, HIGH);
 
-  mainChute.init(2, MAIN_DEPL_RELAY_PIN, MAIN_TYPE);
-  drogueChute.init(1, DROGUE_DEPL_RELAY_PIN, DROGUE_TYPE);
+  initRecoveryDevices();
 
   barometerReady = altimeter.start();
   mpuReady       = imu.start();
@@ -84,9 +83,24 @@ void FlightController::initialize()
   flightData.reset();
 
   DataLogger::log("Deployment Altitude: " + String(deploymentAltitude));
-  DataLogger::log("Pad Altitude:" + String(altimeter.referenceAltitude()));
+  DataLogger::log("Pressure:" + String(altimeter.getRefPressure()));
   // We don't want to sound the buzzer on first boot, only after a flight
   enableBuzzer = false;
+}
+
+void TestView::initRecoveryDevices()
+{
+  //TODO:Load these from settings
+  RecoveryDevice::setOffAngle(kChuteReleaseArmedAngle);
+  RecoveryDevice::setOnAngle(kChuteReleaseTriggeredAngle);
+
+  mainChute.init(2, MAIN_DEPL_RELAY_PIN, MAIN_TYPE);
+  drogueChute.init(1, DROGUE_DEPL_RELAY_PIN, DROGUE_TYPE);
+
+  device[0].init(ControlChannel1, DEPL_CTL_1, CTL_1_TYPE);
+  device[1].init(ControlChannel2, DEPL_CTL_2, CTL_2_TYPE);
+  device[2].init(ControlChannel3, DEPL_CTL_3, CTL_3_TYPE);
+  device[3].init(ControlChannel4, DEPL_CTL_4, CTL_4_TYPE);
 }
 
 StatusData const &FlightController::getStatusData()
@@ -97,6 +111,8 @@ StatusData const &FlightController::getStatusData()
   statusData.mpuReady      = mpuReady;
   statusData.padAltitude   = altimeter.referenceAltitude();
   statusData.lastApogee    = flightData.apogee;
+  statusData.referencePressure = altimeter.referencePressure();
+  
   return statusData;
 }
 
@@ -264,18 +280,17 @@ void FlightController::flightControl()
   flightData.apogee          = MAX(flightData.apogee, altitude);
   flightData.maxAcceleration = MAX(flightData.maxAcceleration, acceleration);
 
-  // Experimental.  Log when we've hit some prescribed g load.  This might be
-  // more accurate than starting the flight at some altitude x...  The minimum
-  // load will probably have to be too small and will pick up things like wind
-  // gusts though.
-  if (flightState == kReadyToFly && acceleration > FLIGHT_START_THRESHOLD_ACC &&
-      flightData.accTriggerTime == 0) {
+  if (flightState == kReadyToFly && acceleration > FLIGHT_START_THRESHOLD_ACC ) {
+    DataLogger::log("Flight Started - ACC Trigger");
+    flightState               = kAscending;
     flightData.accTriggerTime = millis() - resetTime;
+    digitalWrite(READY_PIN, LOW);
+    digitalWrite(MESSAGE_PIN, HIGH);
   }
 
   if (flightState == kReadyToFly && altitude > FLIGHT_START_THRESHOLD_ALT) {
     // Transition to "InFlight" if we've exceeded the threshold altitude.
-    DataLogger::log("Flight Started");
+    DataLogger::log("Flight Started - Alt trigger");
     flightState               = kAscending;
     flightData.altTriggerTime = millis() - resetTime;
     // For testing - to indicate we're in the ascending mode
@@ -364,7 +379,7 @@ void FlightController::testFlightData(SensorData *d)
   if (testFlightTimeStep == 1) {
     testFlightTimeStep    = 2;
     fakeData.altitude     = 0;
-    fakeData.acceleration = 4;
+    fakeData.acceleration = 0;
     d->altitude           = fakeData.altitude;
     d->acceleration       = fakeData.acceleration;
     isTestAscending       = true;

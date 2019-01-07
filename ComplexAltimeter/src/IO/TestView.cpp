@@ -1,4 +1,3 @@
-
 /*********************************************************************************
  * Open Altimeter
  *
@@ -25,77 +24,60 @@
  * SOFTWARE.
  **********************************************************************************/
 
-#include "RecoveryDevice.h"
-#ifdef IS_SIMPLE_ALT
-#include "Configuration.h"
-#else
-#include "../Configuration.h"
-#endif
-#include "types.h"
+#include "TestView.hpp"
 
-void RecoveryDevice::init(byte id, byte pin, DeploymentType type)
+void TestView::shortPressAction()
 {
-  // log("Init RD " + String(id) + " p:" + String(pin));
-  this->relayPin = pin;
-  this->id       = id;
-  this->type     = type;
-  switch (type) {
-    case kPyro:
-      pinMode(pin, OUTPUT);
-      break;
-    case kServo:
-      servo.attach(pin);
-      break;
-    case kNoEjection:
-      break;
+  if (testDevice->enabled) {
+    testDevice->disable();
   }
-  reset();
-};
 
-void RecoveryDevice::setServoAngle(int angle) { 
-  if(type == kServo) {
-    servo.write(angle);
+  activeOption++;
+  if (activeOption == ControlChannelCount) {
+    activeOption = ControlChannel1;
+  }
+
+  testDevice = &FlightController::shared().devices[activeOption];
+  needsRefresh = true;
+  resfresh();
+}
+
+void TestView::longPressAction()
+{
+  if (testDevice->enabled) {
+    testDevice->disable();
+  } else {
+    testDevice->enable();
   }
 }
 
-void RecoveryDevice::enable()
+void TestView::refresh()
 {
-  deployed       = true;
-  deploymentTime = millis();
-  relayState     = ON;
-  switch (type) {
-    case kPyro:
-      digitalWrite(relayPin, HIGH);
-      break;
-    case kServo:
-      setServoAngle(kChuteReleaseTriggeredAngle);
-      break;
-    case kNoEjection:
-      break;
+  if (!needsRefresh) {
+    return;
   }
-  // log("RD En" + String(id) );
-};
 
-void RecoveryDevice::disable()
-{
-  deployed   = false;
-  relayState = OFF;
-  switch (type) {
-    case kPyro:
-      digitalWrite(relayPin, LOW);
-      break;
-    case kServo:
-      setServoAngle(kChuteReleaseArmedAngle);
-      break;
-    case kNoEjection:
-      break;
+  setText(F("===::: TEST :::==="), 0, false);
+
+  String labels[TestOptionsCount];
+  labels[0] = F("Test Ctl 1");
+  labels[1] = F("Test Ctl 2");
+  labels[2] = F("Test Ctl 3");
+  labels[3] = F("Test Ctl 4");
+
+  labels[activeOption] = String("**") + labels[activeOption] + String("**");
+  for (int i = 0; i < 4; i++) {
+    setText(labels[i], i + 1, false);
   }
-  // log("RD Dis" + String(id) );
-};
+  needsRefresh = false;
+  update();
+}
 
-void RecoveryDevice::reset()
+void TestView::dismiss()
 {
-  disable();
-  deploymentTime = 0;
-  timedReset     = false;
-};
+  if (testDevice->enabled) {
+    testDevice->disable();
+    return;
+  }
+  activeOption = 0;
+}

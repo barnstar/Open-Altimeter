@@ -47,6 +47,7 @@ typedef Adafruit_SH1106 Display;
 #include "SensorDataView.hpp"
 #include "SettingsView.hpp"
 #include "StatusView.hpp"
+#include "TestView.hpp"
 #include "View.hpp"
 
 #define kMaxViews 6
@@ -61,7 +62,8 @@ class UserInterface : public ButtonInputDelegate
         statusView(display),
         historyView(display),
         sensorDataView(display),
-        settingsView(display)
+        settingsView(display),
+        testView(display)
   {
     primaryButton.setDelegate(this);
     secondaryButton.setDelegate(this);
@@ -88,6 +90,7 @@ class UserInterface : public ButtonInputDelegate
     addView(&sensorDataView, false);
     addView(&historyView, false);
     addView(&settingsView, false);
+    addView(&testView, false);
     addView(&statusView, true);
   }
 
@@ -111,6 +114,7 @@ class UserInterface : public ButtonInputDelegate
   StatusView statusView;
   FlightHistoryView historyView;
   SettingsView settingsView;
+  TestView testView;
 
   View *views[kMaxViews];
   short activeViewIndex = 0;

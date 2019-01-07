@@ -31,12 +31,29 @@
 #include <Servo.h>
 #include "types.h"
 
+class RecoveryDevice;
+
+RecoveryDevice::offAngle = kChuteReleaseArmedAngle;
+RecoveryDevice::onAngle = kChuteReleaseTriggeredAngle;
+
 class RecoveryDevice
 {
  public:
   RecoveryDevice() { this->reset(); };
-
   ~RecoveryDevice(){};
+
+  static int offAngle;
+  static int onAngle;
+
+  static setOnAngle(int angle) {
+      onAngle = angle;
+      //TODO: Save to settings
+  }
+
+  static setOffAngle(int angle) {
+      offAngle = angle;
+      //TODO: Save to settings
+  }
 
   bool deployed      = false;  // True if the the chute has been deplyed
   int deploymentTime = 0;      // Time at which the chute was deployed
@@ -55,6 +72,8 @@ class RecoveryDevice
   void enable();
   void disable();
   void reset();
+
+  void setServoAngle(int angle);
 };
 
 #endif  // RECOVERYDEVICE_H

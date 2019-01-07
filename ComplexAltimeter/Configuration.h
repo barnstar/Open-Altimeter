@@ -36,7 +36,7 @@
 #define USE_SH1106
 //#define USE_SDD1306
 
-//Display width and height for the SDD1306 constructor
+// Display width and height for the SDD1306 constructor
 #define kDispWidth 128
 #define kDispHeight 64
 
@@ -49,7 +49,7 @@
 // sufficient for most launch sites.
 const double FLIGHT_START_THRESHOLD_ALT      = 10;
 const double FLIGHT_END_THRESHOLD_ALT        = 30;
-const double FLIGHT_START_THRESHOLD_ACC      = 0.1;  // in G's
+const double FLIGHT_START_THRESHOLD_ACC      = 2.0;  // in G's
 const double FLIGHT_START_THRESHOLD_VELOCITY = 0.5;  // m/s
 const double FLIGHT_END_THRESHOLD_VELOCITY   = 0.0;  // m/s
 
@@ -58,31 +58,42 @@ const double FLIGHT_END_THRESHOLD_VELOCITY   = 0.0;  // m/s
 // trajectory....
 const double DESCENT_THRESHOLD = 15;
 
-// The deployment relay will be deactivated after this time.
+// Maximum on time for pyro type deployment
 const int MAX_FIRE_TIME = 5000;
 
-// ESP8266 12E specific
+// ESP8266 specific
 #define SD2 9
 #define SD3 10
 
 // D1 & D2 are used for i2c
 const int SERIAL_BAUD_RATE = 57600;
-const byte STATUS_PIN = NO_PIN;        // Unit status pin.  On if OK
-const byte MESSAGE_PIN = D6;           // Blinks out the altitude
-const byte READY_PIN   = D5;           // Indicates the unit is ready for flight
-const byte BUZZER_PIN = D0;            // Audible buzzer on landing
-const byte RESET_PIN           = SD2;  // SD2 - pin "9"
-const byte INPUT_PIN           = SD3;  // SD3 - pin "10"
-const byte MAIN_DEPL_RELAY_PIN = D3;   // parachute deployment pin
-const byte DROGUE_DEPL_RELAY_PIN = D4;  // parachute deployment pin
-const byte SERVO_CTL_1         = D7;    // servo control pin 1
-const byte SERVO_CTL_2         = D8;    // servo control pin 2
-const DeploymentType MAIN_TYPE = kServo;
-const DeploymentType DROGUE_TYPE = kServo;
-const int BARO_I2C_ADDR          = 0x76;  // 0x77 or 0x76 depending on the barometer used
-const int DISPLAY_I2C_ADDR       = 0x3C;
-const int IMU_I2C_ADDR           = 0x68;
-const PeizoStyle PEIZO_TYPE      = kActive;
+const byte STATUS_PIN      = NO_PIN;  // Unit status pin.  On if OK
+const byte MESSAGE_PIN     = D6;      // Blinks out the altitude
+const byte READY_PIN       = D5;      // Indicates the unit is ready for flight
+const byte BUZZER_PIN      = D0;      // Audible buzzer on landing
+const byte RESET_PIN       = SD2;     // SD2 - pin "9"
+const byte INPUT_PIN       = SD3;     // SD3 - pin "10"
+
+const byte DEPL_CTL_1           = D3;  // control pin 1
+const byte DEPL_CTL_2           = D4;  // control pin 2
+const byte DEPL_CTL_3           = D7;  // control pin 1
+const byte DEPL_CTL_4           = D8;  // control pin 2
+const DeploymentType CTL_1_TYPE = kServo;  //PWM control
+const DeploymentType CTL_2_TYPE = kServo;  //PWM control 
+const DeploymentType CTL_3_TYPE = kPyro;   //On/off
+const DeploymentType CTL_4_TYPE = kPyro;   //On/off
+
+//TODO: These should be software configurable and saved
+//      in a persistent setting
+const byte MAIN_DEPL_RELAY_PIN   = DEPL_CTL_1;  // parachute deployment pin
+const byte DROGUE_DEPL_RELAY_PIN = DEPL_CTL_2;  // parachute deployment pin
+const DeploymentType MAIN_TYPE   = CTL_1_TYPE;
+const DeploymentType DROGUE_TYPE = CTL_2_TYPE;
+
+const int BARO_I2C_ADDR     = 0x76;  // 0x77 or 0x76
+const int DISPLAY_I2C_ADDR  = 0x3C;
+const int IMU_I2C_ADDR      = 0x68;
+const PeizoStyle PEIZO_TYPE = kActive;
 
 // The barometer can only refresh at about 50Hz.
 const int SENSOR_READ_DELAY_MS = 20;

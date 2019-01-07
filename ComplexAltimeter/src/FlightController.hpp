@@ -75,8 +75,11 @@ class FlightController
 
   bool sampleOnNextLoop = false;
 
+  RecoveryDevice devices[ControlChannelCount];
+  
  private:
   void initialize();
+  void initRecoveryDevices();
 
   Altimeter altimeter;
   Imu imu;
@@ -96,6 +99,7 @@ class FlightController
 
   Blinker *blinker;
   Ticker sensorTicker;
+  
   int logCounterUI = 0;
   int logCounterLogger = 0;
 
