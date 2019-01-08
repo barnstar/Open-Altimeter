@@ -78,8 +78,8 @@ const int MAIN_DEPL_RELAY_PIN = 12;    // parachute deployment pin
 const int DROGUE_DEPL_RELAY_PIN = 11;  // parachute deployment pin
 const int ALT_PIN_A             = 9;   // Main Chute Altitude Altitude Set Pin.
 const int ALT_PIN_B             = 10;  // Main Chute Altitude Altitude Set Pin
-const DeploymentType MAIN_TYPE   = kPyro;
-const DeploymentType DROGUE_TYPE = kPyro;
+const RecoveryDeviceType MAIN_TYPE   = kPyro;
+const RecoveryDeviceType DROGUE_TYPE = kPyro;
 const int BARO_I2C_ADDR          = 0x77;
 const PeizoStyle PEIZO_TYPE      = kActive;
 #define ENABLE_MPU 0
@@ -99,8 +99,8 @@ const int MAIN_DEPL_RELAY_PIN = 11;    // parachute deployment pin
 const int DROGUE_DEPL_RELAY_PIN = 10;  // parachute deployment pin
 const int ALT_PIN_A = 8;               // Main Chute Altitude Set Pin.
 const int ALT_PIN_B = 9;               // Main Chute Altitude Set Pin
-const DeploymentType MAIN_TYPE   = kServo;
-const DeploymentType DROGUE_TYPE = kServo;
+const RecoveryDeviceType MAIN_TYPE   = kServo;
+const RecoveryDeviceType DROGUE_TYPE = kServo;
 const int BARO_I2C_ADDR          = 0x76;
 const PeizoStyle PEIZO_TYPE      = kPassive;
 #define ENABLE_MPU 0
@@ -120,8 +120,8 @@ const byte MAIN_DEPL_RELAY_PIN = 11;    // parachute deployment pin
 const char DROGUE_DEPL_RELAY_PIN = 12;  // parachute deployment pin
 const byte ALT_PIN_A = 8;               // Main Chute Altitude Set Pin.
 const byte ALT_PIN_B = 9;               // Main Chute Altitude Set Pin
-const DeploymentType MAIN_TYPE   = kServo;
-const DeploymentType DROGUE_TYPE = kNoEjection;
+const RecoveryDeviceType MAIN_TYPE   = kServo;
+const RecoveryDeviceType DROGUE_TYPE = kNoEjection;
 #define BARO_I2C_ADDR
 #define STATUS_PIN_LEVEL 800
 const PeizoStyle PEIZO_TYPE      = kPassive;

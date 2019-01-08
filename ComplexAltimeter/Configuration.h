@@ -78,17 +78,11 @@ const byte DEPL_CTL_1           = D3;  // control pin 1
 const byte DEPL_CTL_2           = D4;  // control pin 2
 const byte DEPL_CTL_3           = D7;  // control pin 1
 const byte DEPL_CTL_4           = D8;  // control pin 2
-const DeploymentType CTL_1_TYPE = kServo;  //PWM control
-const DeploymentType CTL_2_TYPE = kServo;  //PWM control 
-const DeploymentType CTL_3_TYPE = kPyro;   //On/off
-const DeploymentType CTL_4_TYPE = kPyro;   //On/off
+const RecoveryDeviceType CTL_1_TYPE = kServo;  //PWM control
+const RecoveryDeviceType CTL_2_TYPE = kServo;  //PWM control 
+const RecoveryDeviceType CTL_3_TYPE = kPyro;   //On/off
+const RecoveryDeviceType CTL_4_TYPE = kPyro;   //On/off
 
-//TODO: These should be software configurable and saved
-//      in a persistent setting
-const byte MAIN_DEPL_RELAY_PIN   = DEPL_CTL_1;  // parachute deployment pin
-const byte DROGUE_DEPL_RELAY_PIN = DEPL_CTL_2;  // parachute deployment pin
-const DeploymentType MAIN_TYPE   = CTL_1_TYPE;
-const DeploymentType DROGUE_TYPE = CTL_2_TYPE;
 
 const int BARO_I2C_ADDR     = 0x76;  // 0x77 or 0x76
 const int DISPLAY_I2C_ADDR  = 0x3C;

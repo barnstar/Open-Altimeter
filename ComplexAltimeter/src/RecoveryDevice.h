@@ -24,7 +24,6 @@
  * SOFTWARE.
  **********************************************************************************/
 
-
 #ifndef RECOVERYDEVICE_H
 #define RECOVERYDEVICE_H
 
@@ -34,11 +33,11 @@
 #include "Configuration.h"
 #else
 #include "../Configuration.h"
+#include "Settings.h"
 #endif
 
-
- static int offAngle;
- static int onAngle;
+static int offAngle;
+static int onAngle;
 
 class RecoveryDevice
 {
@@ -46,34 +45,44 @@ class RecoveryDevice
   RecoveryDevice() { this->reset(); };
   ~RecoveryDevice(){};
 
-
-  static void setOnAngle(int angle) {
-      onAngle = angle;
-      //TODO: Save to settings
+  static void setOnAngle(int angle, bool save)
+  {
+    onAngle = angle;
+#ifndef IS_SIMPLE_ALT
+    if (save) {
+      Settings s;
+      s.writeIntValue(angle, "servoOnAngle");
+    }
+#endif
   }
 
-  static void setOffAngle(int angle) {
-      offAngle = angle;
-      //TODO: Save to settings
+  static void setOffAngle(int angle, bool save)
+  {
+    offAngle = angle;
+#ifndef IS_SIMPLE_ALT
+    if (save) {
+      Settings s;
+      s.writeIntValue(angle, "servoOffAngle");
+    }
+#endif
   }
 
   bool deployed      = false;  // True if the the chute has been deplyed
   int deploymentTime = 0;      // Time at which the chute was deployed
-  bool timedReset =
-      false;  // True if we've reset the chute relay due to a timeout
-  RelayState relayState = OFF;  // State of the parachute relay pin.  Recorded
-                                // separately.  To avoid fire.
-  DeploymentType type = kServo;
-  Servo servo;
-
-  byte relayPin = 0;
-  byte id       = 0;
+  bool timedReset    = false;
+  RecoveryDeviceState deviceState = OFF;
+  RecoveryDeviceType type         = kServo;
 
  public:
-  void init(byte id, byte pin, DeploymentType type);
+  void init(byte id, byte pin, RecoveryDeviceType type);
   void enable();
   void disable();
   void reset();
+
+ private:
+  Servo servo;
+  byte gpioPin = 0;
+  byte id      = 0;
 
   void setServoAngle(int angle);
 };

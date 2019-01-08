@@ -33,12 +33,12 @@ void TestView::shortPressAction()
     testDevice->disable();
   }
 
-  activeOption ++;
+  activeOption++;
   if (activeOption == kOptionCount) {
     activeOption = 0;
   }
 
-  testDevice = &FlightController::shared().devices[activeOption];
+  testDevice   = &FlightController::shared().devices[activeOption];
   needsRefresh = true;
   refresh();
 }
@@ -62,15 +62,15 @@ void TestView::refresh()
 
   setText(F("===::: TEST :::==="), 0, false);
 
-  String labels[4];
-  labels[0] = F("Test Ctl 1");
-  labels[1] = F("Test Ctl 2");
-  labels[2] = F("Test Ctl 3");
-  labels[3] = F("Test Ctl 4");
-
   labels[activeOption] = String("::") + labels[activeOption] + String("::");
-  for (int i = 0; i < 4; i++) {
-    setText(labels[i], i + 1, false);
+  for (int i = 1; i < 5; i++) {
+    String label;
+    if (i == activeOption) {
+      label = String("::Test Chan ") + String(i) + String("::");
+    } else {
+          label =  String("  Test Chan " + String(i);
+    }
+    setText(label, i, false);
   }
   needsRefresh = false;
   update();
@@ -83,5 +83,5 @@ void TestView::dismiss()
     testDevice->disable();
     return;
   }
-  activeOption = ControlChannel1;
+  activeOption = 0;
 }

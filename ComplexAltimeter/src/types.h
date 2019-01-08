@@ -36,11 +36,11 @@
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
 #define MAX(a, b) (((a) > (b)) ? (a) : (b))
 
-typedef enum { kNoEjection, kPyro, kServo, kServoChannel } DeploymentType;
+typedef enum { kNoEjection, kPyro, kServo, kServoChannel } RecoveryDeviceType;
 
 typedef enum { OFF = 0, ON = 1 } OnOffState;
 
-typedef OnOffState RelayState;
+typedef OnOffState RecoveryDeviceState;
 typedef OnOffState BlinkerState;
 
 struct Vector {
@@ -175,11 +175,10 @@ struct StatusData {
 typedef enum { PrimaryButton = 1, SecondaryButton = 2 } ButtonId;
 
 typedef enum {
-  ControlChannel1 = 0,
+  ControlChannel1 = 1,
   ControlChannel2,
   ControlChannel3,
-  ControlChannel4,
-  ControlChannelCount
+  ControlChannel4
 } ControlChannel;
 
 #endif  // types_h

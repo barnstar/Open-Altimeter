@@ -34,7 +34,7 @@
 
 void log(String msg);
 
-typedef enum { kNoEjection, kPyro, kServo } DeploymentType;
+typedef enum { kNoEjection, kPyro, kServo } RecoveryDeviceType;
 
 typedef struct {
   float apogee                 = 0;
@@ -59,7 +59,7 @@ typedef enum { kNone, kActive, kPassive } PeizoStyle;
 
 typedef enum { OFF = 0, ON = 1 } OnOffState;
 
-using RelayState   = OnOffState;
+using RecoveryDeviceState   = OnOffState;
 using BlinkerState = OnOffState;
 
 #endif  // TYPES_H

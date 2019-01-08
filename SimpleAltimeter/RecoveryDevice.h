@@ -42,16 +42,16 @@ class RecoveryDevice
   int deploymentTime = 0;      // Time at which the chute was deployed
   bool timedReset =
       false;  // True if we've reset the chute relay due to a timeout
-  RelayState relayState = OFF;  // State of the parachute relay pin.  Recorded
+  RecoveryDeviceState deviceState = OFF;  // State of the parachute relay pin.  Recorded
                                 // separately.  To avoid fire.
-  DeploymentType type = kServo;
+  RecoveryDeviceType type = kServo;
   Servo servo;
 
-  byte relayPin = 0;
+  byte gpioPin = 0;
   byte id       = 0;
 
  public:
-  void init(byte id, byte pin, DeploymentType type);
+  void init(byte id, byte pin, RecoveryDeviceType type);
   void enable();
   void disable();
   void reset();

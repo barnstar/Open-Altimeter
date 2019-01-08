@@ -38,11 +38,11 @@
 #include "WebServer.hpp"
 
 #include "../Configuration.h"
-#include "types.h"
 #include "IO/UserInterface.h"
 #include "Settings.hpp"
+#include "types.h"
 
-class FlightController 
+class FlightController
 {
  public:
   static FlightController &shared();
@@ -76,34 +76,38 @@ class FlightController
 
   bool sampleOnNextLoop = false;
 
-  RecoveryDevice devices[ControlChannelCount];
-  
+  RecoveryDevice &getRecoveryDevice(int channel);
+
  private:
   void initialize();
+
+  RecoveryDevice devices[4];
   void initRecoveryDevices();
+  void setMainChannel(int channel);
+  void setDrogueChannel(int channel);
 
   Settings settings;
 
   Altimeter altimeter;
   Imu imu;
 
-  int lastApogee          = 0;
-  bool refreshInterface   = false;
+  int lastApogee        = 0;
+  bool refreshInterface = false;
 
-  RecoveryDevice mainChute;
-  RecoveryDevice drogueChute;
+  RecoveryDevice *mainChute;
+  RecoveryDevice *drogueChute;
 
   int flightCount        = 0;      // The number of flights recorded in EEPROM
   int resetTime          = 0;      // millis() after starting the current flight
   bool enableBuzzer      = false;  // True if the buzzer should be sounding
   int testFlightTimeStep = 0;
-  bool mpuReady          = false;   // True if the barometer/altimeter is ready
-  bool barometerReady    = false;   // True if the barometer/altimeter is ready
+  bool mpuReady          = false;  // True if the barometer/altimeter is ready
+  bool barometerReady    = false;  // True if the barometer/altimeter is ready
 
   Blinker *blinker;
   Ticker sensorTicker;
-  
-  int logCounterUI = 0;
+
+  int logCounterUI     = 0;
   int logCounterLogger = 0;
 
   UserInterface userInterface;
@@ -117,14 +121,16 @@ class FlightController
 
   bool checkResetPin();
   void blinkLastAltitude();
-  void playReadyTone();
-  Vector getacceleration();
+
   void flightControl();
-  void checkChuteIgnitionTimeout(RecoveryDevice &c, int maxIgnitionTime);
-  void setDeploymentRelay(RelayState relayState, RecoveryDevice &c);
+
+  void checkChuteIgnitionTimeout(RecoveryDevice *c, int maxIgnitionTime);
+  void setRecoveryDeviceState(RecoveryDeviceState deviceState,
+                              RecoveryDevice *c);
+  void resetRecoveryDeviceIfRequired(RecoveryDevice *c);
+
   void recordFlight(FlightData &d);
   void testFlightData(SensorData *d);
-  void resetChuteIfRequired(RecoveryDevice &c);
 };
 
 #endif

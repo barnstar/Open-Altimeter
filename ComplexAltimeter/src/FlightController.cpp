@@ -36,6 +36,7 @@
 FlightController::FlightController() : imu(1000 / SENSOR_READ_DELAY_MS)
 {
   SPIFFS.begin();
+
   Serial.begin(SERIAL_BAUD_RATE);
   DataLogger::sharedLogger();
 
@@ -85,8 +86,6 @@ void FlightController::initialize()
   digitalWrite(STATUS_PIN, LOW);
   digitalWrite(MESSAGE_PIN, HIGH);
 
-  initRecoveryDevices();
-
   barometerReady = altimeter.start();
   mpuReady       = imu.start();
 
@@ -98,20 +97,50 @@ void FlightController::initialize()
   enableBuzzer = false;
 }
 
+
 void FlightController::initRecoveryDevices()
 {
-  //TODO:Load these from settings
-  RecoveryDevice::setOffAngle(kChuteReleaseArmedAngle);
-  RecoveryDevice::setOnAngle(kChuteReleaseTriggeredAngle);
+  bool didRead = false;
+  int onAngle = settings.readIntValue("servoOnAngle", &didRead);
+  if(!didRead) {
+    onAngle = kChuteReleaseTriggeredAngle;
+  }
 
-  mainChute.init(2, MAIN_DEPL_RELAY_PIN, MAIN_TYPE);
-  drogueChute.init(1, DROGUE_DEPL_RELAY_PIN, DROGUE_TYPE);
+  didRead = false;
+  int offAngle = settings.readIntValue("servoOffAngle", &didRead);
+  if(!didRead) {
+    offAngle = kChuteReleaseArmedAngle;
+  }
+
+  RecoveryDevice::setOffAngle(offAngle, false);
+  RecoveryDevice::setOnAngle(onAngle, false);
 
   devices[0].init(ControlChannel1, DEPL_CTL_1, CTL_1_TYPE);
   devices[1].init(ControlChannel2, DEPL_CTL_2, CTL_2_TYPE);
   devices[2].init(ControlChannel3, DEPL_CTL_3, CTL_3_TYPE);
   devices[3].init(ControlChannel4, DEPL_CTL_4, CTL_4_TYPE);
+
+  //These should be software configurable
+  setMainChannel(ControlChannel1);
+  setDrogueChannel(ControlChannel2);
 }
+
+void FlightController::setMainChannel(int channel) 
+{
+    mainChute = &(getRecoveryDevice(channel));
+}
+
+void FlightController::setDrogueChannel(int channel) 
+{
+    drogueChute = &(getRecoveryDevice(channel));
+}
+
+RecoveryDevice &FlightController::getRecoveryDevice(int channel)
+{
+  //Array location is 0 indexed... Channels are 1 indexed.
+  return devices[channel - 1];
+}
+
 
 StatusData const &FlightController::getStatusData()
 {
@@ -152,6 +181,7 @@ void FlightController::loop()
 {
    if(!interfaceStarted) {
     interfaceStarted = true;
+    initRecoveryDevices();
     userInterface.start();
    }
   // Ignore the wifis when we're flying.
@@ -222,23 +252,19 @@ void FlightController::reset()
   altimeter.reset();
   imu.reset();
 
-  setDeploymentRelay(OFF, drogueChute);
+  setRecoveryDeviceState(OFF, drogueChute);
   drogueChute.reset();
-  setDeploymentRelay(OFF, mainChute);
+  setRecoveryDeviceState(OFF, mainChute);
   mainChute.reset();
 
   testFlightTimeStep = 0;
   blinker->cancelSequence();
   enableBuzzer = true;
-  /// playReadyTone();
   enableBuzzer = false;
   flightState  = kReadyToFly;
   DataLogger::log(F("Ready To Fly..."));
 }
 
-void FlightController::playReadyTone() { blinker->blinkValue(3, 400, false); }
-
-Vector FlightController::getacceleration() { return Vector(0, 0, 0); }
 
 void FlightController::runTest()
 {
@@ -319,7 +345,7 @@ void FlightController::flightControl()
     DataLogger::log(F("Descending"));
     flightState = kDescending;
     // Deploy our drogue chute
-    setDeploymentRelay(ON, drogueChute);
+    setRecoveryDeviceState(ON, drogueChute);
     flightData.drogueEjectionAltitude = altitude;
     DataLogger::sharedLogger().logDataPoint(dp, false);
   } else if (flightState == kDescending &&
@@ -332,21 +358,21 @@ void FlightController::flightControl()
     DataLogger::sharedLogger().endDataRecording(flightData, flightCount);
     server.bindFlight(flightCount);
 
-    DataLogger::log(F("Resetting Relays"));
-    resetChuteIfRequired(drogueChute);
-    resetChuteIfRequired(mainChute);
+    DataLogger::log(F("Resetting Pyro"));
+    resetRecoveryDeviceIfRequired(drogueChute);
+    resetRecoveryDeviceIfRequired(mainChute);
     DataLogger::log(F("Relays Reset"));
     enableBuzzer     = true;
   }
 
   // Main chute deployment at kDeployment Altitude
-  if ((flightState == kDescending) && !mainChute.deployed &&
+  if ((flightState == kDescending) && !mainChute->deployed &&
       altitude < deploymentAltitude) {
     // If we're descening and we're below our deployment altitude, deploy the
     // chute!
     flightData.ejectionAltitude = altitude;
     DataLogger::log(F("Deploy Main"));
-    setDeploymentRelay(ON, mainChute);
+    setRecoveryDeviceState(ON, mainChute);
   }
 
   // Safety measure in case we don't switch to the onGround state.  This will
@@ -356,37 +382,36 @@ void FlightController::flightControl()
   checkChuteIgnitionTimeout(drogueChute, MAX_FIRE_TIME);
 }
 
-void FlightController::resetChuteIfRequired(RecoveryDevice &c)
+void FlightController::resetRecoveryDeviceIfRequired(RecoveryDevice *c)
 {
   if (c.type == kPyro) {
-    setDeploymentRelay(OFF, c);
-    c.reset();
+    setRecoveryDeviceState(OFF, c);
+    c->reset();
   }
 }
 
-void FlightController::checkChuteIgnitionTimeout(RecoveryDevice &c,
+void FlightController::checkChuteIgnitionTimeout(RecoveryDevice *c,
                                                  int maxIgnitionTime)
 {
   if (!c.timedReset && c.deployed &&
-      millis() - c.deploymentTime > maxIgnitionTime && c.type == kPyro) {
-    int chuteId = c.id;
-    setDeploymentRelay(OFF, c);
-    c.timedReset = true;
+      millis() - c->deploymentTime > maxIgnitionTime && c->type == kPyro) {
+    setRecoveryDeviceState(OFF, c);
+    c->timedReset = true;
   }
 }
 
-void FlightController::setDeploymentRelay(RelayState relayState,
-                                          RecoveryDevice &c)
+void FlightController::setRecoveryDeviceState(RecoveryDeviceState deviceState,
+                                          RecoveryDevice *c)
 {
-  if (relayState == c.relayState) return;
-  int chuteId = c.id;
+  if (deviceState == c->deviceState) return;
+  int chuteId = c->id;
 
-  switch (relayState) {
+  switch (deviceState) {
     case ON:
-      c.enable();
+      c->enable();
       break;
     case OFF:
-      c.disable();
+      c->disable();
       break;
   }
 }

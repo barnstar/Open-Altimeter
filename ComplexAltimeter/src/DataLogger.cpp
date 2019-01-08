@@ -34,12 +34,18 @@ DataLogger::DataLogger()
 {
   log(F(":: Data Logger Initialized ::"));
 
+  FSInfo fs_info;
+  SPIFFS.info(fs_info);
+  Serial.println(String("FS Size: ") + String(fs_info.totalBytes));
+  Serial.println(String("FS Avail: ") + String(fs_info.usedBytes));
+
   Dir dir = SPIFFS.openDir("/");
   while (dir.next()) {
     Serial.print(dir.fileName() + "  size:");
     File f = dir.openFile("r");
     Serial.println(f.size());
   }
+
   printFlightData();
   clearBuffer();
 }

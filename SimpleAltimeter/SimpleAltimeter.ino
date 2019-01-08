@@ -182,9 +182,9 @@ bool checkResetPin()
     blinker.cancelSequence();
     reset(&flightData);
     resetTime = millis();
-    setDeploymentRelay(OFF, &drogueChute);
+    setRecoveryDeviceState(OFF, &drogueChute);
     drogueChute.reset();
-    setDeploymentRelay(OFF, &mainChute);
+    setRecoveryDeviceState(OFF, &mainChute);
     mainChute.reset();
     testFlightTimeStep = 0;
     playReadyTone();
@@ -281,7 +281,7 @@ void flightControl(SensorData *d)
     flightState = kDescending;
 
     // Deploy our drogue chute
-    setDeploymentRelay(ON, &drogueChute);
+    setRecoveryDeviceState(ON, &drogueChute);
     flightData.drogueEjectionAltitude = altitude;
   } else if (flightState == kDescending &&
              altitude < FLIGHT_END_THRESHOLD_ALT) {
@@ -294,8 +294,8 @@ void flightControl(SensorData *d)
 
     // Reset the pyro charges.  Leave chute releases open.  Start the locator
     // beeper and start blinking...
-    resetChuteIfRequired(&drogueChute);
-    resetChuteIfRequired(&mainChute);
+    resetRecoveryDeviceIfRequired(&drogueChute);
+    resetRecoveryDeviceIfRequired(&mainChute);
   }
 
   // Main chute deployment at kDeployment Altitude.
@@ -306,7 +306,7 @@ void flightControl(SensorData *d)
     // If we're descening and we're below our deployment altitude, deploy the
     // chute!
     flightData.ejectionAltitude = altitude;
-    setDeploymentRelay(ON, &mainChute);
+    setRecoveryDeviceState(ON, &mainChute);
   }
 
   // Safety measure in case we don't switch to the onGround state.  This will
@@ -316,10 +316,10 @@ void flightControl(SensorData *d)
   checkChuteIgnitionTimeout(&drogueChute, MAX_FIRE_TIME);
 }
 
-void resetChuteIfRequired(RecoveryDevice *c)
+void resetRecoveryDeviceIfRequired(RecoveryDevice *c)
 {
   if (c->type == kPyro) {
-    setDeploymentRelay(OFF, c);
+    setRecoveryDeviceState(OFF, c);
     c->reset();
   }
 }
@@ -329,17 +329,17 @@ void checkChuteIgnitionTimeout(RecoveryDevice *c, int maxIgnitionTime)
   if (!c->timedReset && c->deployed &&
       millis() - c->deploymentTime > maxIgnitionTime && c->type == kPyro) {
     int chuteId = c->id;
-    setDeploymentRelay(OFF, c);
+    setRecoveryDeviceState(OFF, c);
     c->timedReset = true;
   }
 }
 
-void setDeploymentRelay(RelayState relayState, RecoveryDevice *c)
+void setRecoveryDeviceState(RecoveryDeviceState deviceState, RecoveryDevice *c)
 {
-  if (relayState == c->relayState) return;
+  if (deviceState == c->deviceState) return;
   int chuteId = c->id;
 
-  switch (relayState) {
+  switch (deviceState) {
     case ON:
       c->enable();
       break;

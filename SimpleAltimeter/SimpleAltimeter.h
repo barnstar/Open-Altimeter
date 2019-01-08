@@ -41,7 +41,7 @@ void flightControllInterrupt();
 void readSensorData(SensorData *d);
 void flightControl(SensorData *d);
 
-void setDeploymentRelay(RelayState relayState, RecoveryDevice *c);
+void setRecoveryDeviceState(RecoveryDeviceState deviceState, RecoveryDevice *c);
 
 void testFlightData(SensorData *d);
 

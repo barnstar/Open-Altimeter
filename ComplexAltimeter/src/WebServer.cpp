@@ -133,7 +133,7 @@ void WebServer::handleFlight()
   DataLogger::log("Reading " + path);
 
   pageBuilder.startPageStream(&server, "");
-  pageBuilder.sendHeaders();
+  pageBuilder.sendRawText(HtmlHtml);
   //Send the flight data as a JSON object
   pageBuilder.sendRawText("<script>");
   pageBuilder.sendFileRaw(path);
@@ -193,11 +193,11 @@ void WebServer::handleConfigSetting(String &arg, String &val)
     FlightController::shared().setDeploymentAltitude(deplAlt);
   }else if(arg == String("testChannel")) {
     uint channel = val.toInt();
-    if(channel >= ControlChannelCount) {
+    if(channel < 1 || channel > 4) {
       DataLogger::log(F("Invalid channel number"));
       return;
     };
-    RecoveryDevice &d = FlightController::shared().devices[channel];
+    RecoveryDevice &d = FlightController::shared().getRecoveryDevice(channel);
     if(d.deployed) {
       d.disable();
     }else{
@@ -205,10 +205,10 @@ void WebServer::handleConfigSetting(String &arg, String &val)
     }
   }else if(arg == String("onAngle")) {
     uint angle = val.toInt();
-    RecoveryDevice::setOnAngle(angle);
+    RecoveryDevice::setOnAngle(angle, true);
   }else if(arg == String("offAngle")) {
     uint angle = val.toInt();
-    RecoveryDevice::setOffAngle(angle);
+    RecoveryDevice::setOffAngle(angle, true);
   }
 }
 
@@ -248,15 +248,11 @@ void PageBuilder::startPageStream(ESP8266WebServer *s, const String &title)
 
 void PageBuilder::sendFileRaw(const String &path)
 {
-  const size_t buffer_size = 256;
-  File f                   = SPIFFS.open(path, "r");
-  char buffer[buffer_size];
-
+  File f = SPIFFS.open(path, "r");
   if (f) {
     while (f.available()) {
-      size_t read      = f.readBytes(buffer, buffer_size - 1);
-      buffer[read + 1] = 0;
-      sendRawText(String(buffer));
+      String line = f.readStringUntil('\n');
+      sendRawText(line);
     }
     f.close();
   }

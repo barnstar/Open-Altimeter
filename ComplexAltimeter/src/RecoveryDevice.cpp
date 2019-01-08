@@ -33,12 +33,16 @@
 #endif
 #include "types.h"
 
-void RecoveryDevice::init(byte id, byte pin, DeploymentType type)
+void RecoveryDevice::init(byte id, byte pin, RecoveryDeviceType type)
 {
-  // log("Init RD " + String(id) + " p:" + String(pin));
-  this->relayPin = pin;
-  this->id       = id;
-  this->type     = type;
+  if(this->pin && this->type == kServo) {
+    servo.detach(this->pin);
+  }
+
+  this->gpioPin = pin;
+  this->id      = id;
+  this->type    = type;
+
   switch (type) {
     case kPyro:
       pinMode(pin, OUTPUT);
@@ -49,11 +53,13 @@ void RecoveryDevice::init(byte id, byte pin, DeploymentType type)
     case kNoEjection:
       break;
   }
+
   reset();
 };
 
-void RecoveryDevice::setServoAngle(int angle) { 
-  if(type == kServo) {
+void RecoveryDevice::setServoAngle(int angle)
+{
+  if (type == kServo) {
     servo.write(angle);
   }
 }
@@ -62,10 +68,10 @@ void RecoveryDevice::enable()
 {
   deployed       = true;
   deploymentTime = millis();
-  relayState     = ON;
+  deviceState    = ON;
   switch (type) {
     case kPyro:
-      digitalWrite(relayPin, HIGH);
+      digitalWrite(gpioPin, HIGH);
       break;
     case kServo:
       setServoAngle(onAngle);
@@ -78,11 +84,11 @@ void RecoveryDevice::enable()
 
 void RecoveryDevice::disable()
 {
-  deployed   = false;
-  relayState = OFF;
+  deployed    = false;
+  deviceState = OFF;
   switch (type) {
     case kPyro:
-      digitalWrite(relayPin, LOW);
+      digitalWrite(gpioPin, LOW);
       break;
     case kServo:
       setServoAngle(offAngle);

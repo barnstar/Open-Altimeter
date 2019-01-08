@@ -34,10 +34,10 @@
 #endif
 #include "types.h"
 
-void RecoveryDevice::init(byte id, byte pin, DeploymentType type)
+void RecoveryDevice::init(byte id, byte pin, RecoveryDeviceType type)
 {
   //log("Init RD " + String(id) + " p:" + String(pin));
-  this->relayPin = pin;
+  this->gpioPin = pin;
   this->id       = id;
   this->type     = type;
   switch (type) {
@@ -57,10 +57,10 @@ void RecoveryDevice::enable()
 {
   deployed       = true;
   deploymentTime = millis();
-  relayState     = ON;
+  deviceState     = ON;
   switch (type) {
     case kPyro:
-      digitalWrite(relayPin, HIGH);
+      digitalWrite(gpioPin, HIGH);
       ;
       break;
     case kServo:
@@ -75,10 +75,10 @@ void RecoveryDevice::enable()
 void RecoveryDevice::disable()
 {
   deployed   = false;
-  relayState = OFF;
+  deviceState = OFF;
   switch (type) {
     case kPyro:
-      digitalWrite(relayPin, LOW);
+      digitalWrite(gpioPin, LOW);
       ;
       break;
     case kServo:
