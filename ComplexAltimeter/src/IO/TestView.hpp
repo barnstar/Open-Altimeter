@@ -27,18 +27,16 @@
 #ifndef TESTVIEW_H
 #define TESTVIEW_H
 
+#include "../RecoveryDevice.h"
 #include "../types.h"
 #include "View.hpp"
 
-
-
+#define kOptionCount 4
 
 class TestView : public View
 {
  public:
-  TestView(Display &displayRef) : View(displayRef){
-      initRecoveryDevices();
-  };
+  TestView(Display &displayRef) : View(displayRef){};
 
   void shortPressAction();
   void longPressAction();
@@ -46,8 +44,10 @@ class TestView : public View
   void dismiss();
 
  private:
-   RecoveryDevice *testDevice;
-   ControlChannel activeOption = ControlChannel1;
+  RecoveryDevice *testDevice = nullptr;
+  uint8_t activeOption                 = 0;
+  ControlChannel options[kOptionCount] = {ControlChannel1, ControlChannel2,
+                                          ControlChannel3, ControlChannel4};
 };
 
 #endif

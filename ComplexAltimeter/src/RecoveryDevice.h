@@ -29,12 +29,16 @@
 #define RECOVERYDEVICE_H
 
 #include <Servo.h>
-#include "types.h"
 
-class RecoveryDevice;
+#ifdef IS_SIMPLE_ALT
+#include "Configuration.h"
+#else
+#include "../Configuration.h"
+#endif
 
-RecoveryDevice::offAngle = kChuteReleaseArmedAngle;
-RecoveryDevice::onAngle = kChuteReleaseTriggeredAngle;
+
+ static int offAngle;
+ static int onAngle;
 
 class RecoveryDevice
 {
@@ -42,15 +46,13 @@ class RecoveryDevice
   RecoveryDevice() { this->reset(); };
   ~RecoveryDevice(){};
 
-  static int offAngle;
-  static int onAngle;
 
-  static setOnAngle(int angle) {
+  static void setOnAngle(int angle) {
       onAngle = angle;
       //TODO: Save to settings
   }
 
-  static setOffAngle(int angle) {
+  static void setOffAngle(int angle) {
       offAngle = angle;
       //TODO: Save to settings
   }

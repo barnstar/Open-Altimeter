@@ -81,8 +81,8 @@ Heading Imu::getRelativeHeading()
 void Imu::calibrate() 
 {
   for(int i=0;i<20;i++) {
-    udpate();
-    delay(20);
+    update();
+    delay(SENSOR_READ_DELAY_MS);
   }
   referenceHeading = heading;
 }

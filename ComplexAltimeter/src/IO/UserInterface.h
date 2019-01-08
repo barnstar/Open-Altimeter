@@ -50,7 +50,7 @@ typedef Adafruit_SH1106 Display;
 #include "TestView.hpp"
 #include "View.hpp"
 
-#define kMaxViews 6
+#define kMaxViews 8
 
 class UserInterface : public ButtonInputDelegate
 {

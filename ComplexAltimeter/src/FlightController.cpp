@@ -98,7 +98,7 @@ void FlightController::initialize()
   enableBuzzer = false;
 }
 
-void TestView::initRecoveryDevices()
+void FlightController::initRecoveryDevices()
 {
   //TODO:Load these from settings
   RecoveryDevice::setOffAngle(kChuteReleaseArmedAngle);
@@ -107,10 +107,10 @@ void TestView::initRecoveryDevices()
   mainChute.init(2, MAIN_DEPL_RELAY_PIN, MAIN_TYPE);
   drogueChute.init(1, DROGUE_DEPL_RELAY_PIN, DROGUE_TYPE);
 
-  device[0].init(ControlChannel1, DEPL_CTL_1, CTL_1_TYPE);
-  device[1].init(ControlChannel2, DEPL_CTL_2, CTL_2_TYPE);
-  device[2].init(ControlChannel3, DEPL_CTL_3, CTL_3_TYPE);
-  device[3].init(ControlChannel4, DEPL_CTL_4, CTL_4_TYPE);
+  devices[0].init(ControlChannel1, DEPL_CTL_1, CTL_1_TYPE);
+  devices[1].init(ControlChannel2, DEPL_CTL_2, CTL_2_TYPE);
+  devices[2].init(ControlChannel3, DEPL_CTL_3, CTL_3_TYPE);
+  devices[3].init(ControlChannel4, DEPL_CTL_4, CTL_4_TYPE);
 }
 
 StatusData const &FlightController::getStatusData()
@@ -121,7 +121,7 @@ StatusData const &FlightController::getStatusData()
   statusData.mpuReady      = mpuReady;
   statusData.padAltitude   = altimeter.referenceAltitude();
   statusData.lastApogee    = flightData.apogee;
-  statusData.referencePressure = altimeter.referencePressure();
+  statusData.referencePressure = altimeter.getRefPressure();
   
   return statusData;
 }

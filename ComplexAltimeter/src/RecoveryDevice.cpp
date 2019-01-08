@@ -68,7 +68,7 @@ void RecoveryDevice::enable()
       digitalWrite(relayPin, HIGH);
       break;
     case kServo:
-      setServoAngle(kChuteReleaseTriggeredAngle);
+      setServoAngle(onAngle);
       break;
     case kNoEjection:
       break;
@@ -85,7 +85,7 @@ void RecoveryDevice::disable()
       digitalWrite(relayPin, LOW);
       break;
     case kServo:
-      setServoAngle(kChuteReleaseArmedAngle);
+      setServoAngle(offAngle);
       break;
     case kNoEjection:
       break;

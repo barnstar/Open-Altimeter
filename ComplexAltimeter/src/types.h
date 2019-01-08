@@ -83,10 +83,10 @@ struct Vector {
   }
 };
 
-typedef struct {
+struct Heading {
   Heading() {}
 
-  Vector(float r, float p, float y)
+  Heading(float r, float p, float y)
   {
     roll  = r;
     pitch = p;
@@ -106,7 +106,7 @@ typedef struct {
   {
     return String(String(roll) + ":" + String(pitch) + ":" + String(yaw));
   }
-} Heading;
+};
 
 typedef struct {
   double altitude         = 0;

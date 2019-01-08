@@ -29,6 +29,7 @@
 #include <WiFiClient.h>
 #include "../FlightController.hpp"
 
+
 void StatusView::dismiss() {
   //Ugly.. But it will force a refresh
   needsRefresh = true;

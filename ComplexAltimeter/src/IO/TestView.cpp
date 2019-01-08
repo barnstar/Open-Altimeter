@@ -25,26 +25,27 @@
  **********************************************************************************/
 
 #include "TestView.hpp"
+#include "../FlightController.hpp"
 
 void TestView::shortPressAction()
 {
-  if (testDevice->enabled) {
+  if (testDevice->deployed) {
     testDevice->disable();
   }
 
-  activeOption++;
-  if (activeOption == ControlChannelCount) {
-    activeOption = ControlChannel1;
+  activeOption ++;
+  if (activeOption == kOptionCount) {
+    activeOption = 0;
   }
 
   testDevice = &FlightController::shared().devices[activeOption];
   needsRefresh = true;
-  resfresh();
+  refresh();
 }
 
 void TestView::longPressAction()
 {
-  if (testDevice->enabled) {
+  if (testDevice->deployed) {
     testDevice->disable();
   } else {
     testDevice->enable();
@@ -57,15 +58,17 @@ void TestView::refresh()
     return;
   }
 
+  testDevice = &FlightController::shared().devices[activeOption];
+
   setText(F("===::: TEST :::==="), 0, false);
 
-  String labels[TestOptionsCount];
+  String labels[4];
   labels[0] = F("Test Ctl 1");
   labels[1] = F("Test Ctl 2");
   labels[2] = F("Test Ctl 3");
   labels[3] = F("Test Ctl 4");
 
-  labels[activeOption] = String("**") + labels[activeOption] + String("**");
+  labels[activeOption] = String("::") + labels[activeOption] + String("::");
   for (int i = 0; i < 4; i++) {
     setText(labels[i], i + 1, false);
   }
@@ -75,9 +78,10 @@ void TestView::refresh()
 
 void TestView::dismiss()
 {
-  if (testDevice->enabled) {
+  needsRefresh = true;
+  if (testDevice->deployed) {
     testDevice->disable();
     return;
   }
-  activeOption = 0;
+  activeOption = ControlChannel1;
 }

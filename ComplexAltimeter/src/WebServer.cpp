@@ -132,14 +132,13 @@ void WebServer::handleFlight()
   String path = server.uri();
   DataLogger::log("Reading " + path);
 
-  pageBuilder.startPageStream(&server, "Flight :" + path + "<br>\n");
+  pageBuilder.startPageStream(&server, "");
   pageBuilder.sendHeaders();
   //Send the flight data as a JSON object
-  pageBuilder.sendRawText, "<script>");
-  pageBuilder.sendFilePretty, path);
-  pageBuilder.sendRawText, "</script>");
+  pageBuilder.sendRawText("<script>");
+  pageBuilder.sendFileRaw(path);
   //Send the graphing fragment
-  pageBuilder.sendFilePretty("/graph.html");
+  pageBuilder.sendFileRaw("/graph.html");
   pageBuilder.closePageStream();
 }
 
@@ -195,11 +194,11 @@ void WebServer::handleConfigSetting(String &arg, String &val)
   }else if(arg == String("testChannel")) {
     uint channel = val.toInt();
     if(channel >= ControlChannelCount) {
-      DataLogger.log(F("Invalid channel number"));
+      DataLogger::log(F("Invalid channel number"));
       return;
     };
-    RecoveryDevice &d = FlightController.shared().devices[channel];
-    if(d.enabled()) {
+    RecoveryDevice &d = FlightController::shared().devices[channel];
+    if(d.deployed) {
       d.disable();
     }else{
       d.enable();

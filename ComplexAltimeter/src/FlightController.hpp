@@ -81,6 +81,7 @@ class FlightController
  private:
   void initialize();
   void initRecoveryDevices();
+
   Settings settings;
 
   Altimeter altimeter;
