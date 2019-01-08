@@ -1,3 +1,4 @@
+
 /*********************************************************************************
  * Open Altimeter
  *
@@ -24,42 +25,39 @@
  * SOFTWARE.
  **********************************************************************************/
 
-#include "StatusView.hpp"
-#include <ESP8266WiFi.h>
-#include <WiFiClient.h>
-#include "../FlightController.hpp"
+#include "Settings.hpp"
+#include "FS.h"
 
-void StatusView::dismiss() {
-  //Ugly.. But it will force a refresh
-  needsRefresh = true;
-}
-
-void StatusView::refresh()
+String Settings::readStringValue(const String &key, bool &success)
 {
-  setInfo(FlightController::shared().getStatusData());
-}
-
-void StatusView::setInfo(StatusData const &data)
-{
-  if(!lastStatus.isEqual(data) || needsRefresh) {
-    lastStatus = data;
-
-    setText(F("==:::: Status ::::=="), 0, false);
-    setText(flightStateString(data.status), 1, false);
-    String sensorStatus =
-        (data.baroReady ? String(F("Baro OK")) : String(F("Baro Fail")) + String(F(":")) ) +
-        (data.mpuReady ? String(F("IMU OK")) : String(F("IMU Fail")) );
-    setText(sensorStatus, 2, false);
-    setText((String("Depl:") + String(data.deploymentAlt) + String("m")), 3,
-            false);
-    setText((String("Pressure:") + String(data.referencePressure) + String("m")), 4,
-            false);
-    setText(WiFi.localIP().toString(), 5, false);
-    update();
-    needsRefresh = false;
+  String retVal;
+  String fName = "/" + key + ".cfg";
+  File f       = SPIFFS.open(fName, "r");
+  if (f.available()) {
+    retVal = f.readStringUntil('\n');
+    success     = true;
+  } else {
+    success = false;
   }
+  f.close();
+  return retVal;
 }
 
-void StatusView::shortPressAction() { FlightController::shared().reset(); }
+void Settings::writeStringValue(const String &value, const String &key)
+{
+  String fName = "/" + key + ".cfg";
+  File f       = SPIFFS.open(fName, "w");
+  f.println(value);
+  f.close();
+}
 
-void StatusView::longPressAction() { FlightController::shared().stop(); }
+int Settings::readIntValue(const String &key, bool &success)
+{
+  String val = readStringValue(key, success);
+  return val.toInt();
+}
+
+void Settings::writeIntValue(int value, const String &key)
+{
+  writeStringValue(String(value), key);
+}

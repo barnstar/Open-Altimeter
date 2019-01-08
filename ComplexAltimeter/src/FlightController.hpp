@@ -40,6 +40,7 @@
 #include "../Configuration.h"
 #include "types.h"
 #include "IO/UserInterface.h"
+#include "Settings.hpp"
 
 class FlightController 
 {
@@ -80,6 +81,7 @@ class FlightController
  private:
   void initialize();
   void initRecoveryDevices();
+  Settings settings;
 
   Altimeter altimeter;
   Imu imu;

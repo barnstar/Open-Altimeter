@@ -38,13 +38,13 @@ bool Altimeter::start()
     digitalWrite(STATUS_PIN, HIGH);
 #endif
     digitalWrite(MESSAGE_PIN, LOW);
-    DataLogger::log("Barometer Started");
+    DataLogger::log(F("Barometer Started"));
     barometerReady = true;
     reset();
   } else {
     // If the unit starts with the status pin off and the message pin on,
     // the barometer failed to initialize
-    DataLogger::log("Barometer Init Fail");
+    DataLogger::log(F("Barometer Init Fail"));
   }
   return ready;
 }
@@ -56,7 +56,7 @@ void Altimeter::reset()
 
   baselinePressure = pressure();
   lastRefreshTime  = 0;
-  DataLogger::log(String("Barometer reset: ") + String(baselinePressure));
+  DataLogger::log(String(F("Barometer reset: ")) + String(baselinePressure));
 }
 
 double Altimeter::referenceAltitude() { return refAltitude; }

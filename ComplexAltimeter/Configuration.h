@@ -41,7 +41,7 @@
 #define kDispHeight 64
 
 // Set this to 0 to disable the display while in flight
-#define RUN_DISPLAY_WHILE_FLYING 1
+#define RUN_DISPLAY_WHILE_FLYING 0
 
 // Recording will start at FLIGHT_START_THRESHOLD_ALT m and we'll assume we're
 // on the ground at FLIGHT_END_THRESHOLD_ALT m. In theory, these could be lower,

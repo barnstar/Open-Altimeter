@@ -45,6 +45,16 @@ FlightController::FlightController() : imu(1000 / SENSOR_READ_DELAY_MS)
 
   this->initialize();
   DataLogger::log("Flight Controller Initialized");
+
+  bool success = false;
+  int deplAlt = settings.readIntValue(F("DepAlt"), success);
+  if(success) {
+    DataLogger::log("Read Deployment Altitude");
+    deploymentAltitude = deplAlt;
+  }else{
+    DataLogger::log("Set default deployment altitude 100");
+    settings.writeIntValue(100, F("DepAlt"));
+  }
 }
 
 FlightController::~FlightController() { delete blinker; }
@@ -118,7 +128,7 @@ StatusData const &FlightController::getStatusData()
 
 String FlightController::getStatus()
 {
-  String statusStr = (flightState == kReadyToFly ? "Ready To Fly" : "Waiting");
+  String statusStr = (flightState == kReadyToFly ? F("Ready To Fly") : F("Waiting"));
 
   String ret;
   ret += "Status :" + statusStr + "<br/>";
@@ -156,27 +166,31 @@ void FlightController::loop()
 
   if (flightState == kReadyToFly && altimeter.isReady() &&
       !sensorTicker.active()) {
-    DataLogger::log("Starting Ticker");
+    DataLogger::log(F("Starting Ticker"));
     blinker->cancelSequence();
+    blinker->blinkValue(2, 300, true);
     DataLogger::sharedLogger().openFlightDataFileWithIndex(flightCount);
     sensorTicker.attach_ms(SENSOR_READ_DELAY_MS, readSensors, this);
     digitalWrite(READY_PIN, HIGH);
   }
 
+  if(flightState == kAscending && blinker->isBlinking()) {
+    blinker->cancelSequence();
+  }
+
   // Blink out the last recorded apogee on the message pin
   if (flightState == kOnGround && sensorTicker.active()) {
-    DataLogger::log("Stopping Ticker");
+    DataLogger::log(F("Stopping Ticker"));
     sensorTicker.detach();
+    blinker->cancelSequence();
     digitalWrite(READY_PIN, LOW);
     if (lastApogee) {
-      blinker->cancelSequence();
-      DataLogger::log(String("Starting Blinker: ") + String(lastApogee));
+      DataLogger::log(String(F("Starting Blinker: ")) + String(lastApogee));
       blinker->blinkValue(lastApogee, BLINK_SPEED_MS, true);
       lastApogee = 0;
     }
   }
 
-  //
   userInterface.eventLoop(true);
 }
 
@@ -184,6 +198,7 @@ void FlightController::setDeploymentAltitude(int altitude)
 {
   DataLogger::log("Deployment Altitude Set to " + String(altitude));
   deploymentAltitude = altitude;
+  settings.writeIntValue(deploymentAltitude, F("DepAlt"));
 }
 
 void FlightController::resetAll()
@@ -218,7 +233,7 @@ void FlightController::reset()
   /// playReadyTone();
   enableBuzzer = false;
   flightState  = kReadyToFly;
-  DataLogger::log("Ready To Fly...");
+  DataLogger::log(F("Ready To Fly..."));
 }
 
 void FlightController::playReadyTone() { blinker->blinkValue(3, 400, false); }
@@ -270,8 +285,8 @@ void FlightController::flightControl()
   }
 
   // Log slightly more to the file system
-  sampleDelay      = (flightState != kDescending) ? 3 : 6;
-  logCounterLogger = !logCounterUI ? 3 : logCounterUI - 1;
+  sampleDelay      = (flightState == kAscending) ? 2 : 6;
+  logCounterLogger = !logCounterLogger ? 3 : logCounterLogger - 1;
   if (0 == logCounterLogger && flightState != kOnGround) {
     DataLogger::sharedLogger().logDataPoint(dp, false);
   }
@@ -290,35 +305,37 @@ void FlightController::flightControl()
 
   if (flightState == kReadyToFly && altitude > FLIGHT_START_THRESHOLD_ALT) {
     // Transition to "InFlight" if we've exceeded the threshold altitude.
-    DataLogger::log("Flight Started - Alt trigger");
+    DataLogger::log(F("Flight Started"));
     flightState               = kAscending;
     flightData.altTriggerTime = millis() - resetTime;
     // For testing - to indicate we're in the ascending mode
     digitalWrite(READY_PIN, LOW);
     digitalWrite(MESSAGE_PIN, HIGH);
+    DataLogger::sharedLogger().logDataPoint(dp, true);
   } else if (flightState == kAscending &&
              altitude < (flightData.apogee - DESCENT_THRESHOLD)) {
     // Transition to kDescendining if we've we're DESCENT_THRESHOLD meters below
     // our apogee
-    DataLogger::log("Descending");
+    DataLogger::log(F("Descending"));
     flightState = kDescending;
     // Deploy our drogue chute
     setDeploymentRelay(ON, drogueChute);
     flightData.drogueEjectionAltitude = altitude;
+    DataLogger::sharedLogger().logDataPoint(dp, false);
   } else if (flightState == kDescending &&
              altitude < FLIGHT_END_THRESHOLD_ALT) {
     flightState = kOnGround;
-    DataLogger::log("Landed");
+    DataLogger::log(F("Landed"));
     lastApogee = flightData.apogee;
 
     DataLogger::log(flightData.toString(flightCount));
     DataLogger::sharedLogger().endDataRecording(flightData, flightCount);
     server.bindFlight(flightCount);
 
-    DataLogger::log("Resetting Relays");
+    DataLogger::log(F("Resetting Relays"));
     resetChuteIfRequired(drogueChute);
     resetChuteIfRequired(mainChute);
-    DataLogger::log("Relays Reset");
+    DataLogger::log(F("Relays Reset"));
     enableBuzzer     = true;
   }
 
@@ -328,7 +345,7 @@ void FlightController::flightControl()
     // If we're descening and we're below our deployment altitude, deploy the
     // chute!
     flightData.ejectionAltitude = altitude;
-    DataLogger::log("Deploy Main");
+    DataLogger::log(F("Deploy Main"));
     setDeploymentRelay(ON, mainChute);
   }
 

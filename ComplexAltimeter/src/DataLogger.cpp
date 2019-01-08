@@ -32,7 +32,7 @@
 
 DataLogger::DataLogger()
 {
-  log(":: Data Logger Initialized ::");
+  log(F(":: Data Logger Initialized ::"));
 
   Dir dir = SPIFFS.openDir("/");
   while (dir.next()) {
@@ -46,19 +46,19 @@ DataLogger::DataLogger()
 
 void DataLogger::resetAll()
 {
-  log("Erasing all flight data");
+  log(F("Erasing all flight data"));
   File f = SPIFFS.open("/flights.txt", "w");
-  log("Erasing all flight data");
+  log(F("Erasing all flight data"));
   f.print("");
   f.close();
 
   f = SPIFFS.open("/apogeeHistory.txt", "w");
-  log("Erasing all flight history");
+  log(F("Erasing all flight history"));
   f.print("");
   f.close();
 
   f = SPIFFS.open("/flightCount.txt", "w");
-  log("Setting flight count to zero");
+  log(F("Setting flight count to zero"));
   f.print("");
   f.close();
 
@@ -84,10 +84,14 @@ void DataLogger::logDataPoint(FlightDataPoint &p, bool isTriggerPoint)
     int idx      = dataIndex;
     int logCount = MIN(dataPointsLogged, dataBufferLen);
     for (int i = 0; i < logCount; i++) {
-      dataBuffer[idx].toJson();
+      if(i) {
+        dataFile.print(",");
+      }
+      dataFile.println(dataBuffer[idx].toJson());
       idx = (idx == dataBufferLen) ? 0 : idx + 1;
     }
   } else if (triggerIndex != -1) {
+    dataFile.print(",");
     dataFile.println(p.toJson());
   } else {
     dataBuffer[dataIndex] = p;
@@ -111,15 +115,15 @@ void DataLogger::readFlightDetails(int index, PrintCallback callback)
 
 void DataLogger::openFlightDataFileWithIndex(int index)
 {
-  DataLogger::log("Opening flight data file..");
+  DataLogger::log(F("Opening flight data file.."));
   String path = String(FLIGHTS_DIR) + String("/") + String(index);
   dataFile    = SPIFFS.open(path, "w");
-  dataFile.print("var flightData = { data\":[");
+  dataFile.print("var flightData = { \"data\":[");
 }
 
 bool DataLogger::closeFlightDataFile()
 {
-  DataLogger::log("Closing flight data file..");
+  DataLogger::log(F("Closing flight data file.."));
   dataFile.println("]}\n\n");
   dataFile.close();
   clearBuffer();
@@ -217,7 +221,7 @@ void DataLogger::endDataRecording(FlightData &d, int index)
   f.close();
 
   f               = SPIFFS.open("/flightCount.txt", "w");
-  String indexStr = String(index + 1);
+  String indexStr = String(index);
   f.println(indexStr);
   f.close();
   log("Updated Flight Count: " + indexStr);

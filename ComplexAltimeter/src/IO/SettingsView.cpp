@@ -37,10 +37,10 @@ void SettingsView::refresh()
 {
   if (needsRefresh) {
     String deplAlt =
-        String("Main:" + String(FlightController::shared().deploymentAltitude));
+        String(String(F("Main:")) + String(FlightController::shared().deploymentAltitude));
     setText(F("==::: Settings :::=="), 0, false);
     setText(deplAlt, 1, false);
-    String resetText = resetOnNextLongPress ? "Press Again To Reset" : "Hold To Reset";
+    String resetText = resetOnNextLongPress ? F("Press Again To Reset") : F("Hold To Reset");
     setText(resetText, 2, false);
     update();
     needsRefresh = false;

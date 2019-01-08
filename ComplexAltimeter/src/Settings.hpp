@@ -1,3 +1,4 @@
+
 /*********************************************************************************
  * Open Altimeter
  *
@@ -24,42 +25,17 @@
  * SOFTWARE.
  **********************************************************************************/
 
-#include "StatusView.hpp"
-#include <ESP8266WiFi.h>
-#include <WiFiClient.h>
-#include "../FlightController.hpp"
+#include <Arduino.h>
 
-void StatusView::dismiss() {
-  //Ugly.. But it will force a refresh
-  needsRefresh = true;
-}
-
-void StatusView::refresh()
+class Settings
 {
-  setInfo(FlightController::shared().getStatusData());
-}
+    public:
+    Settings(){}
+    ~Settings(){}
 
-void StatusView::setInfo(StatusData const &data)
-{
-  if(!lastStatus.isEqual(data) || needsRefresh) {
-    lastStatus = data;
+    String readStringValue(const String &key, bool &success);
+    void writeStringValue(const String &val, const String &key);
 
-    setText(F("==:::: Status ::::=="), 0, false);
-    setText(flightStateString(data.status), 1, false);
-    String sensorStatus =
-        (data.baroReady ? String(F("Baro OK")) : String(F("Baro Fail")) + String(F(":")) ) +
-        (data.mpuReady ? String(F("IMU OK")) : String(F("IMU Fail")) );
-    setText(sensorStatus, 2, false);
-    setText((String("Depl:") + String(data.deploymentAlt) + String("m")), 3,
-            false);
-    setText((String("Pressure:") + String(data.referencePressure) + String("m")), 4,
-            false);
-    setText(WiFi.localIP().toString(), 5, false);
-    update();
-    needsRefresh = false;
-  }
-}
-
-void StatusView::shortPressAction() { FlightController::shared().reset(); }
-
-void StatusView::longPressAction() { FlightController::shared().stop(); }
+    int readIntValue(const String &key, bool &success);
+    void writeIntValue(int value, const String &key);
+};
