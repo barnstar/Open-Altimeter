@@ -25,6 +25,9 @@
  * SOFTWARE.
  **********************************************************************************/
 
+#ifndef SETTINGS_H
+#define SETTINGS_H
+
 #include <Arduino.h>
 
 class Settings
@@ -39,3 +42,5 @@ class Settings
     int readIntValue(const String &key, bool &success);
     void writeIntValue(int value, const String &key);
 };
+
+#endif

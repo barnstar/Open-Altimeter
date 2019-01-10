@@ -38,8 +38,9 @@ void TestView::shortPressAction()
     activeOption = 0;
   }
 
-  testDevice   = &FlightController::shared().devices[activeOption];
-  needsRefresh = true;
+  ControlChannel c = options[activeOption];
+  testDevice       = &FlightController::shared().getRecoveryDevice(c);
+  needsRefresh     = true;
   refresh();
 }
 
@@ -58,17 +59,17 @@ void TestView::refresh()
     return;
   }
 
-  testDevice = &FlightController::shared().devices[activeOption];
+  ControlChannel c = options[activeOption];
+  testDevice       = &FlightController::shared().getRecoveryDevice(c);
 
   setText(F("===::: TEST :::==="), 0, false);
 
-  labels[activeOption] = String("::") + labels[activeOption] + String("::");
   for (int i = 1; i < 5; i++) {
     String label;
     if (i == activeOption) {
       label = String("::Test Chan ") + String(i) + String("::");
     } else {
-          label =  String("  Test Chan " + String(i);
+      label = String("  Test Chan ") + String(i);
     }
     setText(label, i, false);
   }

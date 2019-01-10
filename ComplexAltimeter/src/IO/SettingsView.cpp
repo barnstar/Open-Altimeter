@@ -37,12 +37,6 @@ void SettingsView::refresh()
 {
   if (needsRefresh) {
 
-  FSInfo fs_info;
-  SPIFFS.info(fs_info);
-  Serial.println(String("FS Size: ") + String(fs_info.totalBytes));
-  Serial.println(String("FS Avail: ") + String(fs_info.usedBytes));
-
-
 
     String deplAlt =
         String(String(F("Main:")) + String(FlightController::shared().deploymentAltitude));
@@ -50,6 +44,12 @@ void SettingsView::refresh()
     setText(deplAlt, 1, false);
     String resetText = resetOnNextLongPress ? F("Press Again To Reset") : F("Hold To Reset");
     setText(resetText, 2, false);
+
+  FSInfo fs_info;
+  SPIFFS.info(fs_info);
+  setText("",3,false)
+  setText(String("FS Size Kb: ") + String(fs_info.totalBytes / 1024),4,false);
+  setText(String("FS Used Kb: ") + String(fs_info.usedBytes / 1024),5,false);
     update();
     needsRefresh = false;
   }

@@ -33,7 +33,7 @@
 #include "Configuration.h"
 #else
 #include "../Configuration.h"
-#include "Settings.h"
+#include "Settings.hpp"
 #endif
 
 static int offAngle;
@@ -74,15 +74,15 @@ class RecoveryDevice
   RecoveryDeviceType type         = kServo;
 
  public:
-  void init(byte id, byte pin, RecoveryDeviceType type);
+  void init(byte id, byte gpioPin, RecoveryDeviceType type);
   void enable();
   void disable();
   void reset();
+  byte id      = 0;
+  byte gpioPin = 0;
 
  private:
   Servo servo;
-  byte gpioPin = 0;
-  byte id      = 0;
 
   void setServoAngle(int angle);
 };

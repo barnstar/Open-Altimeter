@@ -43,24 +43,6 @@ typedef enum { OFF = 0, ON = 1 } OnOffState;
 typedef OnOffState RecoveryDeviceState;
 typedef OnOffState BlinkerState;
 
-struct Quaternion {
-  float q0 = 0;
-  float q2 = 0;
-  float q3 = 0;
-  float q4 = 0;
-
-  Quaternion() {};
-
-  Quaternion(float q0, float q1, float q2, float q3)
-  {
-    this->q1 = q0;
-    this->q2 = q1;
-    this->q3 = q2;
-    this->q4 = q3;
-  }
-
-};
-
 struct Vector {
   float XAxis = 0;
   float YAxis = 0;

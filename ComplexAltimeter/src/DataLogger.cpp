@@ -131,7 +131,7 @@ void DataLogger::closeFlightDataFile(FlightData &d)
 {
   DataLogger::log(F("Closing flight data file.."));
   dataFile.println("],\n");
-  dataFile.println(d.toString());
+  dataFile.println(d.toString(0));
    dataFile.println("}\n");
   dataFile.close();
   clearBuffer();

@@ -33,22 +33,22 @@
 #endif
 #include "types.h"
 
-void RecoveryDevice::init(byte id, byte pin, RecoveryDeviceType type)
+void RecoveryDevice::init(byte id, byte gpioPin, RecoveryDeviceType type)
 {
-  if(this->pin && this->type == kServo) {
-    servo.detach(this->pin);
+  if(this->gpioPin && this->type == kServo) {
+    servo.detach();
   }
 
-  this->gpioPin = pin;
+  this->gpioPin = gpioPin;
   this->id      = id;
   this->type    = type;
 
   switch (type) {
     case kPyro:
-      pinMode(pin, OUTPUT);
+      pinMode(gpioPin, OUTPUT);
       break;
     case kServo:
-      servo.attach(pin);
+      servo.attach(gpioPin);
       break;
     case kNoEjection:
       break;
