@@ -198,7 +198,7 @@ void FlightController::loop()
       !sensorTicker.active()) {
     DataLogger::log(F("Starting Ticker"));
     blinker->cancelSequence();
-    blinker->blinkValue(2, 300, true);
+    blinker->blinkValue(2, 300, true, false);
     DataLogger::sharedLogger().openFlightDataFileWithIndex(flightCount);
     sensorTicker.attach_ms(SENSOR_READ_DELAY_MS, readSensors, this);
     digitalWrite(READY_PIN, HIGH);
@@ -259,8 +259,6 @@ void FlightController::reset()
 
   testFlightTimeStep = 0;
   blinker->cancelSequence();
-  enableBuzzer = true;
-  enableBuzzer = false;
   flightState  = kReadyToFly;
   DataLogger::log(F("Ready To Fly..."));
 }
@@ -287,11 +285,12 @@ void FlightController::readSensorData(SensorData *d)
     d->verticalVelocity = altimeter.verticalVelocity();
   }
   imu.update();
-  d->heading      = imu.getHeading();
+  d->heading      = imu.getRelativeHeading();
   d->acc_vec      = imu.getAcceleration();
   d->gyro_vec     = imu.getGyro();
   d->acceleration = d->acc_vec.length();
 }
+
 
 void FlightController::flightControl()
 {
@@ -327,6 +326,12 @@ void FlightController::flightControl()
     flightData.accTriggerTime = millis() - resetTime;
     digitalWrite(READY_PIN, LOW);
     digitalWrite(MESSAGE_PIN, HIGH);
+  }
+
+  if(flightState == kAscending && acceleration < 11.0 && flightData.burnoutTime == 0) {
+    //We're on the way up, but gravity has taken over... We're now coasting.
+    flightData.burnoutTime = millis() - resetTime;
+    flightData.burnoutAltitude = altitude;
   }
 
   if (flightState == kReadyToFly && altitude > FLIGHT_START_THRESHOLD_ALT) {

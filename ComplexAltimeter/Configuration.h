@@ -49,7 +49,7 @@
 // sufficient for most launch sites.
 const double FLIGHT_START_THRESHOLD_ALT      = 10;
 const double FLIGHT_END_THRESHOLD_ALT        = 30;
-const double FLIGHT_START_THRESHOLD_ACC      = 2.0;  // in G's
+const double FLIGHT_START_THRESHOLD_ACC      = 20.0;  // in mss
 const double FLIGHT_START_THRESHOLD_VELOCITY = 0.5;  // m/s
 const double FLIGHT_END_THRESHOLD_VELOCITY   = 0.0;  // m/s
 

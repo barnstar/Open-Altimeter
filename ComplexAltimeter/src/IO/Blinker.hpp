@@ -57,7 +57,7 @@ class Blinker : public TimerDelegate
 
   ~Blinker() { cancelSequence(); };
 
-  void blinkValue(long value, int speed, bool repeat);
+  void blinkValue(long value, int speed, bool repeat, bool pause = true);
   void cancelSequence();
   bool isBlinking();
 

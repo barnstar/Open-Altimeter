@@ -85,4 +85,5 @@ void Imu::calibrate()
     delay(SENSOR_READ_DELAY_MS);
   }
   referenceHeading = heading;
+  gravityReference = acceleration;
 }

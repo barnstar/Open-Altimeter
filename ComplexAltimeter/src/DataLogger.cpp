@@ -127,10 +127,12 @@ void DataLogger::openFlightDataFileWithIndex(int index)
   dataFile.print("var flightData = { \"data\":[");
 }
 
-bool DataLogger::closeFlightDataFile()
+void DataLogger::closeFlightDataFile(FlightData &d)
 {
   DataLogger::log(F("Closing flight data file.."));
-  dataFile.println("]}\n\n");
+  dataFile.println("],\n");
+  dataFile.println(d.toString());
+   dataFile.println("}\n");
   dataFile.close();
   clearBuffer();
 }
@@ -164,23 +166,6 @@ void DataLogger::readFlightData(PrintCallback callback)
   }
   f.close();
 }
-
-void DataLogger::printBufferData() { readBufferData(logLine); }
-
-void DataLogger::readBufferData(PrintCallback callback)
-{
-  if (triggerIndex == -1) {
-    callback(F("No Data to Log"));
-    return;
-  }
-
-  int idx = triggerIndex;
-  for (int i = 0; i < dataBufferLen; i++) {
-    callback(dataBuffer[idx].toJson());
-    idx = (idx == dataBufferLen) ? 0 : idx + 1;
-  }
-}
-
 void logLine(const String &s) { DataLogger::log(s); }
 
 void DataLogger::log(const String &msg) { Serial.println(msg); }
@@ -210,7 +195,7 @@ String DataLogger::apogeeHistory()
 
 void DataLogger::endDataRecording(FlightData &d, int index)
 {
-  closeFlightDataFile();
+  closeFlightDataFile(d);
 
   File f;
 
@@ -249,6 +234,6 @@ int DataLogger::nextFlightIndex()
 
 String FlightDataPoint::toJson()
 {
-  return String("{\"x\":" + String(ltime) + "," + "\"y\":" + String(altitude) +
+  return String("{\"t\":" + String(ltime) + "," + "\"a\":" + String(altitude) +
                 "," + "\"g\":" + String(acelleration) + "}");
 }

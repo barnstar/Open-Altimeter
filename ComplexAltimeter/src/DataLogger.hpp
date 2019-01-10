@@ -88,12 +88,10 @@ class DataLogger
 
   void clearBuffer();
   void printFlightData();
-  void printBufferData();
 
   void readFlightData(PrintCallback callback);
   void readFlightDetails(int index, PrintCallback callback);
 
-  void readBufferData(PrintCallback callback);
   String apogeeHistory();
 
   int nextFlightIndex();
@@ -113,7 +111,7 @@ class DataLogger
 
   File dataFile;
 
-  bool closeFlightDataFile();
+  void closeFlightDataFile(FlightData &d);
 };
 
 #endif

@@ -1,7 +1,54 @@
+
+
+<script>
+/*
+var flightData = {
+    data: [{ t: 0, a: 0, g: 0 },
+    { t: 20, a: 100, g: 6 },
+    { t: 30, a: 300, g: 6 },
+    { t: 40, a: 300, g: 4 },
+    { t: 120, a: 200, g: -1 },
+    { t: 200, a: 100, g: -1 },
+    { t: 240, a: 50, g: -1 },
+    { t: 280, a: 20, g: -1 },
+    { t: 300, a: 0, g: -1 }],
+    index: 1,
+    apogee: 332,
+    main_alt: 100,
+    drogue_alt: 300,
+    max_acc: 124,
+    apogee_time: 32,
+    burnout_alt: 200,
+    burnout_time: 24,
+    acc_trigger_time: 2,
+    alt_trigger_time: 1,
+};*/
+</script>
+
+<body>
+    <h1>FlightProfile</h1><br>
+    <div id="profileInfo"></div><br>
+    <canvas id="graphCanvas" width="500" height="550" style="border:2px solid #000000;">
+        Your browser does not support the HTML5 canvas tag.</canvas>
+</body>
+
+<script>   
+    var profileString = "<table>";
+    profileString += "<tr><td>Apogee  </td><td>" + flightData.apogee + "m at " + flightData.apogee_time + "ms</td></tr>";
+    profileString += "<tr><td>Burnout  </td><td>" + flightData.burnout_alt + "m at " + flightData.burnout_time + "ms</td></tr>";
+    profileString += "<tr><td>Main Deploy Altitude  </td><td>" + flightData.main_alt +"m</td></tr>";
+    profileString += "<tr><td>Drogue Deploy Altitude  </td><td>" + flightData.drogue_alt +"m</td></tr>";
+    profileString += "<tr><td>Maximum Acceleration  </td><td>" + flightData.max_acc +"mss</td></tr>";
+    profileString += "<tr><td>Barometer Trigger Time  </td><td>" + flightData.alt_trigger_time +"ms</td></tr>";
+    profileString += "<tr><td>Accelerometer Trigger Time  </td><td>" + flightData.acc_trigger_time +"ms</td></tr>";
+    profileString += "</table>";
+    document.getElementById("profileInfo").innerHTML = profileString;
+
+
     var canvas = document.getElementById('graphCanvas');
     var ctx = canvas.getContext("2d");
     canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+    canvas.height = window.innerWidth *.8;
 
     function drawCurve(points, tension) {
 
@@ -54,6 +101,7 @@
             ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, p2.x, p2.y);
         }
         ctx.lineWidth = 3;
+        ctx.strokeStyle = "#22EE00";
         ctx.stroke();
 
         ctx.beginPath();
@@ -73,18 +121,14 @@
             ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, p2.x, p2.y2);
         }
         ctx.lineWidth = 3;
-        ctx.strokeStyle = "#FF0000";
+        ctx.strokeStyle = "#0022FF";
         ctx.stroke();
 
-        var altText = "Apogee: " + maxima.pmax.y + "m";
+        var altText = "Apogee: " + flightData.apogee + "m";
         ctx.fillText(altText, maxima.pmax_norm.x, maxima.pmax_norm.y - 10);
     }
 
     drawCurve(flightData.data, 0.1);
 </script>
 
-<body>
-    <h1>FlightProfile</h1><br>
-    <canvas id="graphCanvas" width="500" height="550" style="border:2px solid #000000;">
-        Your browser does not support the HTML5 canvas tag.</canvas>
-</body>
+

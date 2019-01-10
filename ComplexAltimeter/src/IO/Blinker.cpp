@@ -26,7 +26,7 @@
 
 #include "Blinker.hpp"
 
-void Blinker::blinkValue(long value, int speed, bool repeat)
+void Blinker::blinkValue(long value, int speed, bool repeat, bool pause)
 {
   if (isBlinking()) {
     cancelSequence();
@@ -64,7 +64,7 @@ void Blinker::blinkValue(long value, int speed, bool repeat)
       position += 2;
     }
   }
-  if (repeat) {
+  if (repeat && pause) {
     byte byteNumber    = position / 8;
     byte bitNumber     = position % 8;
     bitMap[byteNumber] = bitMap[byteNumber] | 0b11000000 >> bitNumber;

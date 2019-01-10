@@ -33,9 +33,10 @@
 #include "../types.h"
 #include "lib/MPU9250.h"
 #include "lib/MahonyAHRS.h"
+#include "lib/MadgwickAHRS.h"
 
 typedef MPU9250 ImuSensor;
-typedef Mahony SensorFusion;
+typedef Madgwick SensorFusion;
 
 class Imu
 {
@@ -75,7 +76,9 @@ class Imu
   Heading heading;
   Vector acceleration;
   Vector gyro;
+
   Heading referenceHeading;
+  Vector gravityReference;
 
   ImuSensor imuSensor;
   Mahony sensorFusion;

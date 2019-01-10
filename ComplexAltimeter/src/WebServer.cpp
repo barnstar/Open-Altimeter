@@ -114,7 +114,7 @@ String WebServer::savedFlightLinks()
   String ret;
   Dir dir = SPIFFS.openDir(FLIGHTS_DIR);
   while (dir.next()) {
-    ret += "<a href=\"" + dir.fileName() + "\">" + dir.fileName() + "</a><br>";
+    ret += "<h2><a href=\"" + dir.fileName() + "\">" + dir.fileName() + "</a></h2><br>";
   }
   return ret;
 }
@@ -137,6 +137,7 @@ void WebServer::handleFlight()
   //Send the flight data as a JSON object
   pageBuilder.sendRawText("<script>");
   pageBuilder.sendFileRaw(path);
+  pageBuilder.sendRawText("</script>");
   //Send the graphing fragment
   pageBuilder.sendFileRaw("/graph.html");
   pageBuilder.closePageStream();

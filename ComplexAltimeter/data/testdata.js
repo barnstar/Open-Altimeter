@@ -1,13 +1,22 @@
-var flightData = { 
-    othercrap: {}, 
-    data:  [{t:0,a:0,g:0},
-            {t:20,a:100,g:6}, 
-            {t:30,a:300,g:6}, 
-            {t:40,a:300,g:4}, 
-            {t:120,a:200,g:-1},
-             {t:200,a:100,g:-1}, 
-             {t:240,a:50,g:-1}, 
-             {t:280,a:20,g:-1}, 
-             {t:300,a:0,g:-1}]
+var flightData = {
+    data: [{ t: 0, a: 0, g: 0 },
+    { t: 20, a: 100, g: 6 },
+    { t: 30, a: 300, g: 6 },
+    { t: 40, a: 300, g: 4 },
+    { t: 120, a: 200, g: -1 },
+    { t: 200, a: 100, g: -1 },
+    { t: 240, a: 50, g: -1 },
+    { t: 280, a: 20, g: -1 },
+    { t: 300, a: 0, g: -1 }],
+    index: 1,
+    apogee: 332,
+    main_alt: 100,
+    drogue_alt: 300,
+    max_acc: 124,
+    apogee_time: 32,
+    burnout_alt: 200,
+    burnout_time: 24,
+    acc_trigger_time: 2,
+    alt_trigger_time: 1,
 };
 

@@ -42,6 +42,7 @@ class FlightData
   int apogeeTime     = 0;
   int accTriggerTime = 0;
   int altTriggerTime = 0;
+  int burnoutTime    = 0;
 
   const String toString(int index);
   const bool isValid();
