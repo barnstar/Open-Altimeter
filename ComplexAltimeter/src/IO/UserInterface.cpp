@@ -29,8 +29,9 @@
 
 void UserInterface::eventLoop(bool dispDirty)
 {
-  primaryButton.update();
-  secondaryButton.update();
+  long t = millis();
+  primaryButton.update(t);
+  secondaryButton.update(t);
   if (dispDirty) {
     View *view = views[activeViewIndex];
     view->refresh();

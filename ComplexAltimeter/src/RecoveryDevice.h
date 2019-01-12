@@ -33,7 +33,8 @@
 #include "Configuration.h"
 #else
 #include "../Configuration.h"
-#include "Settings.hpp"
+#include "Settings.h"
+#include "DataLogger.hpp"
 #endif
 
 static int offAngle;
@@ -53,6 +54,7 @@ class RecoveryDevice
       Settings s;
       s.writeIntValue(angle, "servoOnAngle");
     }
+    DataLogger::log(String("On Angle Set to ") + String(angle));
 #endif
   }
 
@@ -64,6 +66,7 @@ class RecoveryDevice
       Settings s;
       s.writeIntValue(angle, "servoOffAngle");
     }
+    DataLogger::log(String("Off Angle Set to ") + String(angle));
 #endif
   }
 
@@ -71,19 +74,19 @@ class RecoveryDevice
   int deploymentTime = 0;      // Time at which the chute was deployed
   bool timedReset    = false;
   RecoveryDeviceState deviceState = OFF;
-  RecoveryDeviceType type         = kServo;
+  RecoveryDeviceType type         = kNoEjection;
 
  public:
-  void init(byte id, byte gpioPin, RecoveryDeviceType type);
+  void init(byte id, byte pin, RecoveryDeviceType type);
   void enable();
   void disable();
   void reset();
-  byte id      = 0;
+
   byte gpioPin = 0;
+  byte id      = 0;
 
  private:
   Servo servo;
-
   void setServoAngle(int angle);
 };
 

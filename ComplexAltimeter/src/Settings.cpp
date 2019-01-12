@@ -28,16 +28,16 @@
 #include "Settings.hpp"
 #include "FS.h"
 
-String Settings::readStringValue(const String &key, bool &success)
+String Settings::readStringValue(const String &key, bool *success)
 {
   String retVal;
   String fName = "/" + key + ".cfg";
   File f       = SPIFFS.open(fName, "r");
   if (f.available()) {
-    retVal = f.readStringUntil('\n');
-    success     = true;
+    retVal   = f.readStringUntil('\n');
+    *success = true;
   } else {
-    success = false;
+    *success = false;
   }
   f.close();
   return retVal;
@@ -51,7 +51,7 @@ void Settings::writeStringValue(const String &value, const String &key)
   f.close();
 }
 
-int Settings::readIntValue(const String &key, bool &success)
+int Settings::readIntValue(const String &key, bool *success)
 {
   String val = readStringValue(key, success);
   return val.toInt();

@@ -21,15 +21,15 @@ class ButtonInput
 	}
 
 	//call in loop();
-	void update()
+	void update(long t)
 	{
 		if (pushedTime == 0 && digitalRead(pin) == LOW)
 		{
-			pushedTime = millis();
+			pushedTime = t;
 		}
 		if (pushedTime && digitalRead(pin) == HIGH)
 		{
-			int onTime = millis() - pushedTime;
+			int onTime = t - pushedTime;
 			if (pushedTime < longPressInterval)
 			{
 				if (shortPressCallback != nullptr)

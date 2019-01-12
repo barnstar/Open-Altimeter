@@ -26,6 +26,8 @@
  **********************************************************************************/
 
 #include "RecoveryDevice.h"
+#include "Arduino.h"
+
 #ifdef IS_SIMPLE_ALT
 #include "Configuration.h"
 #else
@@ -33,22 +35,22 @@
 #endif
 #include "types.h"
 
-void RecoveryDevice::init(byte id, byte gpioPin, RecoveryDeviceType type)
+void RecoveryDevice::init(byte id, byte pin, RecoveryDeviceType type)
 {
-  if(this->gpioPin && this->type == kServo) {
+  if (this->pin && this->type == kServo) {
     servo.detach();
   }
 
-  this->gpioPin = gpioPin;
+  this->gpioPin = pin;
   this->id      = id;
   this->type    = type;
 
   switch (type) {
     case kPyro:
-      pinMode(gpioPin, OUTPUT);
+      pinMode(pin, OUTPUT);
       break;
     case kServo:
-      servo.attach(gpioPin);
+      servo.attach(pin);
       break;
     case kNoEjection:
       break;
@@ -57,12 +59,7 @@ void RecoveryDevice::init(byte id, byte gpioPin, RecoveryDeviceType type)
   reset();
 };
 
-void RecoveryDevice::setServoAngle(int angle)
-{
-  if (type == kServo) {
-    servo.write(angle);
-  }
-}
+void RecoveryDevice::setServoAngle(int angle) { servo.write(angle); }
 
 void RecoveryDevice::enable()
 {
@@ -74,12 +71,12 @@ void RecoveryDevice::enable()
       digitalWrite(gpioPin, HIGH);
       break;
     case kServo:
+      Serial.println("Turning Servo On");
       setServoAngle(onAngle);
       break;
     case kNoEjection:
       break;
   }
-  // log("RD En" + String(id) );
 };
 
 void RecoveryDevice::disable()
@@ -91,12 +88,12 @@ void RecoveryDevice::disable()
       digitalWrite(gpioPin, LOW);
       break;
     case kServo:
+      Serial.println("Turning Servo Off");
       setServoAngle(offAngle);
       break;
     case kNoEjection:
       break;
   }
-  // log("RD Dis" + String(id) );
 };
 
 void RecoveryDevice::reset()

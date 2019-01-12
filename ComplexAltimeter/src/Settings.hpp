@@ -36,10 +36,10 @@ class Settings
     Settings(){}
     ~Settings(){}
 
-    String readStringValue(const String &key, bool &success);
+    String readStringValue(const String &key, bool *success);
     void writeStringValue(const String &val, const String &key);
 
-    int readIntValue(const String &key, bool &success);
+    int readIntValue(const String &key, bool *success);
     void writeIntValue(int value, const String &key);
 };
 

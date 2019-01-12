@@ -48,11 +48,11 @@ FlightController::FlightController() : imu(1000 / SENSOR_READ_DELAY_MS)
   DataLogger::log("Flight Controller Initialized");
 
   bool success = false;
-  int deplAlt = settings.readIntValue(F("DepAlt"), success);
-  if(success) {
+  int deplAlt  = settings.readIntValue(F("DepAlt"), &success);
+  if (success) {
     DataLogger::log("Read Deployment Altitude");
     deploymentAltitude = deplAlt;
-  }else{
+  } else {
     DataLogger::log("Set default deployment altitude 100");
     settings.writeIntValue(100, F("DepAlt"));
   }
@@ -97,18 +97,17 @@ void FlightController::initialize()
   enableBuzzer = false;
 }
 
-
 void FlightController::initRecoveryDevices()
 {
   bool didRead = false;
-  int onAngle = settings.readIntValue("servoOnAngle", didRead);
-  if(!didRead) {
+  int onAngle  = settings.readIntValue("servoOnAngle", &didRead);
+  if (!didRead) {
     onAngle = kChuteReleaseTriggeredAngle;
   }
 
-  didRead = false;
-  int offAngle = settings.readIntValue("servoOffAngle", didRead);
-  if(!didRead) {
+  didRead      = false;
+  int offAngle = settings.readIntValue("servoOffAngle", &didRead);
+  if (!didRead) {
     offAngle = kChuteReleaseArmedAngle;
   }
 
@@ -120,44 +119,44 @@ void FlightController::initRecoveryDevices()
   devices[2].init(ControlChannel3, DEPL_CTL_3, CTL_3_TYPE);
   devices[3].init(ControlChannel4, DEPL_CTL_4, CTL_4_TYPE);
 
-  //These should be software configurable
+  // These should be software configurable
   setMainChannel(ControlChannel1);
   setDrogueChannel(ControlChannel2);
 }
 
-void FlightController::setMainChannel(int channel) 
+void FlightController::setMainChannel(int channel)
 {
-    mainChute = &(getRecoveryDevice(channel));
+  mainChute = &(getRecoveryDevice(channel));
 }
 
-void FlightController::setDrogueChannel(int channel) 
+void FlightController::setDrogueChannel(int channel)
 {
-    drogueChute = &(getRecoveryDevice(channel));
+  drogueChute = &(getRecoveryDevice(channel));
 }
 
-RecoveryDevice &FlightController::getRecoveryDevice(int channel)
+RecoveryDevice& FlightController::getRecoveryDevice(int channel)
 {
-  //Array location is 0 indexed... Channels are 1 indexed.
+  // Array location is 0 indexed... Channels are 1 indexed.
   return devices[channel - 1];
 }
 
-
-StatusData const &FlightController::getStatusData()
+StatusData const& FlightController::getStatusData()
 {
-  statusData.deploymentAlt = deploymentAltitude;
-  statusData.status        = flightState;
-  statusData.baroReady     = barometerReady;
-  statusData.mpuReady      = mpuReady;
-  statusData.padAltitude   = altimeter.referenceAltitude();
-  statusData.lastApogee    = flightData.apogee;
+  statusData.deploymentAlt     = deploymentAltitude;
+  statusData.status            = flightState;
+  statusData.baroReady         = barometerReady;
+  statusData.mpuReady          = mpuReady;
+  statusData.padAltitude       = altimeter.referenceAltitude();
+  statusData.lastApogee        = flightData.apogee;
   statusData.referencePressure = altimeter.getRefPressure();
-  
+
   return statusData;
 }
 
 String FlightController::getStatus()
 {
-  String statusStr = (flightState == kReadyToFly ? F("Ready To Fly") : F("Waiting"));
+  String statusStr =
+      (flightState == kReadyToFly ? F("Ready To Fly") : F("Waiting"));
 
   String ret;
   ret += "Status :" + statusStr + "<br/>";
@@ -179,14 +178,17 @@ void readSensors(FlightController *f)
 
 void FlightController::loop()
 {
-   if(!interfaceStarted) {
+  if (!interfaceStarted) {
     interfaceStarted = true;
     initRecoveryDevices();
     userInterface.start();
-   }
-  // Ignore the wifis when we're flying.
+  }
+  // Ignore the wifis and oled when we're flying.
   if (flightState == kReadyToFly || flightState == kOnGround) {
     server.handleClient();
+    userInterface.eventLoop(true);
+  }else{
+    userInterface.eventLoop(false);
   }
 
   if (sampleOnNextLoop) {
@@ -202,9 +204,10 @@ void FlightController::loop()
     DataLogger::sharedLogger().openFlightDataFileWithIndex(flightCount);
     sensorTicker.attach_ms(SENSOR_READ_DELAY_MS, readSensors, this);
     digitalWrite(READY_PIN, HIGH);
+    flightControl();
   }
 
-  if(flightState == kAscending && blinker->isBlinking()) {
+  if (flightState == kAscending && blinker->isBlinking()) {
     blinker->cancelSequence();
   }
 
@@ -212,6 +215,7 @@ void FlightController::loop()
   if (flightState == kOnGround && sensorTicker.active()) {
     DataLogger::log(F("Stopping Ticker"));
     sensorTicker.detach();
+    flightControl();
     blinker->cancelSequence();
     digitalWrite(READY_PIN, LOW);
     if (lastApogee) {
@@ -220,8 +224,6 @@ void FlightController::loop()
       lastApogee = 0;
     }
   }
-
-  userInterface.eventLoop(true);
 }
 
 void FlightController::setDeploymentAltitude(int altitude)
@@ -253,16 +255,15 @@ void FlightController::reset()
   imu.reset();
 
   setRecoveryDeviceState(OFF, drogueChute);
-  drogueChute->reset();
+  drogueChute.reset();
   setRecoveryDeviceState(OFF, mainChute);
-  mainChute->reset();
+  mainChute.reset();
 
   testFlightTimeStep = 0;
   blinker->cancelSequence();
-  flightState  = kReadyToFly;
+  flightState = kReadyToFly;
   DataLogger::log(F("Ready To Fly..."));
 }
-
 
 void FlightController::runTest()
 {
@@ -291,14 +292,14 @@ void FlightController::readSensorData(SensorData *d)
   d->acceleration = d->acc_vec.length();
 }
 
-
 void FlightController::flightControl()
 {
+  long t = millis();
   readSensorData(&sensorData);
   double acceleration = sensorData.acceleration;
   double altitude     = sensorData.altitude;
 
-  FlightDataPoint dp = FlightDataPoint(millis(), altitude, acceleration);
+  FlightDataPoint dp = FlightDataPoint(t, altitude, acceleration);
 
   // Log every 5 samples when going fast and every 20 when in a slow descent.
   int sampleDelay = (flightState != kDescending) ? 5 : 20;
@@ -309,10 +310,7 @@ void FlightController::flightControl()
                     sensorData.acc_vec.toString());
   }
 
-  // Log slightly more to the file system
-  sampleDelay      = (flightState == kAscending) ? 2 : 6;
-  logCounterLogger = !logCounterLogger ? 3 : logCounterLogger - 1;
-  if (0 == logCounterLogger && flightState != kOnGround) {
+  if (flightState != kOnGround) {
     DataLogger::sharedLogger().logDataPoint(dp, false);
   }
 
@@ -320,17 +318,18 @@ void FlightController::flightControl()
   flightData.apogee          = MAX(flightData.apogee, altitude);
   flightData.maxAcceleration = MAX(flightData.maxAcceleration, acceleration);
 
-  if (flightState == kReadyToFly && acceleration > FLIGHT_START_THRESHOLD_ACC ) {
+  if (flightState == kReadyToFly && acceleration > FLIGHT_START_THRESHOLD_ACC) {
     DataLogger::log("Flight Started - ACC Trigger");
     flightState               = kAscending;
-    flightData.accTriggerTime = millis() - resetTime;
+    flightData.accTriggerTime = t - resetTime;
     digitalWrite(READY_PIN, LOW);
     digitalWrite(MESSAGE_PIN, HIGH);
   }
 
-  if(flightState == kAscending && acceleration < 11.0 && flightData.burnoutTime == 0) {
-    //We're on the way up, but gravity has taken over... We're now coasting.
-    flightData.burnoutTime = millis() - resetTime;
+  if (flightState == kAscending && acceleration < 11.0 &&
+      flightData.burnoutTime == 0) {
+    // We're on the way up, but gravity has taken over... We're now coasting.
+    flightData.burnoutTime     = t - resetTime;
     flightData.burnoutAltitude = altitude;
   }
 
@@ -338,7 +337,7 @@ void FlightController::flightControl()
     // Transition to "InFlight" if we've exceeded the threshold altitude.
     DataLogger::log(F("Flight Started"));
     flightState               = kAscending;
-    flightData.altTriggerTime = millis() - resetTime;
+    flightData.altTriggerTime = t - resetTime;
     // For testing - to indicate we're in the ascending mode
     digitalWrite(READY_PIN, LOW);
     digitalWrite(MESSAGE_PIN, HIGH);
@@ -367,7 +366,7 @@ void FlightController::flightControl()
     resetRecoveryDeviceIfRequired(drogueChute);
     resetRecoveryDeviceIfRequired(mainChute);
     DataLogger::log(F("Relays Reset"));
-    enableBuzzer     = true;
+    enableBuzzer = true;
   }
 
   // Main chute deployment at kDeployment Altitude
@@ -389,7 +388,7 @@ void FlightController::flightControl()
 
 void FlightController::resetRecoveryDeviceIfRequired(RecoveryDevice *c)
 {
-  if (c->type == kPyro) {
+  if (c.type == kPyro) {
     setRecoveryDeviceState(OFF, c);
     c->reset();
   }
@@ -398,7 +397,7 @@ void FlightController::resetRecoveryDeviceIfRequired(RecoveryDevice *c)
 void FlightController::checkChuteIgnitionTimeout(RecoveryDevice *c,
                                                  int maxIgnitionTime)
 {
-  if (!c->timedReset && c->deployed &&
+  if (!c.timedReset && c.deployed &&
       millis() - c->deploymentTime > maxIgnitionTime && c->type == kPyro) {
     setRecoveryDeviceState(OFF, c);
     c->timedReset = true;
@@ -406,7 +405,7 @@ void FlightController::checkChuteIgnitionTimeout(RecoveryDevice *c,
 }
 
 void FlightController::setRecoveryDeviceState(RecoveryDeviceState deviceState,
-                                          RecoveryDevice *c)
+                                              RecoveryDevice *c)
 {
   if (deviceState == c->deviceState) return;
   int chuteId = c->id;
@@ -445,4 +444,3 @@ void FlightController::testFlightData(SensorData *d)
   d->altitude     = fakeData.altitude;
   d->acceleration = fakeData.acceleration;
 }
-

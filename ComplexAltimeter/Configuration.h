@@ -90,7 +90,7 @@ const int IMU_I2C_ADDR      = 0x68;
 const PeizoStyle PEIZO_TYPE = kActive;
 
 // The barometer can only refresh at about 50Hz.
-const int SENSOR_READ_DELAY_MS = 20;
+const int SENSOR_READ_DELAY_MS = 10;
 
 // Delay between digit blinks.  Any faster is too quick to keep up with
 const int BLINK_SPEED_MS = 250;

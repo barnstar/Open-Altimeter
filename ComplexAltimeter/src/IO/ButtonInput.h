@@ -50,23 +50,23 @@ class ButtonInput
   int buttonId;
 
   // call in loop();
-  void update()
+  void update(long time)
   {
     if (lastReleaseTime) {
-      if (millis() - lastReleaseTime < 100) {
+      if (time - lastReleaseTime < 100) {
         return;
       }
     }
 
     if (digitalRead(pin) == LOW) {
       if (pushedTime == 0) {
-        pushedTime = millis();
+        pushedTime = time;
       }
       return;
     }
 
     if (pushedTime && digitalRead(pin) == HIGH) {
-      long onTime = millis() - pushedTime;
+      long onTime = time - pushedTime;
       if (onTime < 30) {
         pushedTime = 0;
         return;
@@ -86,7 +86,7 @@ class ButtonInput
         }
       }
       pushedTime      = 0;
-      lastReleaseTime = millis();
+      lastReleaseTime = time;
     }
   }
 
