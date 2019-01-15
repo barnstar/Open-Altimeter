@@ -12,8 +12,8 @@
 include <threads.scad>
 
 // 1.5" Mailing Tube
-//TUBE_ID = 38.2;
-//TUBE_OD = 41.2;
+TUBE_ID = 38.0;
+TUBE_OD = 41.2;
 
 // 2.5" Mailing Tube
 //TUBE_ID = 63.65;
@@ -30,8 +30,8 @@ include <threads.scad>
 
 //Rocketarium thick wall 2.5" Tube
 //O.D.: 2.638. I.D.: 2.558
-TUBE_OD = 2.638 *25.4;
-TUBE_ID = 2.558 *25.4;
+//TUBE_OD = 2.638 *25.4;
+//TUBE_ID = 2.558 *25.4;
 
 //BT80: OD: 2.6" ID: 2.558"
 //BT60: ID: 1.595", OD: 1.637
@@ -43,7 +43,7 @@ TUBE_ID = 2.558 *25.4;
 //MOTOR_OD = 31.31; //29mm tube Motor Tube D.  Include some tolerance here
 
 //24mm BT50
-MOTOR_OD = 0.967 * 25.4;
+MOTOR_OD = 0.99 * 25.4;
 
 MOTOR_LEN = 120;            //Motor length.  Total len is MOTOR_LEN+RET_TNK
 RET_THK = 3.5;              //Retainer thickness
@@ -51,7 +51,7 @@ WALL_THK = 1.5;             //1.5 default
 TC_LEN = 20;                //Tail cone length
 TC_CUTOFF=12;
 THREAD_LEN = 12.5;          //Length of the retainer threads
-TOL = .1;                   //Fit tolerance for retainers and cetnering ring
+TOL = 0;                   //Fit tolerance for retainers and cetnering ring
 LUG_LEN = 20;               //Launch Lug Length
 LL_BASE_OFFSET=5.5;         //Increase/decrease to change the lug base thickness
 
@@ -66,7 +66,7 @@ BOOSTER_T_ID = 24.0;
 BOOSTER_OD = 25.0;
 PORT_LEN = 40.0;
 MOUNT_LEN=30.0;
-THREAD_DIAMETER = MOTOR_OD + 10;
+THREAD_DIAMETER = MOTOR_OD + 12;
 
 
 $fn = 90;
@@ -79,13 +79,13 @@ $fn = 90;
 //dual_mount();
 //engine_mount_no_tube();
 //centering_ring();
-//translate([0,30,0])rotate([0,0,-90])motor_retainer_inner();
-//translate([0,-30,0])color([1,0,0])motor_retainer_outer();
+translate([0,30,0])rotate([0,0,-90])motor_retainer_inner();
+translate([0,-30,0])color([1,0,0])motor_retainer_outer();
 
 //centering_ring();
 
 //Simple sleeve and bulkhead
-payload_adapter();
+//payload_adapter();
 
 //tail_cone();
 //cutting_jig();
@@ -219,13 +219,13 @@ module motor_retainer_outer()
   angleInc = 360/15;
   union() {
     difference() {
-      cylinder(h=length, r=MOTOR_OD/2+8, center = false);  
+      cylinder(h=length, r=MOTOR_OD/2+10, center = false);  
       metric_thread (diameter=THREAD_DIAMETER+2.5, pitch=2.2, 
                      length=length+1, groove=true);
       for(i=[0:14]) {
           angle = angleInc * i;
           rotate([0,0,angle])
-          translate([MOTOR_OD/2+8.1,0,0])
+          translate([MOTOR_OD/2+10.1,0,0])
             cube([2,4,60],center = true);
       }
     }
