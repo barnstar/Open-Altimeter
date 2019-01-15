@@ -36,20 +36,23 @@ void SettingsView::dismiss()
 void SettingsView::refresh()
 {
   if (needsRefresh) {
-
-
     String deplAlt =
-        String(String(F("Main:")) + String(FlightController::shared().deploymentAltitude));
+        String(String(F("Main:")) +
+               String(FlightController::shared().deploymentAltitude));
     setText(F("==::: Settings :::=="), 0, false);
     setText(deplAlt, 1, false);
-    String resetText = resetOnNextLongPress ? F("Press Again To Reset") : F("Hold To Reset");
+    String resetText =
+        resetOnNextLongPress ? F("Press Again To Reset") : F("Hold To Reset");
     setText(resetText, 2, false);
 
-  FSInfo fs_info;
-  SPIFFS.info(fs_info);
-  setText("",3,false)
-  setText(String("FS Size Kb: ") + String(fs_info.totalBytes / 1024),4,false);
-  setText(String("FS Used Kb: ") + String(fs_info.usedBytes / 1024),5,false);
+    FSInfo fs_info;
+    SPIFFS.info(fs_info);
+
+    setText("", 3, false);
+    setText(String("FS Size Kb: ") +
+            String(fs_info.totalBytes / 1024), 4, false);
+    setText(String("FS Used Kb: ") +
+            String(fs_info.usedBytes / 1024), 5, false);
     update();
     needsRefresh = false;
   }

@@ -54,6 +54,7 @@ var flightData = {
 
         var maxima = { y: 0, x: 0, y2: 0, pmax: { x: 0, y: 0, y2: 0 }, pmax_norm: { x: 0, y: 0, y2: 0 } };
         points.forEach(function (point) {
+            if(t==0)continue; 
             if (point.a > maxima.y) {
                 maxima.y = point.a;
                 maxima.pmax.y = point.a;
