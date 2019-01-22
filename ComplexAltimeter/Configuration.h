@@ -96,7 +96,7 @@ const int SENSOR_READ_DELAY_MS = 20;
 const int BLINK_SPEED_MS = 250;
 
 // Servo angles for servo chute release
-static const int kChuteReleaseTriggeredAngle = 5;
-static const int kChuteReleaseArmedAngle = 120;
+static const int kChuteReleaseTriggeredAngle = 35;
+static const int kChuteReleaseArmedAngle = 178;
 
 #endif  // config_h

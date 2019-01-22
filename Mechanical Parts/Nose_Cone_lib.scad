@@ -27,23 +27,23 @@ $fn=120;
 
 //Rocketarium thick wall 2.2" Tube
 //OD.: 2.26. I.D.: 2.14
-//TUBE_OD = 2.26 *25.4;
-//TUBE_ID = 2.14 *25.4;
+TUBE_OD = 2.26 *25.4;
+TUBE_ID = 2.14 *25.4;
 
 //Rocketarium thick wall 2.5" Tube
 //O.D.: 2.638. I.D.: 2.558
-TUBE_OD = 2.638 *25.4;
-TUBE_ID = 2.558 *25.4;
+//TUBE_OD = 2.638 *25.4;
+//TUBE_ID = 2.558 *25.4;
 
 //BT80: OD: 2.6" ID: 2.558"
 //BT60: ID: 1.595", OD: 1.637
 //BT50 ID: 0.95", OD: 0.976" 
 
 
-LENGTH = 80;             //Overall length
-TIP_LEN=40;               //Length of the removable tip 
+LENGTH = 190;             //Overall length
+TIP_LEN=60;               //Length of the removable tip 
 TIP_RAD=4;                //Tip radiums
-SHOULDER_LENGTH = 170;     //Length of the insert 
+SHOULDER_LENGTH = 90;     //Length of the insert 
 
  //The radii and lengths here have to be customized for each length/od
  //Deriving the raduis at a given z position is left as an exercise for
@@ -60,7 +60,7 @@ OGIVE=2;
 HAACK=3;
 ELLIPTICAL=4;
 
-STYLE = ELLIPTICAL;
+STYLE = OGIVE;
 
 //Build the components - Uncomment the ones you need
 //shelled_cone();
@@ -70,10 +70,10 @@ STYLE = ELLIPTICAL;
 //cone_tip();
 //translate([-TUBE_OD - 20,0,0])
 //translate([0,0,3.5])
-//avbay_insert();
+avbay_insert();
 //bulkhead();
 //simple_insert();
-avbay_retainer();
+//avbay_retainer();
 
 // Components
 module bulkhead()
@@ -163,16 +163,16 @@ module avbay_retainer()
 module solid_cone()
 {
   if(STYLE == ELLIPTICAL) {
-      cone_elliptical(R = TUBE_OD/2, L=LENGTH, s=520);
+      cone_elliptical(R = TUBE_OD/2, L=LENGTH, s=180);
   }
   if(STYLE == OGIVE) {
-      cone_ogive_tan_blunted(R = TUBE_OD/2, R_nose = TIP_RAD, L = LENGTH, s = 520);
+      cone_ogive_tan_blunted(R = TUBE_OD/2, R_nose = TIP_RAD, L = LENGTH, s = 180);
   }
   if(STYLE == PARABOLIC) {
-      cone_parabolic(R = TUBE_OD/2, L=LENGTH, s=520);
+      cone_parabolic(R = TUBE_OD/2, L=LENGTH, s=180);
   }
   if(STYLE == HAACK){
-      cone_haack(R = TUBE_OD/2, L = LENGTH, s = 200, R_nose=TIP_RAD);   
+      cone_haack(R = TUBE_OD/2, L = LENGTH, s = 180, R_nose=TIP_RAD);   
   }
 }
 
@@ -184,8 +184,10 @@ module shelled_cone()
    cone_elliptical(R = TUBE_OD/2 - WALL_THICKNESS, L=LENGTH-WALL_THICKNESS, s=180);
   }
   if(STYLE == OGIVE) {
-   cone_ogive_tan_blunted(R = TUBE_OD/2, R_nose = TIP_RAD, L = LENGTH, s = 180);
-   cone_ogive_tan_blunted(R= TUBE_OD/2- WALL_THICKNESS, R_nose = TIP_RAD, L = LENGTH*.96, s = 180);
+   difference() { 
+     cone_ogive_tan_blunted(R = TUBE_OD/2, R_nose = TIP_RAD, L = LENGTH, s = 90);
+     cone_ogive_tan_blunted(R= TUBE_OD/2- WALL_THICKNESS, R_nose = TIP_RAD, L = LENGTH*.96, s = 90);
+   }
   }
   if(STYLE == PARABOLIC) {
    cone_parabolic(R = TUBE_OD/2, L=LENGTH, s=100);

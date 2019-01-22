@@ -25,7 +25,7 @@ const double SEA_LEVEL_PRESSURE = 101370;
 typedef MPU9250 ImuSensor;
 #endif
 
-#include "Filters.h"
+#include "Filters.hpp"
 #include "SimpleTimer.h"
 
 #include "Blinker.hpp"

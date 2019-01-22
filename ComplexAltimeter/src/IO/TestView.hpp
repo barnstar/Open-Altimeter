@@ -45,7 +45,7 @@ class TestView : public View
 
  private:
   RecoveryDevice *testDevice           = nullptr;
-  uint8_t activeOption                 = 0;
+  uint8_t activeOption                 = 1;
   ControlChannel options[kOptionCount] = {ControlChannel1, ControlChannel2,
                                           ControlChannel3, ControlChannel4};
 };

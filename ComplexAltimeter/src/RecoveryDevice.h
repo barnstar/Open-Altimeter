@@ -36,18 +36,21 @@
 #include "Settings.hpp"
 #endif
 
-static int offAngle;
-static int onAngle;
+
 
 class RecoveryDevice
 {
  public:
-  RecoveryDevice() { this->reset(); };
+  RecoveryDevice() {};
   ~RecoveryDevice(){};
+
+  static int offAngle;
+  static int onAngle;  
 
   static void setOnAngle(int angle, bool save)
   {
-    onAngle = angle;
+    RecoveryDevice::onAngle = angle;
+    DataLogger::log("On Angle set to " + String(angle));
 #ifndef IS_SIMPLE_ALT
     if (save) {
       Settings s;
@@ -58,7 +61,8 @@ class RecoveryDevice
 
   static void setOffAngle(int angle, bool save)
   {
-    offAngle = angle;
+    RecoveryDevice::offAngle = angle;
+    DataLogger::log("Off Angle set to " + String(angle));
 #ifndef IS_SIMPLE_ALT
     if (save) {
       Settings s;
@@ -82,7 +86,7 @@ class RecoveryDevice
   byte gpioPin = 0;
 
  private:
-  Servo servo;
+  Servo *servo = nullptr;
 
   void setServoAngle(int angle);
 };

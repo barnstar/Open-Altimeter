@@ -176,9 +176,9 @@ typedef enum { PrimaryButton = 1, SecondaryButton = 2 } ButtonId;
 
 typedef enum {
   ControlChannel1 = 1,
-  ControlChannel2,
-  ControlChannel3,
-  ControlChannel4
+  ControlChannel2 = 2,
+  ControlChannel3 = 3,
+  ControlChannel4 = 4
 } ControlChannel;
 
 #endif  // types_h

@@ -44,11 +44,11 @@ class RecoveryDevice
       false;  // True if we've reset the chute relay due to a timeout
   RecoveryDeviceState deviceState = OFF;  // State of the parachute relay pin.  Recorded
                                 // separately.  To avoid fire.
-  RecoveryDeviceType type = kServo;
+  RecoveryDeviceType type = kNoEjection;
   Servo servo;
 
   byte gpioPin = 0;
-  byte id       = 0;
+  byte id      = 0;
 
  public:
   void init(byte id, byte pin, RecoveryDeviceType type);
