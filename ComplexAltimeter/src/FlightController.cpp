@@ -114,10 +114,14 @@ void FlightController::initRecoveryDevices()
   RecoveryDevice::setOffAngle(offAngle, false);
   RecoveryDevice::setOnAngle(onAngle, false);
 
-  devices[0].init(ControlChannel1, DEPL_CTL_1, CTL_1_TYPE);
-  devices[1].init(ControlChannel2, DEPL_CTL_2, CTL_2_TYPE);
-  devices[2].init(ControlChannel3, DEPL_CTL_3, CTL_3_TYPE);
-  devices[3].init(ControlChannel4, DEPL_CTL_4, CTL_4_TYPE);
+  for(int i=0;i<4;i++) {
+    devices[i] = new RecoveryDevice();
+  }
+
+  devices[0]->init(ControlChannel1, DEPL_CTL_1, CTL_1_TYPE);
+  devices[1]->init(ControlChannel2, DEPL_CTL_2, CTL_2_TYPE);
+  devices[2]->init(ControlChannel3, DEPL_CTL_3, CTL_3_TYPE);
+  devices[3]->init(ControlChannel4, DEPL_CTL_4, CTL_4_TYPE);
 
   // These should be software configurable
   setMainChannel(ControlChannel1);
@@ -126,15 +130,15 @@ void FlightController::initRecoveryDevices()
 
 void FlightController::setMainChannel(int channel)
 {
-  mainChute = &(getRecoveryDevice(channel));
+  mainChute = getRecoveryDevice(channel);
 }
 
 void FlightController::setDrogueChannel(int channel)
 {
-  drogueChute = &(getRecoveryDevice(channel));
+  drogueChute = getRecoveryDevice(channel);
 }
 
-RecoveryDevice& FlightController::getRecoveryDevice(int channel)
+RecoveryDevice* FlightController::getRecoveryDevice(int channel)
 {
   // Array location is 0 indexed... Channels are 1 indexed.
   return devices[channel - 1];

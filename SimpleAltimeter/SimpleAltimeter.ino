@@ -48,7 +48,7 @@ Barometer barometer;
 ImuSensor imu(Wire, 0x68);
 #endif
 
-KalmanFilter filter;
+KalmanFilter filter(0);
 #if ENABLE_MPU
 Mahony sensorFusion;
 #endif
@@ -189,7 +189,7 @@ bool checkResetPin()
     testFlightTimeStep = 0;
     playReadyTone();
     flightState = kReadyToFly;
-    filter.reset(1, 1, 0.001);
+    filter.reset(0);
 #if ENABLE_MPU
     sensorFusion.begin(1000 / SENSOR_READ_DELAY_MS);
 #endif

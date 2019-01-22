@@ -198,11 +198,11 @@ void WebServer::handleConfigSetting(String &arg, String &val)
       DataLogger::log(F("Invalid channel number"));
       return;
     };
-    RecoveryDevice &d = FlightController::shared().getRecoveryDevice(channel);
-    if(d.deployed) {
-      d.disable();
+    RecoveryDevice* d = FlightController::shared().getRecoveryDevice(channel);
+    if(d->deployed) {
+      d->disable();
     }else{
-      d.enable();
+      d->enable();
     }
   }else if(arg == String("onAngle")) {
     uint angle = val.toInt();

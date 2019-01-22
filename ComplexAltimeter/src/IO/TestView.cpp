@@ -35,11 +35,11 @@ void TestView::shortPressAction()
 
   activeOption++;
   if (activeOption == kOptionCount) {
-    activeOption = 0;
+    activeOption = 1;
   }
 
-  ControlChannel c = options[activeOption];
-  testDevice       = &FlightController::shared().getRecoveryDevice(c);
+  ControlChannel c = options[activeOption -1];
+  testDevice       = FlightController::shared().getRecoveryDevice(c);
   needsRefresh     = true;
   refresh();
 }
@@ -47,8 +47,10 @@ void TestView::shortPressAction()
 void TestView::longPressAction()
 {
   if (testDevice->deployed) {
+    DataLogger::log(F("Disabling"));
     testDevice->disable();
   } else {
+    DataLogger::log(F("Enabling"));
     testDevice->enable();
   }
 }
@@ -59,8 +61,8 @@ void TestView::refresh()
     return;
   }
 
-  ControlChannel c = options[activeOption];
-  testDevice       = &FlightController::shared().getRecoveryDevice(c);
+  ControlChannel c = options[activeOption - 1];
+  testDevice       = FlightController::shared().getRecoveryDevice(c);
 
   setText(F("===::: TEST :::==="), 0, false);
 

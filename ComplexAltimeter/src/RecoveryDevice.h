@@ -37,18 +37,21 @@
 #include "DataLogger.hpp"
 #endif
 
-static int offAngle;
-static int onAngle;
+
 
 class RecoveryDevice
 {
  public:
-  RecoveryDevice() { this->reset(); };
+  RecoveryDevice() {};
   ~RecoveryDevice(){};
+
+  static int offAngle;
+  static int onAngle;  
 
   static void setOnAngle(int angle, bool save)
   {
-    onAngle = angle;
+    RecoveryDevice::onAngle = angle;
+    DataLogger::log("On Angle set to " + String(angle));
 #ifndef IS_SIMPLE_ALT
     if (save) {
       Settings s;
@@ -60,7 +63,8 @@ class RecoveryDevice
 
   static void setOffAngle(int angle, bool save)
   {
-    offAngle = angle;
+    RecoveryDevice::offAngle = angle;
+    DataLogger::log("Off Angle set to " + String(angle));
 #ifndef IS_SIMPLE_ALT
     if (save) {
       Settings s;
@@ -86,7 +90,12 @@ class RecoveryDevice
   byte id      = 0;
 
  private:
+<<<<<<< HEAD
   Servo servo;
+=======
+  Servo *servo = nullptr;
+
+>>>>>>> bc2914f0e35b98d8285b01836dabb7e48a3f249f
   void setServoAngle(int angle);
 };
 

@@ -12,8 +12,8 @@
 include <threads.scad>
 
 // 1.5" Mailing Tube
-TUBE_ID = 38.0;
-TUBE_OD = 41.2;
+//TUBE_ID = 38.0;
+//TUBE_OD = 41.2;
 
 // 2.5" Mailing Tube
 //TUBE_ID = 63.65;
@@ -25,8 +25,8 @@ TUBE_OD = 41.2;
 
 //Rocketarium thick wall 2.2" Tube
 //OD.: 2.26. I.D.: 2.14
-//TUBE_OD = 2.26 *25.4;
-//TUBE_ID = 2.14 *25.4;
+TUBE_OD = 2.26 *25.4;
+TUBE_ID = 2.13 *25.4;
 
 //Rocketarium thick wall 2.5" Tube
 //O.D.: 2.638. I.D.: 2.558
@@ -40,10 +40,10 @@ TUBE_OD = 41.2;
 
 //29mm Motor Bute
 //O.D.: 1.233. I.D.: 1.147
-//MOTOR_OD = 31.31; //29mm tube Motor Tube D.  Include some tolerance here
+MOTOR_OD = 31.4; //29mm tube Motor Tube D.  Include some tolerance here
 
 //24mm BT50
-MOTOR_OD = 0.99 * 25.4;
+//MOTOR_OD = 0.99 * 25.4;
 
 MOTOR_LEN = 120;            //Motor length.  Total len is MOTOR_LEN+RET_TNK
 RET_THK = 3.5;              //Retainer thickness
@@ -112,17 +112,30 @@ module cutting_jig()
 
 module centering_ring()
 {
-  ir = 1.233*24.5/2 ;
-  length = MOTOR_LEN + RET_THK;
-  difference() {
-    or = TUBE_ID / 2;
+      or = TUBE_ID / 2;
     ir = MOTOR_OD/2;// + WALL_THK+TOL; //31.3/2;// 
+  
+  difference() {
+    union(){
+    l = (or - ir)*1.9;
+    h= 15;
+    for(angle = FIN_ANGLES) {
+       rotate([0,0,angle]) {
+         translate([ir,3.2,8]) 
+         cube([l,3.2,h],center=true);
+         translate([ir,-3.2,8]) 
+         cube([l,3.2,h],center=true);
+       }
+    }
+  
     cylinder(h=RET_THK, r=or, center=false);
+  }
     translate([0,0,-1]) {
-      cylinder(h=RET_THK+2, r=ir, center=false);
+      cylinder(h=30, r=ir, center=false);
       //cube(size = [ir*2 + 4, 6, RET_THK+8], center=true);
     }
   } 
+
 }
 
 module dual_mount() 
@@ -201,13 +214,13 @@ module tail_cone()
 
 module motor_retainer_inner() 
 {
-  or = 31.3/2 + 10;
-  ir = 31.3/2 + TOL;
+  or = MOTOR_OD/2 + 10;
+  ir = MOTOR_OD/2 + .3;
   difference() {
     //2.5 mm differene between this diameter and the other
     metric_thread (diameter=THREAD_DIAMETER, pitch=2.2, 
-                   length=THREAD_LEN, groove=false);
-    cylinder(h=THREAD_LEN*2+5, r=ir, center = true);  
+                   length=THREAD_LEN*1.3, groove=false);
+    cylinder(h=THREAD_LEN*5+5, r=ir, center = true);  
   }
 }
 
@@ -219,13 +232,13 @@ module motor_retainer_outer()
   angleInc = 360/15;
   union() {
     difference() {
-      cylinder(h=length, r=MOTOR_OD/2+10, center = false);  
+      cylinder(h=length, r=MOTOR_OD/2+11, center = false);  
       metric_thread (diameter=THREAD_DIAMETER+2.5, pitch=2.2, 
                      length=length+1, groove=true);
       for(i=[0:14]) {
           angle = angleInc * i;
           rotate([0,0,angle])
-          translate([MOTOR_OD/2+10.1,0,0])
+          translate([MOTOR_OD/2+11.1,0,0])
             cube([2,4,60],center = true);
       }
     }

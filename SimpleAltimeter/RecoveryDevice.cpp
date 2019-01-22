@@ -61,7 +61,6 @@ void RecoveryDevice::enable()
   switch (type) {
     case kPyro:
       digitalWrite(gpioPin, HIGH);
-      ;
       break;
     case kServo:
       servo.write(kChuteReleaseTriggeredAngle);
@@ -69,7 +68,7 @@ void RecoveryDevice::enable()
     case kNoEjection:
       break;
   }
-  //log("RD En" + String(id) );
+  Serial.println("RD En" + String(id) );
 };
 
 void RecoveryDevice::disable()
@@ -79,7 +78,6 @@ void RecoveryDevice::disable()
   switch (type) {
     case kPyro:
       digitalWrite(gpioPin, LOW);
-      ;
       break;
     case kServo:
       servo.write(kChuteReleaseArmedAngle);
@@ -87,7 +85,7 @@ void RecoveryDevice::disable()
     case kNoEjection:
       break;
   }
-  //log("RD Dis" + String(id) );
+  Serial.println("RD Dis" + String(id) );
 };
 
 void RecoveryDevice::reset()
