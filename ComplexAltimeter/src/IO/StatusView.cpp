@@ -29,9 +29,9 @@
 #include <WiFiClient.h>
 #include "../FlightController.hpp"
 
-
-void StatusView::dismiss() {
-  //Ugly.. But it will force a refresh
+void StatusView::dismiss()
+{
+  // Ugly.. But it will force a refresh
   needsRefresh = true;
 }
 
@@ -42,19 +42,21 @@ void StatusView::refresh()
 
 void StatusView::setInfo(StatusData const &data)
 {
-  if(!lastStatus.isEqual(data) || needsRefresh) {
+  if (!lastStatus.isEqual(data) || needsRefresh) {
     lastStatus = data;
 
     setText(F("==:::: Status ::::=="), 0, false);
     setText(flightStateString(data.status), 1, false);
     String sensorStatus =
-        (data.baroReady ? String(F("Baro OK")) : String(F("Baro Fail"))) + String(F(":"))  +
-        (data.mpuReady ? String(F("IMU OK")) : String(F("IMU Fail")) );
+        (data.baroReady ? String(F("Baro OK")) : String(F("Baro Fail"))) +
+        String(F(":")) +
+        (data.mpuReady ? String(F("IMU OK")) : String(F("IMU Fail")));
     setText(sensorStatus, 2, false);
     setText((String("Depl:") + String(data.deploymentAlt) + String("m")), 3,
             false);
-    setText((String("Pressure:") + String(data.referencePressure) + String("kPa")), 4,
-            false);
+    setText(
+        (String("Pressure:") + String(data.referencePressure) + String("kPa")),
+        4, false);
     setText(WiFi.localIP().toString(), 5, false);
     update();
     needsRefresh = false;

@@ -114,7 +114,7 @@ void FlightController::initRecoveryDevices()
   RecoveryDevice::setOffAngle(offAngle, false);
   RecoveryDevice::setOnAngle(onAngle, false);
 
-  for(int i=0;i<4;i++) {
+  for (int i = 0; i < 4; i++) {
     devices[i] = new RecoveryDevice();
   }
 
@@ -138,13 +138,13 @@ void FlightController::setDrogueChannel(int channel)
   drogueChute = getRecoveryDevice(channel);
 }
 
-RecoveryDevice* FlightController::getRecoveryDevice(int channel)
+RecoveryDevice *FlightController::getRecoveryDevice(int channel)
 {
   // Array location is 0 indexed... Channels are 1 indexed.
   return devices[channel - 1];
 }
 
-StatusData const& FlightController::getStatusData()
+StatusData const &FlightController::getStatusData()
 {
   statusData.deploymentAlt     = deploymentAltitude;
   statusData.status            = flightState;
@@ -191,7 +191,7 @@ void FlightController::loop()
   if (flightState == kReadyToFly || flightState == kOnGround) {
     server.handleClient();
     userInterface.eventLoop(true);
-  }else{
+  } else {
     userInterface.eventLoop(false);
   }
 

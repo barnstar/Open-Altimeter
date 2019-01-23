@@ -39,9 +39,8 @@ class FlightHistoryView : public View
 
   void refresh();
   void dismiss();
-  void shortPressAction(){ needsRefresh = true; };
+  void shortPressAction() { needsRefresh = true; };
   void longPressAction(){};
-
 };
 
 #endif

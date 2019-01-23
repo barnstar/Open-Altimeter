@@ -76,12 +76,12 @@ class FlightController
 
   bool sampleOnNextLoop = false;
 
-  RecoveryDevice* getRecoveryDevice(int channel);
+  RecoveryDevice *getRecoveryDevice(int channel);
 
  private:
   void initialize();
 
-  RecoveryDevice* devices[4];
+  RecoveryDevice *devices[4];
   void initRecoveryDevices();
   void setMainChannel(int channel);
   void setDrogueChannel(int channel);

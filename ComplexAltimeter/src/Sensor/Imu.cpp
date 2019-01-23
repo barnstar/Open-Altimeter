@@ -26,8 +26,9 @@
 
 #include "Imu.hpp"
 
-void Imu::reset() { 
-  sensorFusion.begin(frequency); 
+void Imu::reset()
+{
+  sensorFusion.begin(frequency);
   calibrate();
 }
 
@@ -37,8 +38,7 @@ void Imu::update()
   float mag_offsets[3] = {0.0F, 0.0F, 0.0F};
 
   // Soft iron error compensation matrix
-  float mag_softiron_matrix[3][3] = {
-      {1, 0, 0}, {0, 1, 0}, {0, 0, 1}};
+  float mag_softiron_matrix[3][3] = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}};
 
   if (mpuReady) {
     int status = imuSensor.readSensor();
@@ -72,15 +72,11 @@ void Imu::update()
   }
 }
 
-Heading Imu::getRelativeHeading()
-{
-  return heading - referenceHeading;
-}
+Heading Imu::getRelativeHeading() { return heading - referenceHeading; }
 
-
-void Imu::calibrate() 
+void Imu::calibrate()
 {
-  for(int i=0;i<20;i++) {
+  for (int i = 0; i < 20; i++) {
     update();
     delay(SENSOR_READ_DELAY_MS);
   }

@@ -33,20 +33,18 @@
 #include "Configuration.h"
 #else
 #include "../Configuration.h"
-#include "Settings.h"
 #include "DataLogger.hpp"
+#include "Settings.h"
 #endif
-
-
 
 class RecoveryDevice
 {
  public:
-  RecoveryDevice() {};
+  RecoveryDevice(){};
   ~RecoveryDevice(){};
 
   static int offAngle;
-  static int onAngle;  
+  static int onAngle;
 
   static void setOnAngle(int angle, bool save)
   {
@@ -90,12 +88,7 @@ class RecoveryDevice
   byte id      = 0;
 
  private:
-<<<<<<< HEAD
-  Servo servo;
-=======
   Servo *servo = nullptr;
-
->>>>>>> bc2914f0e35b98d8285b01836dabb7e48a3f249f
   void setServoAngle(int angle);
 };
 

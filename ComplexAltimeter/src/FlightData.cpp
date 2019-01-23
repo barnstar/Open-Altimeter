@@ -24,7 +24,6 @@
  * SOFTWARE.
  **********************************************************************************/
 
-
 #include "FlightData.hpp"
 
 const bool FlightData::isValid()
@@ -35,7 +34,7 @@ const bool FlightData::isValid()
 
 const String FlightData::toString(int index)
 {
-  return String("index : " + String(index) + ","
+  return String("index : " + String(index) + "," +
                 "apogee:" + String(apogee) + "," +
                 "main_alt : " + String(ejectionAltitude) + "," +
                 "drogue_alt : " + String(drogueEjectionAltitude) + "," +

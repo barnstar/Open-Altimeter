@@ -81,7 +81,7 @@ void Altimeter::update()
 
   long t = micros();
   if (lastRefreshTime) {
-    long dt      = t - lastRefreshTime;
+    long dt         = t - lastRefreshTime;
     double velocity = ((relativeAlt - lastAlt) / dt) * 1000000;
     velocityFilter.step(velocity);
   }

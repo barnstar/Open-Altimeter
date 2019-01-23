@@ -42,7 +42,6 @@ typedef Adafruit_SSD1306 Display;
 typedef Adafruit_SH1106 Display;
 #endif
 
-
 class View
 {
  public:
@@ -53,9 +52,9 @@ class View
   void clear();
   void update();
 
-  virtual void refresh() = 0;
-  virtual void dismiss() = 0;
-  virtual void longPressAction() = 0;
+  virtual void refresh()          = 0;
+  virtual void dismiss()          = 0;
+  virtual void longPressAction()  = 0;
   virtual void shortPressAction() = 0;
 
   Display &display;

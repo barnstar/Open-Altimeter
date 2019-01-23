@@ -27,17 +27,16 @@
 #include "SensorDataView.hpp"
 #include "../FlightController.hpp"
 
-void SensorDataView::dismiss() {
-  needsRefresh = true;
-}
+void SensorDataView::dismiss() { needsRefresh = true; }
 
 void SensorDataView::refresh()
 {
   if (FlightController::shared().flightState == kOnGround && needsRefresh) {
     setWaiting();
-    //If we're in the waiting mode, then the image is static.
+    // If we're in the waiting mode, then the image is static.
     needsRefresh = false;
-  } else if(FlightController::shared().flightState != kOnGround)  {  //flying or ready to fly
+  } else if (FlightController::shared().flightState !=
+             kOnGround) {  // flying or ready to fly
     needsRefresh = true;
     setData(FlightController::shared().sensorData);
   }
@@ -45,10 +44,11 @@ void SensorDataView::refresh()
 
 void SensorDataView::setData(SensorData &data)
 {
-  setText(data.toString(), 0,  false);           // acceleration, vertical velocity and altitude
-  setText(data.heading.toString(), 1, false);    // roll pitch yaw
-  setText(data.acc_vec.toString(), 2, false);     // raw accelerometer values
-  setText(data.gyro_vec.toString(), 3, false);   // raw gyro values 
+  setText(data.toString(), 0,
+          false);  // acceleration, vertical velocity and altitude
+  setText(data.heading.toString(), 1, false);   // roll pitch yaw
+  setText(data.acc_vec.toString(), 2, false);   // raw accelerometer values
+  setText(data.gyro_vec.toString(), 3, false);  // raw gyro values
   update();
 }
 

@@ -35,21 +35,14 @@
 #endif
 #include "types.h"
 
-<<<<<<< HEAD
-void RecoveryDevice::init(byte id, byte pin, RecoveryDeviceType type)
-{
-  if (this->pin && this->type == kServo) {
-    servo.detach();
-=======
-int RecoveryDevice::onAngle = 0;
+int RecoveryDevice::onAngle  = 0;
 int RecoveryDevice::offAngle = 0;
 
 void RecoveryDevice::init(byte id, byte gpioPin, RecoveryDeviceType type)
 {
-  if(this->gpioPin && this->type == kServo & servo != nullptr) {
+  if (this->gpioPin && this->type == kServo & servo != nullptr) {
     servo->detach();
     delete servo;
->>>>>>> bc2914f0e35b98d8285b01836dabb7e48a3f249f
   }
 
   this->gpioPin = pin;
@@ -61,13 +54,10 @@ void RecoveryDevice::init(byte id, byte gpioPin, RecoveryDeviceType type)
       pinMode(pin, OUTPUT);
       break;
     case kServo:
-<<<<<<< HEAD
-      servo.attach(pin);
-=======
+
       Serial.println("Recovery Device Servo init " + String(id));
       servo = new Servo();
       servo->attach(gpioPin);
->>>>>>> bc2914f0e35b98d8285b01836dabb7e48a3f249f
       break;
     case kNoEjection:
       break;
@@ -76,17 +66,13 @@ void RecoveryDevice::init(byte id, byte gpioPin, RecoveryDeviceType type)
   reset();
 };
 
-<<<<<<< HEAD
-void RecoveryDevice::setServoAngle(int angle) { servo.write(angle); }
-=======
 void RecoveryDevice::setServoAngle(int angle)
 {
   if (type == kServo) {
-    Serial.println("Servo Angle " + String(angle) + " " + String(id) );
+    Serial.println("Servo Angle " + String(angle) + " " + String(id));
     servo->write(angle);
   }
 }
->>>>>>> bc2914f0e35b98d8285b01836dabb7e48a3f249f
 
 void RecoveryDevice::enable()
 {
@@ -98,13 +84,8 @@ void RecoveryDevice::enable()
       digitalWrite(gpioPin, HIGH);
       break;
     case kServo:
-<<<<<<< HEAD
-      Serial.println("Turning Servo On");
-      setServoAngle(onAngle);
-=======
       setServoAngle(kChuteReleaseTriggeredAngle);
       Serial.println("RD En " + String(id) + " " + String(onAngle));
->>>>>>> bc2914f0e35b98d8285b01836dabb7e48a3f249f
       break;
     case kNoEjection:
       break;
@@ -120,13 +101,8 @@ void RecoveryDevice::disable()
       digitalWrite(gpioPin, LOW);
       break;
     case kServo:
-<<<<<<< HEAD
-      Serial.println("Turning Servo Off");
-      setServoAngle(offAngle);
-=======
       setServoAngle(kChuteReleaseArmedAngle);
       Serial.println("RD Dis " + String(id) + " " + String(offAngle));
->>>>>>> bc2914f0e35b98d8285b01836dabb7e48a3f249f
       break;
     case kNoEjection:
       break;

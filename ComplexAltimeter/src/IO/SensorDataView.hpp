@@ -37,12 +37,11 @@ class SensorDataView : public View
 
   void setData(SensorData &data);
   void setWaiting();
-  
-  void shortPressAction() {};
-  void longPressAction() {};
+
+  void shortPressAction(){};
+  void longPressAction(){};
   void refresh();
   void dismiss();
-
 };
 
 #endif

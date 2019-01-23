@@ -49,10 +49,10 @@ void SettingsView::refresh()
     SPIFFS.info(fs_info);
 
     setText("", 3, false);
-    setText(String("FS Size Kb: ") +
-            String(fs_info.totalBytes / 1024), 4, false);
-    setText(String("FS Used Kb: ") +
-            String(fs_info.usedBytes / 1024), 5, false);
+    setText(String("FS Size Kb: ") + String(fs_info.totalBytes / 1024), 4,
+            false);
+    setText(String("FS Used Kb: ") + String(fs_info.usedBytes / 1024), 5,
+            false);
     update();
     needsRefresh = false;
   }

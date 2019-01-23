@@ -24,7 +24,6 @@
  * SOFTWARE.
  **********************************************************************************/
 
-
 #include "WebServer.hpp"
 #include <FS.h>
 #include "DataLogger.hpp"
@@ -55,8 +54,7 @@ const char *statusURL   = "/status";
 const char *settingsURL = "/settings";
 const char *configURL   = "/config";
 
-WebServer::WebServer() : server(80)
-{}
+WebServer::WebServer() : server(80) {}
 
 WebServer::~WebServer() {}
 
@@ -64,16 +62,16 @@ void WebServer::handleClient() { server.handleClient(); }
 
 void WebServer::start(const IPAddress &ipAddress)
 {
-  #if RUN_AS_ACCESS_POINT
+#if RUN_AS_ACCESS_POINT
   Serial.println(String("IP Set to:" + ipAddress.toString()));
   this->ipAddress = ipAddress;
   WiFi.softAP(ssid, password);
   IPAddress apip = WiFi.softAPIP();
   Serial.print("Actual Server Address: ");
   Serial.println(apip);
-  #else
-  WiFi.begin(ssid, password);  
-  #endif
+#else
+  WiFi.begin(ssid, password);
+#endif
 
   server.on("/", std::bind(&WebServer::handleRoot, this));
   server.on(resetURL, std::bind(&WebServer::handleReset, this));
@@ -89,10 +87,7 @@ void WebServer::start(const IPAddress &ipAddress)
   Serial.println("HTTP server initialized");
 }
 
-String WebServer::getIPAddress()
-{
-  return WiFi.localIP().toString();
-}
+String WebServer::getIPAddress() { return WiFi.localIP().toString(); }
 
 void WebServer::bindFlight(int index)
 {
@@ -105,7 +100,7 @@ void WebServer::bindSavedFlights()
   Dir dir = SPIFFS.openDir(FLIGHTS_DIR);
   while (dir.next()) {
     server.on(dir.fileName().c_str(),
-               std::bind(&WebServer::handleFlight, this));
+              std::bind(&WebServer::handleFlight, this));
   }
 }
 
@@ -114,7 +109,8 @@ String WebServer::savedFlightLinks()
   String ret;
   Dir dir = SPIFFS.openDir(FLIGHTS_DIR);
   while (dir.next()) {
-    ret += "<h2><a href=\"" + dir.fileName() + "\">" + dir.fileName() + "</a></h2><br>";
+    ret += "<h2><a href=\"" + dir.fileName() + "\">" + dir.fileName() +
+           "</a></h2><br>";
   }
   return ret;
 }
@@ -134,11 +130,11 @@ void WebServer::handleFlight()
 
   pageBuilder.startPageStream(&server, "");
   pageBuilder.sendRawText(HtmlHtml);
-  //Send the flight data as a JSON object
+  // Send the flight data as a JSON object
   pageBuilder.sendRawText("<script>");
   pageBuilder.sendFileRaw(path);
   pageBuilder.sendRawText("</script>");
-  //Send the graphing fragment
+  // Send the graphing fragment
   pageBuilder.sendFileRaw("/graph.html");
   pageBuilder.closePageStream();
 }
@@ -192,22 +188,22 @@ void WebServer::handleConfigSetting(String &arg, String &val)
   if (arg == String("deplAlt")) {
     int deplAlt = val.toInt();
     FlightController::shared().setDeploymentAltitude(deplAlt);
-  }else if(arg == String("testChannel")) {
+  } else if (arg == String("testChannel")) {
     uint channel = val.toInt();
-    if(channel < 1 || channel > 4) {
+    if (channel < 1 || channel > 4) {
       DataLogger::log(F("Invalid channel number"));
       return;
     };
-    RecoveryDevice* d = FlightController::shared().getRecoveryDevice(channel);
-    if(d->deployed) {
+    RecoveryDevice *d = FlightController::shared().getRecoveryDevice(channel);
+    if (d->deployed) {
       d->disable();
-    }else{
+    } else {
       d->enable();
     }
-  }else if(arg == String("onAngle")) {
+  } else if (arg == String("onAngle")) {
     uint angle = val.toInt();
     RecoveryDevice::setOnAngle(angle, true);
-  }else if(arg == String("offAngle")) {
+  } else if (arg == String("offAngle")) {
     uint angle = val.toInt();
     RecoveryDevice::setOffAngle(angle, true);
   }

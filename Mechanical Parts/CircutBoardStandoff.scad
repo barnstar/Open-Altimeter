@@ -1,10 +1,19 @@
+// Prototype board standoffs
+//
+//  by Jonathan Nobels, 2019
+//
+//  I dedicate any and all copyright interest in this software to the public domain.
+//  I make this dedication for the benefit of the public at large and to the
+//  detriment of my heirs and successors. I intend this dedication to be an overt
+//  act of relinquishment in perpetuity of all present and future rights to this
+//  software under copyright law. See <http://unlicense.org> for more info.
+//
 
 //Large Proto Board
 SO_W=46;
 SO_L=66;
 
-
-//Small PCB
+//Small Proto Board
 //SO_W=16;
 //SO_L=76;
 

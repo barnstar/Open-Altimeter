@@ -28,8 +28,8 @@
 #define datalogger_h
 
 #include <Arduino.h>
-#include "FlightData.hpp"
 #include "FS.h"
+#include "FlightData.hpp"
 
 typedef void (*PrintCallback)(const String &line);
 

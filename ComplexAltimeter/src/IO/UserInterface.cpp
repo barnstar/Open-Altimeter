@@ -63,18 +63,17 @@ void UserInterface::previousView()
 
 void UserInterface::setActiveView(int index)
 {
-  View *lastView = views[activeViewIndex];
-  lastView->active   = false;
-  activeViewIndex = index;
-  View *view  = views[index];
-  view->active    = true;
+  View *lastView   = views[activeViewIndex];
+  lastView->active = false;
+  activeViewIndex  = index;
+  View *view       = views[index];
+  view->active     = true;
   view->refresh();
   view->update();
   lastView->dismiss();
 }
 
-
-//Button Delegate
+// Button Delegate
 
 void UserInterface::buttonLongPress(ButtonInput *b)
 {
@@ -97,4 +96,3 @@ void UserInterface::buttonShortPress(ButtonInput *b)
     view->shortPressAction();
   }
 }
-

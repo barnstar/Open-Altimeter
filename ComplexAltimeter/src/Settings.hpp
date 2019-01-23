@@ -32,15 +32,15 @@
 
 class Settings
 {
-    public:
-    Settings(){}
-    ~Settings(){}
+ public:
+  Settings() {}
+  ~Settings() {}
 
-    String readStringValue(const String &key, bool *success);
-    void writeStringValue(const String &val, const String &key);
+  String readStringValue(const String &key, bool *success);
+  void writeStringValue(const String &val, const String &key);
 
-    int readIntValue(const String &key, bool *success);
-    void writeIntValue(int value, const String &key);
+  int readIntValue(const String &key, bool *success);
+  void writeIntValue(int value, const String &key);
 };
 
 #endif

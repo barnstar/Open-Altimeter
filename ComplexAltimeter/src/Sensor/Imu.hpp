@@ -1,6 +1,3 @@
-#ifndef IMU_H
-#define IMU_H
-
 /*********************************************************************************
  * Open Altimeter
  *
@@ -27,13 +24,16 @@
  * SOFTWARE.
  **********************************************************************************/
 
+#ifndef IMU_H
+#define IMU_H
+
 #include <Wire.h>
 #include "../../Configuration.h"
 #include "../DataLogger.hpp"
 #include "../types.h"
 #include "lib/MPU9250.h"
-#include "lib/MahonyAHRS.h"
 #include "lib/MadgwickAHRS.h"
+#include "lib/MahonyAHRS.h"
 
 typedef MPU9250 ImuSensor;
 typedef Madgwick SensorFusion;

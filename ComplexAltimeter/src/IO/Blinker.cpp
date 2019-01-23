@@ -83,7 +83,7 @@ void Blinker::blinkValue(long value, int speed, bool repeat, bool pause)
 void Blinker::cancelSequence()
 {
   position = 0;
-  
+
 #ifdef IS_SIMPLE_ALT
   timer.deleteTimer(timerNumber);
 #else

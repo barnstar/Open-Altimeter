@@ -41,8 +41,8 @@ class SettingsView : public View
   void dismiss();
 
  private:
-  int altIndex      = -1;
-  int altitudes[6]  = {75, 100, 125, 150, 175, 200};
+  int altIndex              = -1;
+  int altitudes[6]          = {75, 100, 125, 150, 175, 200};
   bool resetOnNextLongPress = false;
 };
 

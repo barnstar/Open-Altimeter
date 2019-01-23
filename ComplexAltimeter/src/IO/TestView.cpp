@@ -38,7 +38,7 @@ void TestView::shortPressAction()
     activeOption = 1;
   }
 
-  ControlChannel c = options[activeOption -1];
+  ControlChannel c = options[activeOption - 1];
   testDevice       = FlightController::shared().getRecoveryDevice(c);
   needsRefresh     = true;
   refresh();

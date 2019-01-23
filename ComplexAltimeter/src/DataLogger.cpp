@@ -90,7 +90,7 @@ void DataLogger::logDataPoint(FlightDataPoint &p, bool isTriggerPoint)
     int idx      = dataIndex;
     int logCount = MIN(dataPointsLogged, dataBufferLen);
     for (int i = 0; i < logCount; i++) {
-      if(i) {
+      if (i) {
         dataFile.print(",");
       }
       dataFile.println(dataBuffer[idx].toJson());
@@ -132,7 +132,7 @@ void DataLogger::closeFlightDataFile(FlightData &d)
   DataLogger::log(F("Closing flight data file.."));
   dataFile.println("],\n");
   dataFile.println(d.toString(0));
-   dataFile.println("}\n");
+  dataFile.println("}\n");
   dataFile.close();
   clearBuffer();
 }
