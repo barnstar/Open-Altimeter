@@ -118,7 +118,7 @@ class FlightController
   SensorData fakeData;
   double testApogee = 400;
   bool isTestAscending;
-
+  void failsafeCheck();
   bool checkResetPin();
   void blinkLastAltitude();
 

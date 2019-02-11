@@ -47,6 +47,7 @@ static const int kChuteReleaseArmedAngle = 90;
 const byte FLIGHT_START_THRESHOLD_ALT  = 30;
 const byte FLIGHT_END_THRESHOLD_ALT    = 30;
 const float FLIGHT_START_THRESHOLD_ACC = 0.1;  // in G's
+const float FAILSAFE_ALTITUDE          = -10; 
 
 // When the altitude is DESCENT_THRESHOLD meters less than the apogee, we'll
 // assume we're descending.  Hopefully, your rocket has a generally upwards

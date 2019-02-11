@@ -144,6 +144,23 @@ void loop()
       blinker.blinkValue(flightData.apogee, BLINK_SPEED_MS, true);
     }
     checkResetPin();
+    failsafeCheck();
+  }
+}
+
+void failsafeCheck()
+{ 
+  //If the unit resets itself in flight, the reference altitude will reset 
+  //and the state will be reset to kOnGround
+  //This won't catch all failures, but it should deploy all chutes if we
+  //detect that we're "underground"
+  if(flightState == kOnGround) {
+    SensorData d;
+    readSensorData(&d);
+    if(d.altitude < FAILSAFE_ALTITUDE) {
+       setRecoveryDeviceState(ON, &mainChute);
+       setRecoveryDeviceState(ON, &drogueChute);
+    }
   }
 }
 

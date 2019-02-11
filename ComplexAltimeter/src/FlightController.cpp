@@ -187,6 +187,9 @@ void FlightController::loop()
     initRecoveryDevices();
     userInterface.start();
   }
+  failsafeCheck();
+
+
   // Ignore the wifis and oled when we're flying.
   if (flightState == kReadyToFly || flightState == kOnGround) {
     server.handleClient();
@@ -226,6 +229,22 @@ void FlightController::loop()
       DataLogger::log(String(F("Starting Blinker: ")) + String(lastApogee));
       blinker->blinkValue(lastApogee, BLINK_SPEED_MS, true);
       lastApogee = 0;
+    }
+  }
+}
+
+void FlightController::failsafeCheck()
+{ 
+  //If the unit resets itself in flight, the reference altitude will reset 
+  //and the state will be reset to kOnGround
+  //This won't catch all failures, but it should deploy all chutes if we
+  //detect that we're "underground"
+  if(flightState == kOnGround) {
+    SensorData d;
+    readSensorData(&d);
+    if(d.altitude < FAILSAFE_ALTITUDE) {
+       setRecoveryDeviceState(ON, mainChute);
+       setRecoveryDeviceState(ON, drogueChute);
     }
   }
 }

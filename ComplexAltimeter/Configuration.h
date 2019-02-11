@@ -51,6 +51,7 @@ const double FLIGHT_END_THRESHOLD_ALT        = 30;
 const double FLIGHT_START_THRESHOLD_ACC      = 20.0;  // in mss
 const double FLIGHT_START_THRESHOLD_VELOCITY = 0.5;  // m/s
 const double FLIGHT_END_THRESHOLD_VELOCITY   = 0.0;  // m/s
+const float FAILSAFE_ALTITUDE                = -10; 
 
 // When the altitude is DESCENT_THRESHOLD meters less than the apogee, we'll
 // assume we're descending.  Hopefully, your rocket has a generally upwards
