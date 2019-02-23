@@ -11,20 +11,20 @@
 include<threads.scad>
 
 //Tube Sytles
-TUBE_15MT = 1; //1.5" Mailing Tube
-TUBE_25MT = 2;     //2.5" Mailing Tube
-TUBE_30MT = 3;     //3.0" Mailing Tube
-TUBE_22TW = 4;     //2.2" Thick Wall (Rocketarium)
-TUBE_25TW = 5;     //2.5" Thick Wall (Rocketaruim)
-TUBE_BT80 = 6;     //Estes BT80 (2.5")
-TUBE_BT60 = 7;     //Estes BT60
-TUBE_BT50 = 8;     //Estes BT50
+TUBE_15MT = 0;   //1.5" Mailing Tube
+TUBE_25MT = 1;   //2.5" Mailing Tube
+TUBE_30MT = 2;   //3.0" Mailing Tube
+TUBE_22TW = 3;   //2.2" Thick Wall (Rocketarium)
+TUBE_25TW = 4;   //2.5" Thick Wall (Rocketaruim)
+TUBE_BT80 = 5;   //Estes BT80 (2.5")
+TUBE_BT60 = 6;   //Estes BT60
+TUBE_BT50 = 7;   //Estes BT50
 //-----------------
 TUBE_TYPE = TUBE_22TW;
 
 //Motor Tube Styles
-MTUBE_29MM = 1;
-MTUBE_BT50 = 2;
+MTUBE_29MM = 0;
+MTUBE_BT50 = 1;
 //-------------------
 MOTOR_TUBE_TYPE = MTUBE_29MM;
 
@@ -50,7 +50,6 @@ BOOSTER_OD = 25.0;
 PORT_LEN = 40.0;
 MOUNT_LEN = 30.0;
 
-THREAD_DIAMETER = MOTOR_OD + 12;
 
 if (NUM_FINS == 3)
 {
@@ -65,71 +64,42 @@ else if (NUM_FINS == 4)
   FIN_ANGLES = [ 0, 90, 180, 270 ]; //Fin Angles.  None for no fin guides
 }
 
-if (MOTOR_TUBE_TYPE == MTUBE_29MM)
-{
-  //29mm Motor Bute
+
+MT_DIAMETERS = [
   //O.D.: 1.233. I.D.: 1.147
-  MOTOR_OD = 31.4; //29mm tube Motor Tube D.  Including some tolerance
-}
-else if (MOTOR_TUBE_TYPE == MTUBE_BT50)
-{
+  //29mm tube Motor Tube D.  Including some tolerance
+   31.4,
   //24mm BT50
-  MOTOR_OD = 0.99 * 25.4;
-}
+  0.99 * 25.4
+];
 
-if (TUBE_TYPE == TUBE_15MT)
-{
-  //1.5" Mailing Tube
-  TUBE_ID = 38.2;
-  TUBE_OD = 41.2;
-}
-else if (TUBE_TYPE == TUBE_25MT)
-{
-  //2.5" Mailing Tube
-  TUBE_ID = 63.65;
-  TUBE_OD = 66.90;
-}
-else if (TUBE_TYPE == TUBE_30MT)
-{
-  //3.0" Mailing Tube
-  TUBE_ID = 75.75;
-  TUBE_OD = 78.75;
-}
-else if (TUBE_TYPE == TUBE_22TW)
-{
-  //Rocketarium thick wall 2.2" Tube
-  //OD.: 2.26. I.D.: 2.14
-  TUBE_OD = 2.26 * 25.4;
-  TUBE_ID = 2.14 * 25.4;
-}
-else if (TUBE_TYPE == TUBE_25TW)
-{
-  //Rocketarium thick wall 2.5" Tube
-  //O.D.: 2.638. I.D.: 2.558
-  TUBE_OD = 2.638 * 25.4;
-  TUBE_ID = 2.558 * 25.4;
-}
-else if (TUBE_TYPE == TUBE_BT50)
-{
-  //BT50 ID: 0.95", OD: 0.976"
-  TUBE_ID = 0.95 * 25.4;
-  TUBE_OD = 0.976 * 25.4;
-}
-else if (TUBE_TYPE == TUBE_BT60)
-{
-  //BT60: ID: 1.595", OD: 1.637
-  TUBE_ID = 1.595 * 25.4;
-  TUBE_OD = 1.637 * 25.4;
-}
-else if (TUBE_TYPE == TUBE_BT80)
-{
-  //BT80: OD: 2.6" ID: 2.558"
-  TUBE_ID = 2.558 * 25.4;
-  TUBE_OD = 2.60 * 25.4;
-}
 
-TUBE_ID = TUBE_ID - TOL;
-MOTOR_OD = MOTOR_OD + TOL;
+DIAMETERS=[
+    //1.5" Mailing Tube
+     [38.2, 41.2],
+    //2.5" Mailing Tube
+    [63.65, 66.90],
+    //3.0" Mailing Tube
+    [75.75, 78.75],
+    //Rocketarium thick wall 2.2" Tube
+    //OD.: 2.26. I.D.: 2.14
+    [2.26 * 25.4, 2.14 * 25.4],
+    //Rocketarium thick wall 2.5" Tube
+    //O.D.: 2.638. I.D.: 2.558
+    [2.638 *25.4, 2.558 *25.4],
+    //BT50 ID: 0.95", OD: 0.976"
+    [0.95*25.4, 0.976*25.4],
+    //BT60: ID: 1.595", OD: 1.637
+    [.595*25.4,1.637*25.4],
+    //BT80: OD: 2.6" ID: 2.558"
+    [2.558*25.4,  2.60*25.4]
+];
+
+TUBE_ID = DIAMETERS[TUBE_TYPE][0] - TOL;
+TUBE_OD = DIAMETERS[TUBE_TYPE][1];
+
+MOTOR_OD = MT_DIAMETERS[MOTOR_TUBE_TYPE] + TOL;
+THREAD_DIAMETER = MOTOR_OD + 12;
 
 module cutting_jig()
 {
@@ -205,6 +175,7 @@ module tail_cone()
 
 module motor_retainer_inner()
 {
+  MOTOR_OD=30;
   or = MOTOR_OD / 2 + 10;
   ir = MOTOR_OD / 2 + .3;
   difference()

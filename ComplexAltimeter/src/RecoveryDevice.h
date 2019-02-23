@@ -34,7 +34,7 @@
 #else
 #include "../Configuration.h"
 #include "DataLogger.hpp"
-#include "Settings.h"
+#include "Settings.hpp"
 #endif
 
 class RecoveryDevice

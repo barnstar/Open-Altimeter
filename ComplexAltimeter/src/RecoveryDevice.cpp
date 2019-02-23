@@ -45,13 +45,13 @@ void RecoveryDevice::init(byte id, byte gpioPin, RecoveryDeviceType type)
     delete servo;
   }
 
-  this->gpioPin = pin;
+  this->gpioPin = gpioPin;
   this->id      = id;
   this->type    = type;
 
   switch (type) {
     case kPyro:
-      pinMode(pin, OUTPUT);
+      pinMode(gpioPin, OUTPUT);
       break;
     case kServo:
 

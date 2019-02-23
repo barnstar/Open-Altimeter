@@ -16,85 +16,64 @@ OGIVE = 2;
 HAACK = 3;
 ELLIPTICAL = 4;
 
-STYLE = OGIVE;
+STYLE = PARABOLIC;
 
 
 //Tube Sytles
-TUBE_15MT = 1;   //1.5" Mailing Tube
-TUBE_25MT = 2;   //2.5" Mailing Tube
-TUBE_30MT = 3;   //3.0" Mailing Tube
-TUBE_22TW = 4;   //2.2" Thick Wall (Rocketarium)
-TUBE_25TW = 5;   //2.5" Thick Wall (Rocketaruim)
-TUBE_BT80 = 6;   //Estes BT80 (2.5")
-TUBE_BT60 = 7;   //Estes BT60
-TUBE_BT50 = 8;   //Estes BT50
+TUBE_15MT = 0;   //1.5" Mailing Tube
+TUBE_25MT = 1;   //2.5" Mailing Tube
+TUBE_30MT = 2;   //3.0" Mailing Tube
+TUBE_22TW = 3;   //2.2" Thick Wall (Rocketarium)
+TUBE_25TW = 4;   //2.5" Thick Wall (Rocketaruim)
+TUBE_BT80 = 5;   //Estes BT80 (2.5")
+TUBE_BT60 = 6;   //Estes BT60
+TUBE_BT50 = 7;   //Estes BT50
 
-TUBE_TYPE = TUBE_22TW;
+TUBE_TYPE = TUBE_BT60;
 
 
-LENGTH = 190;         //Overall length of nose cone
-TIP_LEN = 60;         //Length of the removable tip
-TIP_RAD = 4;          //Tip radius
+LENGTH  = 110;         //Overall length of nose cone
+TIP_LEN = 100;         //Length of the removable tip
+TIP_RAD = 8;          //Tip radius
 SHOULDER_LENGTH = 90; //Length of the insert/avbay
 
 //The radii and lengths here have to be customized for each length/od
 //Deriving the raduis at a given z position is left as an exercise for
 //the reader.
-SLEEVE_OR = 13.4; //Tip insery sleeve outer radius
-SLEEVE_IR = 10;   //Tip insert sleeve inner radius
+SLEEVE_OR = 18.4; //Tip insery sleeve outer radius
+SLEEVE_IR = 15;   //Tip insert sleeve inner radius
 SLEEVE_LEN = 20;  //Tip sleeve length
 
 WALL_THICKNESS = 2.0; //Cone and sleeve wall thickness
 TOL = 0.0;
 
 SEGMENTS = 100;
-$fn = 50;
 
 
-if(TUBE_TYPE == TUBE_15MT) {
-  //1.5" Mailing Tube
-  TUBE_ID = 38.2;
-  TUBE_OD = 41.2;
-}
-if(TUBE_TYPE == TUBE_25MT) {
-  //2.5" Mailing Tube
-  TUBE_ID = 63.65;
-  TUBE_OD = 66.90;
-}
-if(TUBE_TYPE == TUBE_30MT) {
-  //3.0" Mailing Tube
-  TUBE_ID = 75.75;
-  TUBE_OD = 78.75;
-}
-if(TUBE_TYPE == TUBE_22TW) {
-  //Rocketarium thick wall 2.2" Tube
-  //OD.: 2.26. I.D.: 2.14
-  TUBE_OD = 2.26 * 25.4;
-  TUBE_ID = 2.14 * 25.4;
-}
-if(TUBE_TYPE == TUBE_25TW) {
-  //Rocketarium thick wall 2.5" Tube
-  //O.D.: 2.638. I.D.: 2.558
-  TUBE_OD = 2.638 *25.4;
-  TUBE_ID = 2.558 *25.4;
-}
-if(TUBE_TYPE == TUBE_BT50) {
-  //BT50 ID: 0.95", OD: 0.976"
-  TUBE_ID = 0.95*25.4;
-  TUBE_OD = 0.976*25.4;
-}
-if(TUBE_TYPE == TUBE_BT60) {
-  //BT60: ID: 1.595", OD: 1.637
-  TUBE_ID = 1.595*25.4;
-  TUBE_OD = 1.637*25.4;
-}
-if(TUBE_TYPE == TUBE_BT80) {
-  //BT80: OD: 2.6" ID: 2.558"
-  TUBE_ID = 2.558*25.4;
-  TUBE_OD = 2.60*25.4;
-}
+DIAMETERS=[
+    //1.5" Mailing Tube
+    [38.2, 41.2],
+    //2.5" Mailing Tube
+    [63.65, 66.90],
+    //3.0" Mailing Tube
+    [75.75, 78.75],
+    //Rocketarium thick wall 2.2" Tube
+    //OD.: 2.26. I.D.: 2.14
+    [2.26 * 25.4, 2.14 * 25.4],
+    //Rocketarium thick wall 2.5" Tube
+    //O.D.: 2.638. I.D.: 2.558
+    [2.638 *25.4, 2.558 *25.4],
+    //BT50 ID: 0.95", OD: 0.976"
+    [0.95*25.4, 0.976*25.4],
+    //BT60: ID: 1.595", OD: 1.637
+    [.595*25.4,1.637*25.4],
+    //BT80: OD: 2.6" ID: 2.558"
+    [2.558*25.4,  2.60*25.4]
+];
 
-TUBE_ID = TUBE_ID - TOL;
+TUBE_ID = DIAMETERS[TUBE_TYPE][0] - TOL;
+TUBE_OD = DIAMETERS[TUBE_TYPE][1];
+
 
 // Components
 module bulkhead()
@@ -256,6 +235,10 @@ module shelled_cone()
     //Cut out inner sleeve
     cylinder(r = TUBE_ID / 2, h = 20, center = true);
   }
+  //The tip support tends to detach during printing.  This bar is removable and 
+  //will prevent that
+  translate([0,0,1])
+  cube([TUBE_OD-WALL_THICKNESS/2,5,2], center=true);
 }
 
 module cone_bottom()
@@ -451,7 +434,7 @@ module cone_elliptical(n = 0.5, R = 5, L = 10, s = 500)
 
 //Build the components - Uncomment the ones you need
 
-//shelled_cone();
+shelled_cone();
 //translate([0,0,0])
 //cone_bottom();
 //translate([TUBE_OD/2 + 20,0,0])

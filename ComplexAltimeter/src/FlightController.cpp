@@ -278,9 +278,9 @@ void FlightController::reset()
   imu.reset();
 
   setRecoveryDeviceState(OFF, drogueChute);
-  drogueChute.reset();
+  drogueChute->reset();
   setRecoveryDeviceState(OFF, mainChute);
-  mainChute.reset();
+  mainChute->reset();
 
   testFlightTimeStep = 0;
   blinker->cancelSequence();
@@ -409,7 +409,7 @@ void FlightController::flightControl()
 
 void FlightController::resetRecoveryDeviceIfRequired(RecoveryDevice *c)
 {
-  if (c.type == kPyro) {
+  if (c->type == kPyro) {
     setRecoveryDeviceState(OFF, c);
     c->reset();
   }
@@ -418,7 +418,7 @@ void FlightController::resetRecoveryDeviceIfRequired(RecoveryDevice *c)
 void FlightController::checkChuteIgnitionTimeout(RecoveryDevice *c,
                                                  int maxIgnitionTime)
 {
-  if (!c.timedReset && c.deployed &&
+  if (!c->timedReset && c->deployed &&
       millis() - c->deploymentTime > maxIgnitionTime && c->type == kPyro) {
     setRecoveryDeviceState(OFF, c);
     c->timedReset = true;
