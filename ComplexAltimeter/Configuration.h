@@ -65,6 +65,8 @@ const int MAX_FIRE_TIME = 5000;
 #define SD2 9
 #define SD3 10
 
+#define ENABLE_GIMBALLING 1
+
 // D1 & D2 are used for i2c
 const int SERIAL_BAUD_RATE = 57600;
 const byte STATUS_PIN      = NO_PIN;  // Unit status pin.  On if OK
@@ -74,14 +76,26 @@ const byte BUZZER_PIN      = D0;      // Audible buzzer on landing
 const byte RESET_PIN       = SD2;     // SD2 - pin "9"
 const byte INPUT_PIN       = SD3;     // SD3 - pin "10"
 
+#if !ENABLE_GIMBALLING
 const byte DEPL_CTL_1           = D3;  // control pin 1
 const byte DEPL_CTL_2           = D4;  // control pin 2
+const byte PITCH_CONTROL_PIN     = NO_PIN;
+const byte YAW_CONTROL_PIN       = NO_PIN;
+#else
+const byte DEPL_CTL_1           = NO_PIN;  // control pin 1
+const byte DEPL_CTL_2           = NO_PIN;  // control pin 2
+const byte PITCH_CONTROL_PIN     = D3;
+const byte YAW_CONTROL_PIN       = D4;
+
+#endif
+
 const byte DEPL_CTL_3           = D7;  // control pin 1
 const byte DEPL_CTL_4           = D8;  // control pin 2
 const RecoveryDeviceType CTL_1_TYPE = kServo;  //PWM control
 const RecoveryDeviceType CTL_2_TYPE = kServo;  //PWM control 
 const RecoveryDeviceType CTL_3_TYPE = kPyro;   //On/off
 const RecoveryDeviceType CTL_4_TYPE = kPyro;   //On/off
+
 
 
 const int BARO_I2C_ADDR     = 0x76;  // 0x77 or 0x76
@@ -96,7 +110,7 @@ const int SENSOR_READ_DELAY_MS = 10;
 const int BLINK_SPEED_MS = 250;
 
 // Servo angles for servo chute release
-static const int kChuteReleaseTriggeredAngle = 35;
-static const int kChuteReleaseArmedAngle = 178;
+static const int kChuteReleaseTriggeredAngle = 45;
+static const int kChuteReleaseArmedAngle = 90;
 
 #endif  // config_h

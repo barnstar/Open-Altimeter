@@ -83,8 +83,13 @@ class KalmanFilter : public Filter
   void configure(double measuredError, double estimatedError, double gain);
 
  private:
-  float err_measured  = 0;
-  float err_estimated = 0;
-  float q             = 0;
+  float err_measured  = 1;
+  float err_estimated = 1;
+  float q             = 0.001;
   float last_estimate = 0;
+
+  float eErrorStarting = 1;
+  float mErrorStarting = 1;
+  float gainStarting   = 0.001;
+
 };

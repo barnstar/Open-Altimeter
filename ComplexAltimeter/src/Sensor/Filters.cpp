@@ -84,7 +84,10 @@ double KalmanFilter::step(double measurement)
 
 void KalmanFilter::reset(double startingValue)
 {
-  configure(1, 1, 0.001);
+  this->err_measured  = this->eErrorStarting;
+  this->err_estimated = this->mErrorStarting;
+  this->q             = this->gainStarting ;
+
   this->last_estimate = startingValue;
   for (int i = 0; i < 4; i++) {
     step(startingValue);
@@ -94,6 +97,10 @@ void KalmanFilter::reset(double startingValue)
 void KalmanFilter::configure(double measuredError, double estimatedError,
                              double gain)
 {
+  this->eErrorStarting = measuredError;
+  this->mErrorStarting = estimatedError;
+  this->gainStarting   = gain;
+
   this->err_measured  = measuredError;
   this->err_estimated = estimatedError;
   this->q             = gain;
