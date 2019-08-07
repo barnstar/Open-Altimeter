@@ -35,6 +35,7 @@
 #include "RecoveryDevice.h"
 #include "Sensor/Altimeter.hpp"
 #include "Sensor/Imu.hpp"
+#include "AttitudeControl.hpp"
 #include "WebServer.hpp"
 
 #include "../Configuration.h"
@@ -96,6 +97,7 @@ class FlightController
 
   RecoveryDevice *mainChute;
   RecoveryDevice *drogueChute;
+  AttitudeControl *attitudeControl;
 
   int flightCount        = 0;      // The number of flights recorded in EEPROM
   int resetTime          = 0;      // millis() after starting the current flight

@@ -24,6 +24,9 @@
  * SOFTWARE.
  **********************************************************************************/
 
+#ifndef Filters_h
+#define Filters_h
+
 class Filter
 {
   public:
@@ -89,3 +92,5 @@ class KalmanFilter : public Filter
 
   void configure(double measuredError, double estimatedError, double gain);
 };
+
+#endif //Filters_h

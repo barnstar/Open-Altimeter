@@ -111,21 +111,27 @@ void FlightController::initRecoveryDevices()
     offAngle = kChuteReleaseArmedAngle;
   }
 
-  RecoveryDevice::setOffAngle(offAngle, false);
-  RecoveryDevice::setOnAngle(onAngle, false);
-
   for (int i = 0; i < 4; i++) {
     devices[i] = new RecoveryDevice();
   }
 
+  RecoveryDevice::setOffAngle(offAngle, false);
+  RecoveryDevice::setOnAngle(onAngle, false);
+
+#if !ENABLE_GIMBALLING
   devices[0]->init(ControlChannel1, DEPL_CTL_1, CTL_1_TYPE);
   devices[1]->init(ControlChannel2, DEPL_CTL_2, CTL_2_TYPE);
-  devices[2]->init(ControlChannel3, DEPL_CTL_3, CTL_3_TYPE);
-  devices[3]->init(ControlChannel4, DEPL_CTL_4, CTL_4_TYPE);
-
-  // These should be software configurable
   setMainChannel(ControlChannel1);
   setDrogueChannel(ControlChannel2);
+#else
+  //Use pyro channels gimballing
+  devices[2]->init(ControlChannel3, DEPL_CTL_3, CTL_3_TYPE);
+  devices[3]->init(ControlChannel4, DEPL_CTL_4, CTL_4_TYPE);
+  setMainChannel(ControlChannel3);
+  setDrogueChannel(ControlChannel4);
+
+  attitudeControl = new AttitudeControl(imu);
+#endif
 }
 
 void FlightController::setMainChannel(int channel)
@@ -200,11 +206,13 @@ void FlightController::loop()
 
   if (sampleOnNextLoop) {
     flightControl();
+    attitudeControl->update();
     sampleOnNextLoop = false;
   }
 
   if (flightState == kReadyToFly && altimeter.isReady() &&
-      !sensorTicker.active()) {
+      !sensorTicker.active())
+  {
     DataLogger::log(F("Starting Ticker"));
     blinker->cancelSequence();
     blinker->blinkValue(2, 300, true, false);
@@ -234,8 +242,8 @@ void FlightController::loop()
 }
 
 void FlightController::failsafeCheck()
-{ 
-  //If the unit resets itself in flight, the reference altitude will reset 
+{
+  //If the unit resets itself in flight, the reference altitude will reset
   //and the state will be reset to kOnGround
   //This won't catch all failures, but it should deploy all chutes if we
   //detect that we're "underground"
@@ -263,7 +271,10 @@ void FlightController::resetAll()
   reset();
 }
 
-void FlightController::stop() { flightState = kOnGround; }
+void FlightController::stop() {
+  attitudeControl->stop();
+  flightState = kOnGround;
+}
 
 void FlightController::reset()
 {
@@ -285,6 +296,10 @@ void FlightController::reset()
   testFlightTimeStep = 0;
   blinker->cancelSequence();
   flightState = kReadyToFly;
+
+  attitudeControl->calibrate();
+  attitudeControl->start();
+
   DataLogger::log(F("Ready To Fly..."));
 }
 

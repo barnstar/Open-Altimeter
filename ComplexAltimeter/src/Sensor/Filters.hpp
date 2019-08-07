@@ -24,6 +24,9 @@
  * SOFTWARE.
  **********************************************************************************/
 
+#ifndef Filters_h
+#define Filters_h
+
 class Filter
 {
  public:
@@ -93,3 +96,5 @@ class KalmanFilter : public Filter
   float gainStarting   = 0.001;
 
 };
+
+#endif //Filters_h

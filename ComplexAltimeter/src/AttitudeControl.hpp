@@ -39,6 +39,7 @@
 
 class AttitudeControl
 {
+public:
     AttitudeControl(Imu imu) : imu(imu), pitchFilter(0), yawFilter(0) {
         pitchServo = new Servo();
         yawServo = new Servo();
