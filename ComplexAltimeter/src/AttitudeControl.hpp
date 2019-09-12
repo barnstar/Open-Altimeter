@@ -27,60 +27,61 @@
 #ifndef ATT_CTL_H
 #define ATT_CTL_H
 
-#include "Sensor/Imu.hpp"
 #include <Servo.h>
 #include "Sensor/Filters.hpp"
+#include "Sensor/Imu.hpp"
 
 #define kMaxGimbalOffset 20
 #define kMinGimbalOffset -20
 
-//This should be configurable
+// This should be configurable
 #define kGimbalCenterAngle 90
 
 class AttitudeControl
 {
-public:
-    AttitudeControl(Imu imu) : imu(imu), pitchFilter(0), yawFilter(0) {
-        pitchServo = new Servo();
-        yawServo = new Servo();
-        pitchServo->attach(PITCH_CONTROL_PIN);
-        yawServo->attach(YAW_CONTROL_PIN);
-        pitchServo->write(pitchServoCenterAngle);
-        yawServo->write(yawServoCenterAngle);
+ public:
+  AttitudeControl(Imu imu) : imu(imu), pitchFilter(0), yawFilter(0)
+  {
+    pitchServo = new Servo();
+    yawServo   = new Servo();
+    pitchServo->attach(PITCH_CONTROL_PIN);
+    yawServo->attach(YAW_CONTROL_PIN);
+    pitchServo->write(pitchServoCenterAngle);
+    yawServo->write(yawServoCenterAngle);
 
-        //Use slightly higher gain than the default for faster response here.
-        pitchFilter.configure(1,1,0.05);
-        yawFilter.configure(1,1,0.05);
-        pitchFilter.reset(0);
-        yawFilter.reset(0);
-    };
+    // Use slightly higher gain than the default for faster response here.
+    pitchFilter.configure(1, 1, 0.05);
+    yawFilter.configure(1, 1, 0.05);
+    pitchFilter.reset(0);
+    yawFilter.reset(0);
+  };
 
+  ~AttitudeControl()
+  {
+    delete pitchServo;
+    delete yawServo;
+  };
 
-    ~AttitudeControl() {
-        delete pitchServo;
-        delete yawServo;
-    };
+  void calibrate();
+  void start();
+  void stop();
+  void update();
 
-    void calibrate();
-    void start();
-    void stop();
-    void update();
+ private:
+  bool running = false;
 
-private:
-    bool running = false;
+  Imu &imu;
+  Vector gravityVec;
+  Vector accVec;
 
-    Imu &imu;
-    Vector gravityVec;
-    Vector accVec;
+  KalmanFilter pitchFilter;
+  KalmanFilter yawFilter;
 
-    KalmanFilter pitchFilter;
-    KalmanFilter yawFilter;
+  Servo *pitchServo;
+  Servo *yawServo;
 
-    Servo *pitchServo;
-    Servo *yawServo;
-
-    int pitchServoCenterAngle = kGimbalCenterAngle;
-    int yawServoCenterAngle = kGimbalCenterAngle;
+  int pitchServoCenterAngle = kGimbalCenterAngle;
+  int yawServoCenterAngle   = kGimbalCenterAngle;
 };
 
 #endif

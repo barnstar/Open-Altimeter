@@ -26,53 +26,56 @@
 
 #include "AttitudeControl.hpp"
 
-#define kACGain 4.0f
-
 void AttitudeControl::calibrate()
 {
-    //gravityVec = imu.getAcceleration();
-    gravityVec = Vector(0,0,-10);
+  // gravityVec = imu.getAcceleration();
+  gravityVec = Vector(0, 0, -10);
 }
 
-//The rocket should always travel upwards, which is direclty oppostie to the gravity Vector
-//The z component of the gravity vector is not relevant, what we want to do is to keep the x and
-//y components as close to zero as possible.  Any deviation from zero means the rocket is leaning
-//in that direction.  We can calculate a correction factor (servo angle) based on the magnitude
-//of the vector along that axis where 0 is straight up and 10.0mss is lying sideways
+// The rocket should always travel upwards, which is direclty oppostie to the
+// gravity Vector The z component of the gravity vector is not relevant, what we
+// want to do is to keep the x and y components as close to zero as possible. Any
+// deviation from zero means the rocket is leaning in that direction.  We can
+// calculate a correction factor (servo angle) based on the magnitude of the
+// vector along that axis where 0 is straight up and 10.0mss is lying sideways
 
-void AttitudeControl::start()
-{
-    running = true;
-}
+void AttitudeControl::start() { running = true; }
 
 void AttitudeControl::stop()
 {
-    running = false;
-    yawServo->write(kGimbalCenterAngle);
-    pitchServo->write(kGimbalCenterAngle);
+  running = false;
+  yawServo->write(kGimbalCenterAngle);
+  pitchServo->write(kGimbalCenterAngle);
 }
 
 double gimbalClamp(double val)
 {
-    if(val < kMinGimbalOffset) return kMinGimbalOffset;
-    if(val > kMaxGimbalOffset) return kMaxGimbalOffset;
-    return val;
+  if (val < kMinGimbalOffset) return kMinGimbalOffset;
+  if (val > kMaxGimbalOffset) return kMaxGimbalOffset;
+  return val;
 }
+
+#define kACGain 4.0f
+#define kGyroGain -0.3f
 
 void AttitudeControl::update()
 {
-    Vector accVec = imu.getAcceleration();
+  Vector accVec  = imu.getAcceleration();
+  Vector gyroVec = imu.getGyro();
 
-    //Simple control where the gimbal angle is proportional to the gravity vector
-    //component for the respective axis.
+  // Simple control where the gimbal angle is proportional to the gravity vector
+  // component for the respective axis plus some second order feedback from the
+  // gyro
 
-    float yaw = yawFilter.step(accVec.YAxis);
-    float pitch = pitchFilter.step(accVec.XAxis);
-    int pitchAngle = kGimbalCenterAngle + gimbalClamp( pitch * kACGain);
-    int yawAngle = kGimbalCenterAngle + gimbalClamp( yaw * kACGain);
+  float yaw      = yawFilter.step(accVec.YAxis);
+  float pitch    = pitchFilter.step(accVec.XAxis);
+  int pitchAngle = kGimbalCenterAngle +
+                   gimbalClamp(pitch * kACGain + gyroVec.YAxis * kGyroGain);
+  int yawAngle = kGimbalCenterAngle +
+                 gimbalClamp(yaw * kACGain + gyroVec.XAxis * kGyroGain);
 
-    if(running) {
-        yawServo->write(yawAngle);
-        pitchServo->write(pitchAngle);
-    }
+  if (running) {
+    yawServo->write(yawAngle);
+    pitchServo->write(pitchAngle);
+  }
 }

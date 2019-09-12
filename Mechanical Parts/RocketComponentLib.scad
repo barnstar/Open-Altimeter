@@ -68,9 +68,9 @@ else if (NUM_FINS == 4)
 MT_DIAMETERS = [
   //O.D.: 1.233. I.D.: 1.147
   //29mm tube Motor Tube D.  Including some tolerance
-   31.4,
+  31.4,
   //24mm BT50
-  0.99 * 25.4
+  0.976*25.4
 ];
 
 
@@ -319,6 +319,30 @@ module payload_adapter()
           cylinder(r = TUBE_ID / 2, h = PLATE_THICKNESS, center = true);
       cylinder(r = 2, h = 30, center = true);
     }
+  }
+}
+
+module 24_29_adapter()
+{
+  ID_29 = 28.9;        //29mm
+  ID_24 = 0.95*25.4;
+  OD_24 = 0.976*25.4;
+
+  translate([0,0,0])
+  difference()
+  {
+    cylinder(r=ID_29, h = 10, center = false);   //Main outer
+    cylinder(r=ID_24, h = 20, center = false);   //Thru hole
+    translate([0,0,2]){
+      cylinder(r=OD_24, h = 20, center = false);    //Blind Hole
+    }
+  }
+
+  translate([0,ID_29*.75,0])
+  difference()
+  {
+    cylinder(r=ID_29, h = 5, center = false);   //Main outer
+    cylinder(r=OD_24, h = 8, center = false);   //Thru hole
   }
 }
 
