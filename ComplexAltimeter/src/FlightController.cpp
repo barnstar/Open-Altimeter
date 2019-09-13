@@ -343,9 +343,9 @@ void FlightController::flightControl()
   int sampleDelay = (flightState != kDescending) ? 5 : 20;
   logCounterUI    = !logCounterUI ? sampleDelay : logCounterUI - 1;
   if (0 == logCounterUI && flightState != kOnGround) {
-    // DataLogger::log("Alt:" + String(altitude) + "  " +
-    //                 sensorData.heading.toString() + +"   " +
-    //                 sensorData.acc_vec.toString());
+     DataLogger::log("Alt:" + String(altitude) + "  " +
+                     sensorData.heading.toString() + +"   " +
+                     sensorData.acc_vec.toString());
   }
 
   DataLogger::sharedLogger().logDataPoint(dp, false);

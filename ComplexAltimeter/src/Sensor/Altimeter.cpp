@@ -30,8 +30,14 @@
 
 bool Altimeter::start()
 {
-  bool ready = false;
-  if (ready = barometer.begin()) {
+  #if USE_BMP280
+  bool ready = barometer.begin(BARO_I2C_ADDR);
+  #endif
+  #if USE_BMP085
+  bool ready = barometer.begin();
+  #endif
+
+  if (ready) {
 #ifdef STATUS_PIN_LEVEL
     analogWrite(STATUS_PIN, STATUS_PIN_LEVEL);
 #else
@@ -55,6 +61,9 @@ void Altimeter::reset()
   velocityFilter.reset(0);
 
   baselinePressure = pressure();
+  #if USE_BMP280
+  refAltitude = barometer.readAltitude(); 
+  #endif
   lastRefreshTime  = 0;
   DataLogger::log(String(F("Barometer reset: ")) + String(baselinePressure));
 }
@@ -70,13 +79,19 @@ double Altimeter::verticalVelocity()
 
 void Altimeter::update()
 {
+  #if USE_BMP085
   double p = pressure();
   if (p == 0) {
     return;
   }
   double relativeAlt = barometer.altitude(p, baselinePressure);
+  #endif
+  #if USE_BMP280
+  double relativeAlt = barometer.readAltitude() - refAltitude;
+  #endif
 
   double lastAlt = altitudeFilter.getCurrentValue();
+
   altitudeFilter.step(relativeAlt);
 
   long t = micros();
@@ -90,6 +105,10 @@ void Altimeter::update()
 
 double Altimeter::pressure()
 {
+  #if USE_BMP280
+  return barometer.readPressure();
+  #endif
+  #if USE_BMP085
   char status;
   double t, p, p0, a;
   status = barometer.startTemperature();
@@ -107,6 +126,7 @@ double Altimeter::pressure()
       }
     }
   }
+  #endif
   return 0;
 }
 

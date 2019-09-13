@@ -50,6 +50,7 @@ const char *testURL     = "/test";
 const char *flightsURL  = "/flights";
 const char *resetAllURL = "/resetAll";
 const char *resetURL    = "/reset";
+const char *disarmURL   = "/disarm";
 const char *statusURL   = "/status";
 const char *settingsURL = "/settings";
 const char *configURL   = "/config";
@@ -75,6 +76,7 @@ void WebServer::start(const IPAddress &ipAddress)
 
   server.on("/", std::bind(&WebServer::handleRoot, this));
   server.on(resetURL, std::bind(&WebServer::handleReset, this));
+  server.on(disarmURL, std::bind(&WebServer::handleDisarm, this));
   server.on(statusURL, std::bind(&WebServer::handleStatus, this));
   server.on(testURL, std::bind(&WebServer::handleTest, this));
   server.on(flightsURL, std::bind(&WebServer::handleFlights, this));
@@ -151,6 +153,12 @@ void WebServer::handleReset()
   handleStatus();
 }
 
+void WebServer::handleDisarm()
+{
+  FlightController::shared().stop();
+  handleStatus();
+}
+
 void WebServer::handleTest()
 {
   FlightController::shared().reset();
@@ -219,9 +227,12 @@ void WebServer::handleRoot()
 
   body += PageBuilder::makeLink(String(settingsURL), "Configure<br/>");
   body += PageBuilder::makeLink(String(flightsURL), "Flight List<br/>");
-  body += PageBuilder::makeLink(String(resetURL), "Set To Ready State<br/>");
   body += PageBuilder::makeLink(String(statusURL), "Show Status<br/>");
   body += PageBuilder::makeLink(String(testURL), "Run Flight Test<br/>");
+
+  body += doubleLine + PageBuilder::makeLink(String(resetURL), "Arm<br/>");
+  body += PageBuilder::makeLink(String(disarmURL), "Disarm<br/>");
+
   body += doubleLine +
           PageBuilder::makeLink(String(resetAllURL), "Full Reset") + doubleLine;
   body += "STATUS : <br>";

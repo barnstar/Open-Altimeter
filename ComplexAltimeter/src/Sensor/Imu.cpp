@@ -34,6 +34,7 @@ void Imu::reset()
 
 void Imu::update()
 {
+  #if USE_MPU9250
   // Offsets applied to raw x/y/z values
   float mag_offsets[3] = {0.0F, 0.0F, 0.0F};
 
@@ -70,6 +71,12 @@ void Imu::update()
     heading.pitch = sensorFusion.getPitch();
     heading.yaw   = sensorFusion.getYaw();
   }
+  #endif
+  
+  #if USE_MPU6050
+      acceleration = imuSensor.readScaledAccel();
+      gyro = imuSensor.readNormalizeGyro();
+  #endif
 }
 
 Heading Imu::getRelativeHeading() { return heading - referenceHeading; }

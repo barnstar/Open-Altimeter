@@ -33,14 +33,14 @@ $fn = 50;
 MOTOR_LEN = 120; //Motor length.  Total len is MOTOR_LEN+RET_TNK
 RET_THK = 3.5;   //Retainer thickness
 WALL_THK = 1.5;  //1.5 default
-TC_LEN = 20;     //Tail cone length
-TC_CUTOFF = 12;
+TC_LEN = 30;     //Tail cone length
+TC_CUTOFF = 20;
 THREAD_LEN = 12.5;    //Length of the retainer threads
 TOL = 0;              //Fit tolerance for retainers and cetnering ring
 LUG_LEN = 20;         //Launch Lug Length
 LL_BASE_OFFSET = 5.5; //Increase/decrease to change the lug base thickness
 
-NUM_FINS = 4;         //3,4,5
+NUM_FINS = 3;         //3,4,5
 FIN_THICKNESS = 3.35; //Fin Thickness
 FIN_RET_THK = 2.0;    //Fin guide thickness
 
@@ -51,18 +51,17 @@ PORT_LEN = 40.0;
 MOUNT_LEN = 30.0;
 
 
-if (NUM_FINS == 3)
-{
-  FIN_ANGLES = [ 0, 120, 240 ]; //Fin Angles.  None for no fin guides
-}
-else if (NUM_FINS == 5)
-{
-  FIN_ANGLES = [ 0, 72, 144, 216, 288 ]; //Fin Angles.  None for no fin guides
-}
-else if (NUM_FINS == 4)
-{
-  FIN_ANGLES = [ 0, 90, 180, 270 ]; //Fin Angles.  None for no fin guides
-}
+ALL_FIN_ANGLES=[
+  [],
+  [ 0 ],
+  [ 0, 180 ],
+  [ 0, 120, 240 ],
+  [ 0, 90, 180, 270 ],
+  [ 0, 72, 144, 216, 288 ],
+  [ 0, 60, 120, 180, 240, 300 ]
+];
+
+FIN_ANGLES=ALL_FIN_ANGLES[NUM_FINS];
 
 
 MT_DIAMETERS = [
@@ -175,9 +174,9 @@ module tail_cone()
 
 module motor_retainer_inner()
 {
-  MOTOR_OD=30;
+  //MOTOR_OD=30;
   or = MOTOR_OD / 2 + 10;
-  ir = MOTOR_OD / 2 + .3;
+  ir = MOTOR_OD / 2 + 1;
   difference()
   {
     //2.5 mm differene between this diameter and the other

@@ -30,7 +30,6 @@
 #include "../../Configuration.h"
 #include "Filters.hpp"
 
-#define USE_BMP085 1
 
 // Sensor libraries
 #if USE_BMP280

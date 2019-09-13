@@ -88,6 +88,7 @@ class WebServer
   void handleFlights();
   void handleFlight();
   void handleConfig();
+  void handleDisarm();
 
   void handleReset();
   void handleResetAll();

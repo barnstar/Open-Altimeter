@@ -69,6 +69,11 @@ const int MAX_FIRE_TIME = 5000;
 
 // D1 & D2 are used for i2c
 const int SERIAL_BAUD_RATE = 57600;
+
+#define CONFIG2
+//#define CONFIG1  
+
+#ifdef CONFIG1
 const byte STATUS_PIN      = NO_PIN;  // Unit status pin.  On if OK
 const byte MESSAGE_PIN     = D6;      // Blinks out the altitude
 const byte READY_PIN       = D5;      // Indicates the unit is ready for flight
@@ -86,7 +91,6 @@ const byte DEPL_CTL_1           = NO_PIN;  // control pin 1
 const byte DEPL_CTL_2           = NO_PIN;  // control pin 2
 const byte PITCH_CONTROL_PIN     = D3;
 const byte YAW_CONTROL_PIN       = D4;
-
 #endif
 
 const byte DEPL_CTL_3           = D7;  // control pin 1
@@ -95,13 +99,41 @@ const RecoveryDeviceType CTL_1_TYPE = kServo;  //PWM control
 const RecoveryDeviceType CTL_2_TYPE = kServo;  //PWM control 
 const RecoveryDeviceType CTL_3_TYPE = kPyro;   //On/off
 const RecoveryDeviceType CTL_4_TYPE = kPyro;   //On/off
-
-
-
 const int BARO_I2C_ADDR     = 0x76;  // 0x77 or 0x76
 const int DISPLAY_I2C_ADDR  = 0x3C;
 const int IMU_I2C_ADDR      = 0x68;
 const PeizoStyle PEIZO_TYPE = kActive;
+#define USE_BMP085 1
+#define USE_MPU9250 1
+#endif
+
+
+
+#ifdef CONFIG2
+const byte STATUS_PIN      = NO_PIN;  // Unit status pin.  On if OK
+const byte MESSAGE_PIN     = NO_PIN;      // Blinks out the altitude
+const byte READY_PIN       = NO_PIN;      // Indicates the unit is ready for flight
+const byte BUZZER_PIN      = D0;      // Audible buzzer on landing
+const byte RESET_PIN       = NO_PIN;     // SD2 - pin "9"
+const byte INPUT_PIN       = NO_PIN;     // SD3 - pin "10"
+
+const byte DEPL_CTL_1           = NO_PIN;  // control pin 1
+const byte DEPL_CTL_2           = NO_PIN;  // control pin 2
+const byte DEPL_CTL_3           = NO_PIN;  // control pin 1
+const byte DEPL_CTL_4           = NO_PIN;  // control pin 2
+const RecoveryDeviceType CTL_1_TYPE = kNoEjection;  //PWM control
+const RecoveryDeviceType CTL_2_TYPE = kNoEjection;  //PWM control 
+const RecoveryDeviceType CTL_3_TYPE = kNoEjection;   //On/off
+const RecoveryDeviceType CTL_4_TYPE = kNoEjection;   //On/off
+const int BARO_I2C_ADDR     = 0x76;  // 0x77 or 0x76
+const int DISPLAY_I2C_ADDR  = 0x3C;
+const int IMU_I2C_ADDR      = 0x68;
+const int MPU6050_ADDRESS   = 0x68;
+const PeizoStyle PEIZO_TYPE = kActive;
+#define USE_BMP280 1
+#define USE_MPU6050 1
+#endif
+
 
 // The barometer can only refresh at about 50Hz.
 const int SENSOR_READ_DELAY_MS = 10;

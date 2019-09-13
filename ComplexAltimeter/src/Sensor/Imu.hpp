@@ -31,23 +31,42 @@
 #include "../../Configuration.h"
 #include "../DataLogger.hpp"
 #include "../types.h"
-#include "lib/MPU9250.h"
 #include "lib/MadgwickAHRS.h"
 #include "lib/MahonyAHRS.h"
 
+#if USE_MPU9250
+#include "lib/MPU9250.h"
 typedef MPU9250 ImuSensor;
+#endif
+
+#if USE_MPU6050
+#include "lib/MPU6050.h"
+typedef MPU6050 ImuSensor;
+#endif
+
 typedef Madgwick SensorFusion;
 
 class Imu
 {
  public:
+  #if USE_MPU9250
   Imu(int frequency) : imuSensor(Wire, IMU_I2C_ADDR), frequency(frequency) {}
+  #endif
+  #if USE_MPU6050
+  Imu(int frequency) : imuSensor(), frequency(frequency) {}
+  #endif
 
   ~Imu() {}
 
   bool start()
   {
+
+  #if USE_MPU9250
     mpuReady = !(imuSensor.begin() < 0);
+  #endif
+  #if USE_MPU6050
+    mpuReady = imuSensor.begin(MPU6050_SCALE_2000DPS, MPU6050_RANGE_2G, IMU_I2C_ADDR);
+  #endif
     DataLogger::log(mpuReady ? "IMU OK" : "IMU failed");
     return mpuReady;
   }

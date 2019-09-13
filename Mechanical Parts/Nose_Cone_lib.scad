@@ -16,8 +16,9 @@ OGIVE = 2;
 HAACK = 3;
 ELLIPTICAL = 4;
 
-STYLE = PARABOLIC;
+STYLE = OGIVE;
 
+$fn=50;
 
 //Tube Sytles
 TUBE_15MT = 0;   //1.5" Mailing Tube
@@ -28,21 +29,22 @@ TUBE_25TW = 4;   //2.5" Thick Wall (Rocketaruim)
 TUBE_BT80 = 5;   //Estes BT80 (2.5")
 TUBE_BT60 = 6;   //Estes BT60
 TUBE_BT50 = 7;   //Estes BT50
+TUBE_BT55 = 8;   //Estes BT55
 
-TUBE_TYPE = TUBE_BT60;
+TUBE_TYPE = TUBE_22TW;
 
 
-LENGTH  = 110;         //Overall length of nose cone
-TIP_LEN = 100;         //Length of the removable tip
-TIP_RAD = 8;          //Tip radius
-SHOULDER_LENGTH = 90; //Length of the insert/avbay
+LENGTH  = 130;         //Overall length of nose cone
+TIP_LEN = 20;         //Length of the removable tip
+TIP_RAD = 2;          //Tip radius
+SHOULDER_LENGTH = 67; //Length of the insert/avbay
 
 //The radii and lengths here have to be customized for each length/od
 //Deriving the raduis at a given z position is left as an exercise for
 //the reader.
-SLEEVE_OR = 18.4; //Tip insery sleeve outer radius
-SLEEVE_IR = 15;   //Tip insert sleeve inner radius
-SLEEVE_LEN = 20;  //Tip sleeve length
+SLEEVE_OR = 22.5; //Tip insery sleeve outer radius
+SLEEVE_IR = 11;   //Tip insert sleeve inner radius
+SLEEVE_LEN = 15;  //Tip sleeve length
 
 WALL_THICKNESS = 2.0; //Cone and sleeve wall thickness
 TOL = 0.0;
@@ -59,16 +61,18 @@ DIAMETERS=[
     [75.75, 78.75],
     //Rocketarium thick wall 2.2" Tube
     //OD.: 2.26. I.D.: 2.14
-    [2.26 * 25.4, 2.14 * 25.4],
+    [2.14 * 25.4, 2.26 * 25.4],
     //Rocketarium thick wall 2.5" Tube
     //O.D.: 2.638. I.D.: 2.558
-    [2.638 *25.4, 2.558 *25.4],
+    [2.558 *25.4, 2.638 *25.4],
     //BT50 ID: 0.95", OD: 0.976"
     [0.95*25.4, 0.976*25.4],
     //BT60: ID: 1.595", OD: 1.637
-    [.595*25.4,1.637*25.4],
+    [1.595*25.4,1.637*25.4],
     //BT80: OD: 2.6" ID: 2.558"
-    [2.558*25.4,  2.60*25.4]
+    [2.558*25.4,  2.60*25.4],
+    //BT55
+    [32.6, 33.7]
 ];
 
 TUBE_ID = DIAMETERS[TUBE_TYPE][0] - TOL;
@@ -96,14 +100,53 @@ module bulkhead()
   }
 }
 
+module simple_insert_nobase()
+{
+  union()
+  {
+    difference()
+    {
+      union(){
+      cylinder(r = TUBE_OD / 2 - WALL_THICKNESS, h = SHOULDER_LENGTH+10, center = false);
+      cylinder(r = TUBE_ID / 2, h = SHOULDER_LENGTH, center = false);
+      }
+      translate([0,0,-3]) {
+      cylinder(r = TUBE_ID / 2 - WALL_THICKNESS, h = (SHOULDER_LENGTH)*2.8, center = false);
+      }
+    }
+  }
+}
+
+module simple_coupler()
+{
+  union()
+  {
+    difference()
+    {
+      union(){
+      cylinder(r = TUBE_OD / 2 - WALL_THICKNESS, h = SHOULDER_LENGTH+10, center = false);
+      cylinder(r = TUBE_ID / 2, h = SHOULDER_LENGTH, center = false);
+      }
+      translate([0,0,-3]) {
+      cylinder(r = TUBE_ID / 2 - WALL_THICKNESS, h = (SHOULDER_LENGTH)*2.8, center = false);
+      }
+    }
+  }
+}
+
 module simple_insert()
 {
   union()
   {
     difference()
     {
+      union(){
+      //cylinder(r = TUBE_OD / 2 - WALL_THICKNESS, h = SHOULDER_LENGTH+10, center = false);
       cylinder(r = TUBE_ID / 2, h = SHOULDER_LENGTH, center = false);
-      cylinder(r = TUBE_ID / 2 - WALL_THICKNESS, h = (SHOULDER_LENGTH)*2.1, center = true);
+      }
+      translate([0,0,3]) {
+      cylinder(r = TUBE_ID / 2 - WALL_THICKNESS, h = (SHOULDER_LENGTH)*2.8, center = false);
+      }
     }
   }
 }
@@ -233,12 +276,12 @@ module shelled_cone()
       }
     }
     //Cut out inner sleeve
-    cylinder(r = TUBE_ID / 2, h = 20, center = true);
+    //cylinder(r = TUBE_ID / 2, h = 20, center = true);
   }
   //The tip support tends to detach during printing.  This bar is removable and 
   //will prevent that
-  translate([0,0,1])
-  cube([TUBE_OD-WALL_THICKNESS/2,5,2], center=true);
+  //translate([0,0,1])
+  //cube([TUBE_OD-WALL_THICKNESS/2,5,2], center=true);
 }
 
 module cone_bottom()
@@ -434,7 +477,9 @@ module cone_elliptical(n = 0.5, R = 5, L = 10, s = 500)
 
 //Build the components - Uncomment the ones you need
 
-shelled_cone();
+//solid_cone();
+//translate([0,0,SHOULDER_LENGTH])
+//shelled_cone();
 //translate([0,0,0])
 //cone_bottom();
 //translate([TUBE_OD/2 + 20,0,0])
@@ -442,6 +487,6 @@ shelled_cone();
 //translate([-TUBE_OD - 20,0,0])
 //translate([0,0,3.5])
 //avbay_insert();
-//bulkhead();
+bulkhead();
 //simple_insert();
-//avbay_retainer();
+//simple_insert_nobase();

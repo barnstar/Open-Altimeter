@@ -31,8 +31,10 @@
 
 void setup()
 {
+ Serial.begin(57600);
+
   //Scan the i2c bus for debugging
-  //scanI2cBus();
+  scanI2cBus();
   
   //Initialize the shared flightController
   FlightController::shared();
