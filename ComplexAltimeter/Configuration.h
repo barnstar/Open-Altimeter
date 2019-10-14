@@ -132,6 +132,8 @@ const int MPU6050_ADDRESS   = 0x68;
 const PeizoStyle PEIZO_TYPE = kActive;
 #define USE_BMP280 1
 #define USE_MPU6050 1
+const byte PITCH_CONTROL_PIN     = NO_PIN;
+const byte YAW_CONTROL_PIN       = NO_PIN;
 #endif
 
 

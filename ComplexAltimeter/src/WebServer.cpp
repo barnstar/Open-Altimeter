@@ -29,7 +29,7 @@
 #include "DataLogger.hpp"
 #include "FlightController.hpp"
 
-#define RUN_AS_ACCESS_POINT 0
+#define RUN_AS_ACCESS_POINT 1
 
 #if RUN_AS_ACCESS_POINT
 const char *ssid     = "Altimeter1";

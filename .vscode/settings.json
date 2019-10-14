@@ -17,6 +17,17 @@
         "type_traits": "cpp",
         "utility": "cpp",
         "queue": "cpp",
-        "*.tcc": "cpp"
+        "*.tcc": "cpp",
+        "__hash_table": "cpp",
+        "__tree": "cpp",
+        "array": "cpp",
+        "filesystem": "cpp",
+        "list": "cpp",
+        "map": "cpp",
+        "regex": "cpp",
+        "set": "cpp",
+        "string": "cpp",
+        "string_view": "cpp",
+        "unordered_map": "cpp"
     }
 }

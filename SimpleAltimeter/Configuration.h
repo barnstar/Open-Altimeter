@@ -30,7 +30,7 @@
 #include "types.h"
 
 #define LOG_TO_SERIAL 1  // Set to 0 to disable serial logging...
-#define PLOT_ALTITUDE 0  // Set to 1 to watch the altitude on the serial plotter
+#define PLOT_ALTITUDE 1  // Set to 1 to watch the altitude on the serial plotter
 
 static const int kChuteReleaseTriggeredAngle = 45;
 static const int kChuteReleaseArmedAngle = 90;
@@ -63,8 +63,8 @@ const int MAX_FIRE_TIME = 5000;
 
 #define USE_PIN_CONFIG_1 0
 #define USE_PIN_CONFIG_2 0
-#define USE_PIN_CONFIG_3 1
-#define USE_PIN_CONFIG_4 0
+#define USE_PIN_CONFIG_3 0
+#define USE_PIN_CONFIG_4 1
 
 #if USE_PIN_CONFIG_1
 // Configuration A: 1 1/2" PCB - No deployment
@@ -124,6 +124,30 @@ const byte ALT_PIN_B = 9;               // Main Chute Altitude Set Pin
 const RecoveryDeviceType MAIN_TYPE   = kServo;
 const RecoveryDeviceType DROGUE_TYPE = kNoEjection;
 #define BARO_I2C_ADDR
+#define STATUS_PIN_LEVEL 800
+const PeizoStyle PEIZO_TYPE      = kPassive;
+#define ENABLE_MPU 0
+#define USE_BMP085 0
+#define USE_BMP280 1
+
+//The PWM function works on pins 3, 5, 6, 9, 10, and 1
+
+#elif USE_PIN_CONFIG_4
+//Tape backed
+const int SERIAL_BAUD_RATE     = 9600;
+const byte STATUS_PIN          = 13;
+const byte MESSAGE_PIN         = 9;  
+const byte READY_PIN           = 10;    
+const byte BUZZER_PIN          = 5;     
+const byte RESET_PIN           = 2;
+const byte TEST_PIN            = 7;
+const byte MAIN_DEPL_RELAY_PIN = 3;  
+const char DROGUE_DEPL_RELAY_PIN = NO_PIN;  
+const byte ALT_PIN_A = 11;              
+const byte ALT_PIN_B = 12;              
+const RecoveryDeviceType MAIN_TYPE   = kServo;
+const RecoveryDeviceType DROGUE_TYPE = kNoEjection;
+const int BARO_I2C_ADDR          = 0x76;  
 #define STATUS_PIN_LEVEL 800
 const PeizoStyle PEIZO_TYPE      = kPassive;
 #define ENABLE_MPU 0

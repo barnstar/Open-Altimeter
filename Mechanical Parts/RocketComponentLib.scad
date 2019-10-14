@@ -89,7 +89,7 @@ DIAMETERS=[
     //BT50 ID: 0.95", OD: 0.976"
     [0.95*25.4, 0.976*25.4],
     //BT60: ID: 1.595", OD: 1.637
-    [.595*25.4,1.637*25.4],
+    [1.595*25.4,1.637*25.4],
     //BT80: OD: 2.6" ID: 2.558"
     [2.558*25.4,  2.60*25.4]
 ];
@@ -324,24 +324,24 @@ module payload_adapter()
 module 24_29_adapter()
 {
   ID_29 = 28.9;        //29mm
-  ID_24 = 0.95*25.4;
-  OD_24 = 0.976*25.4;
+  ID_24 = 0.96*25.4;
+  OD_24 = 0.984*25.4;
 
   translate([0,0,0])
   difference()
   {
-    cylinder(r=ID_29, h = 10, center = false);   //Main outer
-    cylinder(r=ID_24, h = 20, center = false);   //Thru hole
+    cylinder(r=ID_29*.5, h = 10, center = false);   //Main outer
+    cylinder(r=ID_24*.5, h = 20, center = false);   //Thru hole
     translate([0,0,2]){
-      cylinder(r=OD_24, h = 20, center = false);    //Blind Hole
+      cylinder(r=OD_24*.5, h = 20, center = false);    //Blind Hole
     }
   }
 
-  translate([0,ID_29*.75,0])
+  translate([0,ID_29*1.1,0])
   difference()
   {
-    cylinder(r=ID_29, h = 5, center = false);   //Main outer
-    cylinder(r=OD_24, h = 8, center = false);   //Thru hole
+    cylinder(r=ID_29*.5, h = 10, center = false);   //Main outer
+    cylinder(r=OD_24*.5, h = 12, center = false);   //Thru hole
   }
 }
 
@@ -353,9 +353,11 @@ module 24_29_adapter()
 //dual_mount();
 //engine_mount_no_tube();
 //centering_ring();
-translate([ 0, 30, 0 ]) rotate([ 0, 0, -90 ]) motor_retainer_inner();
-translate([ 0, -30, 0 ]) color([ 1, 0, 0 ]) motor_retainer_outer();
+//translate([ 0, 30, 0 ]) rotate([ 0, 0, -90 ]) motor_retainer_inner();
+//translate([ 0, -30, 0 ]) color([ 1, 0, 0 ]) motor_retainer_outer();
 
+
+24_29_adapter();
 //centering_ring();
 
 //Simple sleeve and bulkhead
