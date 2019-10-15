@@ -33,6 +33,8 @@ typedef MPU9250 ImuSensor;
 #include "types.h"
 
 void playReadyTone();
+void playCancelTone();
+
 void reset(FlightData *d);
 bool checkResetPin();
 int  readDeploymentAltitude();

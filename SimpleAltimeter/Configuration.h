@@ -134,7 +134,7 @@ const PeizoStyle PEIZO_TYPE      = kPassive;
 
 #elif USE_PIN_CONFIG_4
 //Tape backed
-const int SERIAL_BAUD_RATE     = 9600;
+const int SERIAL_BAUD_RATE     = 19200;
 const byte STATUS_PIN          = 13;
 const byte MESSAGE_PIN         = 9;  
 const byte READY_PIN           = 10;    
@@ -157,7 +157,7 @@ const PeizoStyle PEIZO_TYPE      = kPassive;
 #endif
 
 // The barometer can only refresh at about 50Hz.
-const byte SENSOR_READ_DELAY_MS = 50;
+const byte SENSOR_READ_DELAY_MS = 30;
 
 // Delay between digit blinks.  Any faster is too quick to keep up with
 const short BLINK_SPEED_MS = 300;

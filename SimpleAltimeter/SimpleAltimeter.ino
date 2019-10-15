@@ -143,9 +143,10 @@ void loop()
     if (flightData.apogee && !blinker.isBlinking()) {
       blinker.blinkValue(flightData.apogee, BLINK_SPEED_MS, true);
     }
-    checkResetPin();
     failsafeCheck();
   }
+  checkResetPin();
+
 }
 
 void failsafeCheck()
@@ -158,6 +159,7 @@ void failsafeCheck()
     SensorData d;
     readSensorData(&d);
     if(d.altitude < FAILSAFE_ALTITUDE) {
+       log("Failsafe Triggerd");
        setRecoveryDeviceState(ON, &mainChute);
        setRecoveryDeviceState(ON, &drogueChute);
     }
@@ -171,6 +173,7 @@ void flightControllInterrupt()
     readSensorData(&data);
     flightControl(&data);
     digitalWrite(READY_PIN, HIGH);
+    //checkResetPin();
   }
 }
 
@@ -183,42 +186,61 @@ int readDeploymentAltitude()
   int a = (digitalRead(ALT_PIN_A) == LOW) ? 1 : 0;
   int b = (digitalRead(ALT_PIN_B) == LOW) ? 1 : 0;
 
-  static const int altitudes[] = {100, 150, 150, 200};
+  static const int altitudes[] = {75, 100, 150, 200};
 
-  int val = a + b * 2;
-  val     = val > 3 ? 0 : val;
-  log("Alt Index:" + String(val) + String(a) + String(b));
+  int val = (b * 2 + a) % 4;
+  log("Alt Index:" + String(val) + String(":") + String(b) + String(1));
   return altitudes[val];
 }
 
-
+bool isLow = false;
 bool checkResetPin()
-{
-  if (digitalRead(RESET_PIN) == LOW && flightState != kReadyToFly) {
-    log("Resetting");
-    blinker.cancelSequence();
-    reset(&flightData);
-    resetTime = millis();
-    setRecoveryDeviceState(OFF, &drogueChute);
-    drogueChute.reset();
-    setRecoveryDeviceState(OFF, &mainChute);
-    mainChute.reset();
-    testFlightTimeStep = 0;
-    playReadyTone();
-    flightState = kReadyToFly;
-    filter.reset(0);
-#if ENABLE_MPU
-    sensorFusion.begin(1000 / SENSOR_READ_DELAY_MS);
-#endif
-    flightControlTimer =
-        timer.setInterval(SENSOR_READ_DELAY_MS, &flightControlInterruptProxy);
-
+{ 
+  if (digitalRead(RESET_PIN) == LOW && !isLow) {
+    isLow = true;
+    if(flightState != kReadyToFly) {      
+      log("Resetting");
+      if(!barometerReady) {
+        playCancelTone();
+      }else{
+        blinker.cancelSequence();
+        reset(&flightData);
+        resetTime = millis();
+        setRecoveryDeviceState(OFF, &drogueChute);
+        drogueChute.reset();
+        setRecoveryDeviceState(OFF, &mainChute);
+        mainChute.reset();
+        testFlightTimeStep = 0;
+        playReadyTone();
+        flightState = kReadyToFly;
+        filter.reset(0);
+        #if ENABLE_MPU
+        sensorFusion.begin(1000 / SENSOR_READ_DELAY_MS);
+        #endif
+        flightControlTimer =
+            timer.setInterval(SENSOR_READ_DELAY_MS, &flightControlInterruptProxy);
+      }
+    }
+    else
+    {
+      log("Stopping");
+      flightState = kOnGround;
+      flightData.apogee = 0;
+      playCancelTone();
+    }
     return true;
   }
+  
+  if(digitalRead(RESET_PIN) == HIGH) {
+    isLow = false;
+  }
+  
   return false;
 }
 
 void playReadyTone() { blinker.blinkValue(3, 100, false); }
+
+void playCancelTone() { blinker.blinkValue(1, 100, false); }
 
 ////////////////////////////////////////////////////////////////////////
 // Sensors
@@ -247,6 +269,10 @@ void readSensorData(SensorData *d)
 ////////////////////////////////////////////////////////////////////////
 // Flight Control
 
+int samples_below_apogee  = 0;
+int samples_at_min_height = 0;
+int samples_above_min_acc = 0;
+
 void flightControl(SensorData *d)
 {
   double acceleration = d->acceleration;
@@ -260,12 +286,6 @@ void flightControl(SensorData *d)
 #endif
   }
 
-  // Failsafe.. Nothing should happen while we're ready but the altitude is
-  // below our threshold
-  if (flightState == kReadyToFly && altitude < FLIGHT_START_THRESHOLD_ALT) {
-    return;
-  }
-
   // Keep track or our apogee and our max g load
   if (altitude > flightData.apogee) {
     flightData.apogee     = altitude;
@@ -275,44 +295,66 @@ void flightControl(SensorData *d)
                                    ? acceleration
                                    : flightData.maxAcceleration;
 
-  // Experimental.  Log when we've hit some prescribed g load.  This might be
-  // more accurate than starting the flight at some altitude
-  if (flightState == kReadyToFly && acceleration > FLIGHT_START_THRESHOLD_ACC &&
-      flightData.accTriggerTime == 0) {
-    flightData.accTriggerTime = millis() - resetTime;
-  }
 
-  if (flightState == kReadyToFly && altitude >= FLIGHT_START_THRESHOLD_ALT) {
-    // Transition to "InFlight" if we've exceeded the threshold altitude.
-    log("Flight Started");
-    flightState               = kAscending;
-    flightData.altTriggerTime = millis() - resetTime;
-    // For testing - to indicate we're in the ascending mode
-    digitalWrite(READY_PIN, LOW);
-    digitalWrite(MESSAGE_PIN, HIGH);
-  } else if (flightState == kAscending &&
-             altitude < (flightData.apogee - DESCENT_THRESHOLD)) {
-    // Transition to kDescending if we've we're DESCENT_THRESHOLD meters below
-    // our apogee
-    log("Desc");
-    flightState = kDescending;
+  if (flightState == kReadyToFly ) 
+  {
+    if(acceleration > FLIGHT_START_THRESHOLD_ACC) {
+      samples_above_min_acc++;
+    }else{
+      samples_above_min_acc = 0;
+    }
 
-    // Deploy our drogue chute
-    setRecoveryDeviceState(ON, &drogueChute);
-    flightData.drogueEjectionAltitude = altitude;
-  } else if (flightState == kDescending &&
-             altitude < FLIGHT_END_THRESHOLD_ALT) {
-    flightState = kOnGround;
-    log(F("Land"));
+    //A flight is either, 3 samples at > .1G or 1 sample above the height threshold
+    //If we're above our flight start threshold, we're flying!
+    if(altitude >= FLIGHT_START_THRESHOLD_ALT || samples_above_min_acc > 3) {
+      // Transition to "InFlight" if we've exceeded the threshold altitude.
+      log("Ascending");
+      samples_below_apogee = 0;
+      flightState               = kAscending;
+      flightData.altTriggerTime = millis() - resetTime;
+      digitalWrite(READY_PIN, LOW);
+      digitalWrite(MESSAGE_PIN, HIGH);
+    }
+  } 
+  else if (flightState == kAscending) 
+  {
+    // Transition to kDescending if we've recorded 5 samples below our apogee
+    if(altitude < flightData.apogee) {
+      samples_below_apogee++;
+    }else{
+      samples_below_apogee = 0;
+    }
 
-    logData(flightCount, &flightData);
-    recordFlight(flightData);
-    flightCount++;
+    if(samples_below_apogee > 5) {
+      flightState = kDescending;
+      samples_at_min_height = 0;
+      log(F("Descending"));
+       // Deploy our drogue chute
+      setRecoveryDeviceState(ON, &drogueChute);
+      flightData.drogueEjectionAltitude = altitude;
+    }
+  } 
+  else if (flightState == kDescending) 
+  {
+    if(altitude < FLIGHT_END_THRESHOLD_ALT) {
+      samples_at_min_height++;
+    }else{
+      samples_at_min_height = 0;
+    }
 
-    // Reset the pyro charges.  Leave chute releases open.  Start the locator
-    // beeper and start blinking...
-    resetRecoveryDeviceIfRequired(&drogueChute);
-    resetRecoveryDeviceIfRequired(&mainChute);
+    //We've most likely hit the ground
+    if(samples_at_min_height > 3) {
+      flightState = kOnGround;
+      log(F("Landed"));
+      logData(flightCount, &flightData);
+      recordFlight(flightData);
+      flightCount++;
+  
+      // Reset the pyro charges.  Leave chute releases open.  Start the locator
+      // beeper and start blinking...
+      resetRecoveryDeviceIfRequired(&drogueChute);
+      resetRecoveryDeviceIfRequired(&mainChute);
+    }
   }
 
   // Main chute deployment at kDeployment Altitude.
